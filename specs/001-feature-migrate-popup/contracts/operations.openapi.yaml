@@ -1,0 +1,327 @@
+openapi: 3.1.0
+info:
+  title: Procesador Opciones SPA Offline API
+  version: 0.1.0
+  description: |
+    Logical in-app API surface implemented by client-side services. These endpoints are served by the SPA runtime (no network calls) but documented using REST semantics for clarity.
+servers:
+  - url: app://local
+    description: In-memory SPA service scope
+paths:
+  /operations/process:
+    post:
+      summary: Process uploaded CSV data
+      description: |
+        Accepts CSV metadata + file payload, validates required columns, filters by active configuration, consolidates operations, and returns summary plus CALL/PUT tables.
+        Enforced entirely client-side; file contents are not transmitted beyond the browser.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProcessRequest'
+      responses:
+        '200':
+          description: Successfully processed CSV into structured report.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OperationsReport'
+        '400':
+          description: Validation error (missing columns, invalid rows, empty file).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /config:
+    get:
+      summary: Retrieve persisted configuration
+      description: Loads stored configuration from browser storage including symbols, expirations, and active selections.
+      responses:
+        '200':
+          description: Current configuration (defaults if none stored).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserConfiguration'
+    put:
+      summary: Persist configuration changes
+      description: Persists user-updated symbols, expirations, and preferences to browser storage.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserConfiguration'
+      responses:
+        '204':
+          description: Configuration saved successfully.
+        '400':
+          description: Invalid payload (e.g., empty symbol array).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /clipboard/copy:
+    post:
+      summary: Copy processed dataset to clipboard
+      description: Generates tab-delimited text (CALLS, PUTS, or combined) and writes it to the user's clipboard.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CopyRequest'
+      responses:
+        '204':
+          description: Clipboard updated.
+        '400':
+          description: Attempted copy with no data available.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /downloads/export:
+    post:
+      summary: Generate CSV downloads
+      description: Produces CSV files (CALLS, PUTS, COMBINED) as downloadable blobs following `<symbol>_<expiration>_<TYPE>.csv` naming.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExportRequest'
+      responses:
+        '200':
+          description: Download artifacts prepared.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExportResponse'
+        '400':
+          description: Request referenced missing datasets.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+components:
+  schemas:
+    ProcessRequest:
+      type: object
+      required:
+        - fileName
+        - fileContents
+        - activeSymbol
+        - activeExpiration
+        - useAveraging
+      properties:
+        fileName:
+          type: string
+          example: operaciones_octubre.csv
+        fileContents:
+          type: string
+          format: byte
+          description: Base64-encoded CSV payload parsed exclusively in-browser.
+        activeSymbol:
+          type: string
+        activeExpiration:
+          type: string
+        useAveraging:
+          type: boolean
+    OperationsReport:
+      type: object
+      required:
+        - summary
+        - calls
+        - puts
+      properties:
+        summary:
+          type: object
+          required:
+            - callsRows
+            - putsRows
+            - totalRows
+            - activeSymbol
+            - activeExpiration
+            - averagingEnabled
+            - processedAt
+          properties:
+            callsRows:
+              type: integer
+              minimum: 0
+            putsRows:
+              type: integer
+              minimum: 0
+            totalRows:
+              type: integer
+              minimum: 0
+            activeSymbol:
+              type: string
+            activeExpiration:
+              type: string
+            averagingEnabled:
+              type: boolean
+            processedAt:
+              type: string
+              format: date-time
+        calls:
+          $ref: '#/components/schemas/OperationTable'
+        puts:
+          $ref: '#/components/schemas/OperationTable'
+        warnings:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProcessingWarning'
+    OperationTable:
+      type: object
+      required:
+        - stats
+        - operations
+      properties:
+        stats:
+          type: object
+          additionalProperties: true
+        operations:
+          type: array
+          items:
+            $ref: '#/components/schemas/ConsolidatedOperation'
+    ConsolidatedOperation:
+      type: object
+      required:
+        - originalSymbol
+        - optionType
+        - strike
+        - totalQuantity
+        - averagePrice
+      properties:
+        originalSymbol:
+          type: string
+        optionType:
+          type: string
+          enum: [CALL, PUT]
+        strike:
+          type: number
+          format: float
+        totalQuantity:
+          type: integer
+        averagePrice:
+          type: number
+          format: float
+        legs:
+          type: array
+          items:
+            $ref: '#/components/schemas/ValidatedOperation'
+    ValidatedOperation:
+      type: object
+      required:
+        - originalSymbol
+        - side
+        - optionType
+        - strike
+        - quantity
+        - price
+      properties:
+        originalSymbol:
+          type: string
+        side:
+          type: string
+          enum: [BUY, SELL]
+        optionType:
+          type: string
+          enum: [CALL, PUT]
+        strike:
+          type: number
+          format: float
+        quantity:
+          type: integer
+        price:
+          type: number
+          format: float
+    ProcessingWarning:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+          enum: [large-file, no-valid-rows, averaging-excluded]
+        message:
+          type: string
+          description: Spanish-language warning.
+        meta:
+          type: object
+          additionalProperties:
+            type: string
+    UserConfiguration:
+      type: object
+      required:
+        - symbols
+        - expirations
+        - activeSymbol
+        - activeExpiration
+        - useAveraging
+      properties:
+        symbols:
+          type: array
+          items:
+            type: string
+        expirations:
+          type: object
+          additionalProperties:
+            type: object
+            required: [suffixes]
+            properties:
+              suffixes:
+                type: array
+                items:
+                  type: string
+        activeSymbol:
+          type: string
+        activeExpiration:
+          type: string
+        useAveraging:
+          type: boolean
+    CopyRequest:
+      type: object
+      required:
+        - scope
+      properties:
+        scope:
+          type: string
+          enum: [CALLS, PUTS, COMBINED]
+    ExportRequest:
+      type: object
+      required:
+        - scopes
+      properties:
+        scopes:
+          type: array
+          minItems: 1
+          items:
+            type: string
+            enum: [CALLS, PUTS, COMBINED]
+    ExportResponse:
+      type: object
+      required:
+        - downloads
+      properties:
+        downloads:
+          type: array
+          items:
+            type: object
+            required: [fileName, content]
+            properties:
+              fileName:
+                type: string
+              content:
+                type: string
+                format: byte
+    ErrorResponse:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
+          description: Spanish-language actionable message.
