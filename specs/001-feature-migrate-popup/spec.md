@@ -1,13 +1,16 @@
-# Feature Specification: Migrate popup.html to React with Material UI
+# Feature Specification: Migrate popup.html to a React SPA with Material UI
 
 **Feature Branch**: `001-feature-migrate-popup`  
 **Created**: 2025-10-08  
 **Status**: Draft  
 **Input**: User description: "Migrate this popup.html to be a React application using a Material UI"
 
+**Migration Note**: The resulting solution MUST run as a standalone single-page application (SPA) and MUST NOT rely on any Chrome Extension-specific mechanisms or APIs.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Process CSV operations file (Priority: P1)
+
 The user opens the popup, selects an operations CSV file, and sees processed results (CALLS and PUTS) in tables and a summary, with options to copy or download the data.
 
 **Why this priority**: It is the core value of the popup: transforming raw trade data for immediate reuse.
@@ -15,12 +18,14 @@ The user opens the popup, selects an operations CSV file, and sees processed res
 **Independent Test**: Load a valid CSV and verify counts, tables, and copy/download buttons appear enabled.
 
 **Acceptance Scenarios**:
+
 1. **Given** the popup is open, **When** the user selects a valid CSV and clicks "Process Operations", **Then** summary, CALLS/PUTS tables, and active copy/download buttons are shown.
 2. **Given** a CSV with no valid operations for current symbol/expiration, **When** it is processed, **Then** a clear error message appears and no tables are shown.
 
 ---
 
 ### User Story 2 - Manage symbols and expirations (Priority: P2)
+
 The user manages symbol list and expirations (names + suffix arrays), adds new entries, removes existing ones, and persists configuration between sessions.
 
 **Why this priority**: Essential customization to adapt processing to multiple underlying assets and expiration months.
@@ -28,12 +33,14 @@ The user manages symbol list and expirations (names + suffix arrays), adds new e
 **Independent Test**: Add a symbol and expiration, save, close and reopen the popup, verify they persist.
 
 **Acceptance Scenarios**:
+
 1. **Given** the settings tab, **When** the user adds a symbol and saves, **Then** it appears in the symbol selector after reload.
 2. **Given** custom expirations exist, **When** the user restores defaults, **Then** the list resets to the default baseline.
 
 ---
 
 ### User Story 3 - Toggle averaging & manipulate views (Priority: P3)
+
 The user toggles strike-level averaging mode, switches between primary tabs (Processor / Settings) and preview sub-tabs (CALLS / PUTS), and copies/downloads partial or combined datasets.
 
 **Why this priority**: Improves usability and control over presentation of processed data.
@@ -41,6 +48,7 @@ The user toggles strike-level averaging mode, switches between primary tabs (Pro
 **Independent Test**: Toggle averaging and observe row consolidation changes; copy only CALLS; download individual files.
 
 **Acceptance Scenarios**:
+
 1. **Given** processed data, **When** averaging is enabled, **Then** row count per strike consolidates buys/sells correctly.
 2. **Given** processed data, **When** the user clicks "Copy Calls", **Then** the clipboard contains only CALLS rows in the specified format.
 
@@ -80,8 +88,9 @@ The user toggles strike-level averaging mode, switches between primary tabs (Pro
 * **FR-020**: System MUST support CSV files up to 50k lines; display a performance warning when >25k lines and still process within success criteria where possible.
 * **FR-021**: Symbol + expiration matching MUST use prefix+suffix detection: a row is in-scope if its `symbol` starts with the active symbol AND ends with one of the active expiration suffixes (middle infixes allowed). Matching is case-sensitive.
 * **FR-022**: Implement development-only console debug logs (suppressed in production build) capturing: processing start, processing end, total parsed rows, post-filter valid row count, counts per classification (CALLS, PUTS), exclusion counts per reason, and total processing duration in ms.
-  
+
   **Example log messages**:
+
   ```javascript
   console.log('PO: Processing started - file: operations.csv, rows: 1234');
   console.log('PO: Filtering complete - valid rows: 1180, excluded: 54');
@@ -89,8 +98,14 @@ The user toggles strike-level averaging mode, switches between primary tabs (Pro
   console.log('PO: Exclusion breakdown - zeroNetQuantity: 42, invalidPrice: 8, missingRequiredField: 4');
   console.log('PO: Processing complete - duration: 87ms');
   ```
+
 * **FR-023**: User-facing error messages MUST be a short sentence in Spanish without codes/prefixes, listing dynamic details inline (e.g., "Faltan columnas requeridas: strike, price.").
 * **FR-024**: Persistence storage MUST use simple flat keys: `symbols`, `expirations`, `activeSymbol`, `activeExpiration`, `useAveraging` (no namespacing/version prefix for this iteration).
+* **FR-025**: The application MUST operate as a standalone SPA and avoid any Chrome Extension APIs (e.g., `chrome.*`). Persistence MUST rely on web-standard browser storage available outside extension contexts.
+
+### Non-Functional Requirements
+
+* **NFR-001**: The application MUST remain fully client-side during CSV processing and MUST NOT issue any network requests while handling user-provided data.
 
 ### Key Entities
 
@@ -119,7 +134,8 @@ The user toggles strike-level averaging mode, switches between primary tabs (Pro
 
 * Typical CSV size <10k lines; in-memory processing acceptable.
 * Extended maximum supported size now 50k lines (warning threshold >25k lines).
-* Persistence will continue using extension local storage.
+* Persistence will use browser-accessible storage (e.g., `localStorage`) compatible with standalone SPA deployment.
+* CSV processing occurs entirely offline; no connectivity is required once the SPA loads.
 * Immediate multi-language support not required; string centralization enables later i18n.
 * User will not process multiple files concurrently.
 
@@ -156,5 +172,9 @@ The user toggles strike-level averaging mode, switches between primary tabs (Pro
 * Q: What level of observability/logging is required for processing? → A: Option B (dev-build console debug logs with timing & counts). Incorporated as FR-022 (production build omits these logs).
 * Q: What standardized format should user-facing error messages follow? → A: Option A (short sentence, no code; inline list). Incorporated as FR-023.
 * Q: What naming scheme should be used for persistence storage keys? → A: Option A (simple flat keys). Incorporated as FR-024.
+
+### Session 2025-10-10
+
+* Q: What level of network connectivity should the standalone SPA rely on while processing user CSV data? → A: Option A (fully client-side; no network requests during processing).
 
 <!-- End of finalized specification -->
