@@ -74,10 +74,14 @@ The user toggles strike-level averaging mode, switches between primary tabs (Pro
 * **FR-014**: System MUST allow restoring default configuration.
 * **FR-015**: System MUST hide results sections until a successful processing occurs.
 * **FR-016**: System MUST centralize all user-visible strings to permit future localization (initial language: Spanish).
-* **FR-017**: System MUST detect any missing required CSV columns before processing and fail fast with a single error listing all missing column names.
+* **FR-017**: System MUST detect any missing required CSV columns before processing and fail fast with a single error listing all missing column names. **Required columns (exact, case-sensitive)**: `order_id`, `symbol`, `side`, `option_type`, `strike`, `quantity`, `price`.
 * **FR-018**: System MUST format prices with up to 4 decimals trimming trailing zeros (no forced padding) and quantities as integers.
 * **FR-019**: System MUST display numeric values using browser locale (initially es-AR: thousands dot, decimal comma) but export/download data in en-US numeric format (thousands comma, decimal point) for interoperability.
 * **FR-020**: System MUST support CSV files up to 50k lines; display a performance warning when >25k lines and still process within success criteria where possible.
+* **FR-021**: Symbol + expiration matching MUST use prefix+suffix detection: a row is in-scope if its `symbol` starts with the active symbol AND ends with one of the active expiration suffixes (middle infixes allowed). Matching is case-sensitive.
+* **FR-022**: Implement development-only console debug logs (suppressed in production build) capturing: processing start, processing end, total parsed rows, post-filter valid row count, counts per classification (CALLS, PUTS), exclusion counts per reason, and total processing duration in ms.
+* **FR-023**: User-facing error messages MUST be a short sentence in Spanish without codes/prefixes, listing dynamic details inline (e.g., "Faltan columnas requeridas: strike, price.").
+* **FR-024**: Persistence storage MUST use simple flat keys: `symbols`, `expirations`, `activeSymbol`, `activeExpiration`, `useAveraging` (no namespacing/version prefix for this iteration).
 
 ### Key Entities
 
@@ -135,5 +139,13 @@ The user toggles strike-level averaging mode, switches between primary tabs (Pro
 * Q: What format should the processed timestamp use? → A: Locale-specific date/time with seconds (es-AR, browser locale APIs).
 * Q: Which standardized exclusion reasons apply to unlisted operations? → A: Option A (zeroNetQuantity, invalidPrice, missingRequiredField).
 * Q: How should the Consolidated Operation represent quantities? → A: Option D (store only original row quantity; derive net quantity & VWAP dynamically in consolidation logic).
+
+### Session 2025-10-09
+
+* Q: Which exact set of CSV column names should be considered REQUIRED for processing (fail-fast if any missing)? → A: Option A (`order_id, symbol, side, option_type, strike, quantity, price`). Incorporated into FR-017 as the authoritative list.
+* Q: How should the system determine that a CSV row belongs to the currently active symbol+expiration? → A: Option B (prefix + suffix detection: starts with active symbol AND ends with any active expiration suffix; middle infix permitted; case-sensitive). Incorporated as FR-021.
+* Q: What level of observability/logging is required for processing? → A: Option B (dev-build console debug logs with timing & counts). Incorporated as FR-022 (production build omits these logs).
+* Q: What standardized format should user-facing error messages follow? → A: Option A (short sentence, no code; inline list). Incorporated as FR-023.
+* Q: What naming scheme should be used for persistence storage keys? → A: Option A (simple flat keys). Incorporated as FR-024.
 
 <!-- End of finalized specification -->
