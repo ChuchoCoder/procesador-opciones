@@ -44,7 +44,7 @@ Single project structure (per plan.md):
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T008 Create Spanish localization file `src/i18n/es-AR.js`: export strings object with all UI text (FR-016, Principle 6)
+- [ ] T008 Create Spanish localization file `src/i18n/es-AR.js`: export strings object with all UI text (FR-016, Principle 6), including error message constants per FR-023 format (e.g., 'csvEmpty', 'missingColumns', 'noMatchingOps') with interpolation placeholders for dynamic values
 - [ ] T009 [P] Implement Chrome storage wrapper in `src/utils/storage.js`: `loadConfig()`, `saveConfig()`, `restoreDefaults()` per contracts/storage-api.md
 - [ ] T010 [P] Implement dev-only logger in `src/utils/logger.js`: console logs with `PO:` prefix, conditional on `import.meta.env.DEV` (FR-022)
 - [ ] T011 Create ConfigContext in `src/state/ConfigContext.jsx`: React Context provider for Configuration entity (data-model.md)

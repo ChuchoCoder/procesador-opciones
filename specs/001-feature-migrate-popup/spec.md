@@ -80,6 +80,15 @@ The user toggles strike-level averaging mode, switches between primary tabs (Pro
 * **FR-020**: System MUST support CSV files up to 50k lines; display a performance warning when >25k lines and still process within success criteria where possible.
 * **FR-021**: Symbol + expiration matching MUST use prefix+suffix detection: a row is in-scope if its `symbol` starts with the active symbol AND ends with one of the active expiration suffixes (middle infixes allowed). Matching is case-sensitive.
 * **FR-022**: Implement development-only console debug logs (suppressed in production build) capturing: processing start, processing end, total parsed rows, post-filter valid row count, counts per classification (CALLS, PUTS), exclusion counts per reason, and total processing duration in ms.
+  
+  **Example log messages**:
+  ```javascript
+  console.log('PO: Processing started - file: operations.csv, rows: 1234');
+  console.log('PO: Filtering complete - valid rows: 1180, excluded: 54');
+  console.log('PO: Classification - CALLS: 56, PUTS: 43');
+  console.log('PO: Exclusion breakdown - zeroNetQuantity: 42, invalidPrice: 8, missingRequiredField: 4');
+  console.log('PO: Processing complete - duration: 87ms');
+  ```
 * **FR-023**: User-facing error messages MUST be a short sentence in Spanish without codes/prefixes, listing dynamic details inline (e.g., "Faltan columnas requeridas: strike, price.").
 * **FR-024**: Persistence storage MUST use simple flat keys: `symbols`, `expirations`, `activeSymbol`, `activeExpiration`, `useAveraging` (no namespacing/version prefix for this iteration).
 

@@ -115,6 +115,24 @@ Resolve technical unknowns identified in Technical Context section of plan.md be
 
 **Decision**: Inline scripts forbidden; use bundled external scripts only
 
+**CSP Directives (Manifest V3 + React Production Build)**:
+
+```json
+{
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'"
+  }
+}
+```
+
+**Rationale**:
+- `script-src 'self'`: Allows only scripts from extension package (no external CDNs, no inline scripts).
+- `object-src 'self'`: Restricts plugins/embeds to extension package only.
+- **No `'unsafe-eval'` needed**: React production build uses static JSX transforms (no runtime eval).
+- **No `'unsafe-inline'` needed**: All scripts bundled externally via Vite.
+
+**Development Mode Note**: Vite dev server HMR may require `'wasm-unsafe-eval'` for development builds, but production build for extension uses standard CSP above.
+
 **Key Constraints**:
 
 1. **No Inline Scripts**: Manifest V3 forbids `<script>` tags with inline code. All JS must be external files.
