@@ -19,10 +19,10 @@
 
 **Purpose**: Scaffold the standalone SPA workspace and baseline tooling.
 
-- [ ] T001 [Setup] Scaffold Vite React project in `frontend/` using React + JavaScript template and ensure `public/index.html` contains root mount point for SPA.
-- [ ] T002 [Setup] Install core dependencies (`react@18`, `react-dom`, `@mui/material`, `@mui/icons-material`, `@emotion/*`, `papaparse`, `vitest`, `@testing-library/react`, `@testing-library/user-event`) and save to `frontend/package.json`.
-- [ ] T003 [Setup] Configure dev/test/build scripts in `frontend/package.json` (`dev`, `build`, `test`, `test:watch`) and add Vitest config (`frontend/vitest.config.js`) aligned with React + jsdom.
-- [ ] T004 [Setup] Establish base directory structure (`frontend/src/app`, `components`, `services`, `hooks`, `state`, `strings`, `tests/{unit,integration}`) with placeholder index files to avoid import errors.
+- [X] T001 [Setup] Scaffold Vite React project in `frontend/` using React + JavaScript template and ensure `public/index.html` contains root mount point for SPA.
+- [X] T002 [Setup] Install core dependencies (`react@18`, `react-dom`, `@mui/material`, `@mui/icons-material`, `@emotion/*`, `papaparse`, `vitest`, `@testing-library/react`, `@testing-library/user-event`) and save to `frontend/package.json`.
+- [X] T003 [Setup] Configure dev/test/build scripts in `frontend/package.json` (`dev`, `build`, `test`, `test:watch`) and add Vitest config (`frontend/vitest.config.js`) aligned with React + jsdom.
+- [X] T004 [Setup] Establish base directory structure (`frontend/src/app`, `components`, `services`, `hooks`, `state`, `strings`, `tests/{unit,integration}`) with placeholder index files to avoid import errors.
 
 ---
 
@@ -30,10 +30,10 @@
 
 **Purpose**: Core infrastructure required before any user story can begin.
 
-- [ ] T005 [Foundational] Implement SPA shell (`frontend/src/app/App.jsx`, `frontend/src/app/routes.jsx`, `frontend/src/main.jsx`) with Material UI ThemeProvider, CssBaseline, and routing between Processor and Settings views.
-- [ ] T006 [P] [Foundational] Create localization module `frontend/src/strings/es-AR.js` exporting Spanish strings and a helper to retrieve keys for UI/components.
-- [ ] T007 [P] [Foundational] Build storage utility `frontend/src/services/storage/local-storage.js` providing safe read/write/remove for keys (`symbols`, `expirations`, `activeSymbol`, `activeExpiration`, `useAveraging`) with offline guards.
-- [ ] T008 [Foundational] Implement configuration context provider `frontend/src/state/config-context.jsx` exposing hooks for configuration state, loading persisted values via storage utility, and broadcasting change events.
+- [X] T005 [Foundational] Implement SPA shell (`frontend/src/app/App.jsx`, `frontend/src/app/routes.jsx`, `frontend/src/main.jsx`) with Material UI ThemeProvider, CssBaseline, and routing between Processor and Settings views.
+- [X] T006 [P] [Foundational] Create localization module `frontend/src/strings/es-AR.js` exporting Spanish strings and a helper to retrieve keys for UI/components.
+- [X] T007 [P] [Foundational] Build storage utility `frontend/src/services/storage/local-storage.js` providing safe read/write/remove for keys (`symbols`, `expirations`, `activeSymbol`, `activeExpiration`, `useAveraging`) with offline guards.
+- [X] T008 [Foundational] Implement configuration context provider `frontend/src/state/config-context.jsx` exposing hooks for configuration state, loading persisted values via storage utility, and broadcasting change events.
 - [ ] T009 [P] [Foundational] Add CSV parsing helper `frontend/src/services/csv/parser.js` wrapping papaparse with schema hints, error propagation, and 50k row handling.
 - [ ] T010 [Foundational] Introduce dev logging utility `frontend/src/services/logging/dev-logger.js` to emit `PO:` prefixed metrics only in development mode per FR-022.
 
