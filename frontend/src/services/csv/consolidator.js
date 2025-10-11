@@ -105,3 +105,14 @@ export const consolidateOperations = (
     },
   };
 };
+
+const buildViewResult = (operations, useAveraging) => ({
+  key: useAveraging ? 'averaged' : 'raw',
+  useAveraging,
+  ...consolidateOperations(operations, { useAveraging }),
+});
+
+export const buildConsolidatedViews = (operations = []) => ({
+  raw: buildViewResult(operations, false),
+  averaged: buildViewResult(operations, true),
+});

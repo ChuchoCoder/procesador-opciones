@@ -9,6 +9,13 @@ const strings = {
     settings: 'Configuración',
   },
   processor: {
+    viewControls: {
+      previewLabel: 'Vista de resultados',
+      callsTab: 'CALLS',
+      putsTab: 'PUTS',
+      settingsButton: 'Ir a Configuración',
+      previewAriaLabel: 'Seleccionar vista de resultados',
+    },
     upload: {
       title: 'Procesar operaciones',
       description: 'Seleccioná un archivo CSV con tus operaciones para generar el informe.',
@@ -33,6 +40,14 @@ const strings = {
     },
     actions: {
       title: 'Acciones',
+      currentViewPrefix: 'Vista actual:',
+      copyActive: 'Copiar vista actual',
+      downloadActive: 'Descargar vista actual',
+      scopeSection: 'Acciones por conjunto específico',
+      viewNames: {
+        CALLS: 'CALLS',
+        PUTS: 'PUTS',
+      },
       copyCalls: 'Copiar CALLS',
       copyPuts: 'Copiar PUTS',
       copyCombined: 'Copiar combinados',

@@ -76,9 +76,21 @@ const formatOperationRow = (operation) => [
 const isValidScope = (scope) =>
   Object.values(CLIPBOARD_SCOPES).includes(scope);
 
-const getOperations = (report, scope) => {
-  const calls = report?.calls?.operations ?? [];
-  const puts = report?.puts?.operations ?? [];
+const resolveViewData = (report, viewKey) => {
+  if (viewKey && report?.views && report.views[viewKey]) {
+    return report.views[viewKey];
+  }
+
+  return {
+    calls: report?.calls,
+    puts: report?.puts,
+    summary: report?.summary,
+  };
+};
+
+const getOperations = (viewData, scope) => {
+  const calls = viewData?.calls?.operations ?? [];
+  const puts = viewData?.puts?.operations ?? [];
 
   switch (scope) {
     case CLIPBOARD_SCOPES.CALLS:
@@ -104,26 +116,33 @@ const buildSectionRows = (label, operations) => {
   return rows;
 };
 
-const createModeSuffix = (report) => {
-  const averagingEnabled = Boolean(report?.summary?.averagingEnabled);
+const createModeSuffix = (summary) => {
+  const averagingEnabled = Boolean(summary?.averagingEnabled);
   return averagingEnabled ? ' (CON PROMEDIOS)' : ' (SIN PROMEDIOS)';
 };
 
-export const buildClipboardPayload = ({ report, scope }) => {
+export const buildClipboardPayload = ({ report, scope, view }) => {
   if (!isValidScope(scope)) {
     throw new Error(CLIPBOARD_ERROR_MESSAGES.invalidScope);
   }
 
-  const operations = getOperations(report, scope);
+  const viewData = resolveViewData(report, view);
+  const operations = getOperations(viewData, scope);
   if (!operations || operations.length === 0) {
     throw new Error(CLIPBOARD_ERROR_MESSAGES.emptyScope);
   }
 
   if (scope === CLIPBOARD_SCOPES.COMBINED) {
-    const suffix = createModeSuffix(report);
+    const suffix = createModeSuffix(viewData?.summary ?? report?.summary);
     const combinedRows = [];
-    const callsRows = buildSectionRows(`OPERACIONES CALLS${suffix}`, report?.calls?.operations ?? []);
-    const putsRows = buildSectionRows(`OPERACIONES PUTS${suffix}`, report?.puts?.operations ?? []);
+    const callsRows = buildSectionRows(
+      `OPERACIONES CALLS${suffix}`,
+      viewData?.calls?.operations ?? report?.calls?.operations ?? [],
+    );
+    const putsRows = buildSectionRows(
+      `OPERACIONES PUTS${suffix}`,
+      viewData?.puts?.operations ?? report?.puts?.operations ?? [],
+    );
 
     if (callsRows.length > 0) {
       combinedRows.push(...callsRows);
@@ -162,13 +181,13 @@ const resolveClipboard = (clipboard) => {
   return null;
 };
 
-export const copyReportToClipboard = async ({ report, scope, clipboard }) => {
+export const copyReportToClipboard = async ({ report, scope, view, clipboard }) => {
   const resolvedClipboard = resolveClipboard(clipboard);
   if (!resolvedClipboard) {
     throw new Error(CLIPBOARD_ERROR_MESSAGES.unavailable);
   }
 
-  const payload = buildClipboardPayload({ report, scope });
+  const payload = buildClipboardPayload({ report, scope, view });
 
   try {
     await resolvedClipboard.writeText(payload);

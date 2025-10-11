@@ -1,7 +1,7 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 import Alert from '@mui/material/Alert';
-import Grid from '@mui/material/Grid';
 import LinearProgress from '@mui/material/LinearProgress';
 import Stack from '@mui/material/Stack';
 
@@ -13,10 +13,12 @@ import {
 import { exportReportToCsv, EXPORT_SCOPES } from '../../services/csv/export-service.js';
 import { useConfig } from '../../state/config-context.jsx';
 import { useStrings } from '../../strings/index.js';
+import { ROUTES } from '../../app/routes.jsx';
 import FilePicker from './FilePicker.jsx';
 import OperationsTable from './OperationsTable.jsx';
 import ProcessorActions from './ProcessorActions.jsx';
 import SummaryPanel from './SummaryPanel.jsx';
+import ProcessorTabs from './ProcessorTabs.jsx';
 
 const ProcessorScreen = () => {
   const strings = useStrings();
@@ -32,12 +34,14 @@ const ProcessorScreen = () => {
     setAveraging,
   } = useConfig();
 
+  const navigate = useNavigate();
   const [selectedFile, setSelectedFile] = useState(null);
   const [report, setReport] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [processingError, setProcessingError] = useState(null);
   const [warningCodes, setWarningCodes] = useState([]);
   const [actionFeedback, setActionFeedback] = useState(null);
+  const [activePreview, setActivePreview] = useState(CLIPBOARD_SCOPES.CALLS);
 
   const buildConfiguration = useCallback(
     (overrides = {}) => ({
@@ -62,14 +66,26 @@ const ProcessorScreen = () => {
       setActionFeedback(null);
 
       try {
+        const configurationPayload = buildConfiguration(overrides);
         const result = await processOperations({
           file,
           fileName: file.name,
-          configuration: buildConfiguration(overrides),
+          configuration: configurationPayload,
         });
 
         setReport(result);
         setWarningCodes(result.summary.warnings ?? []);
+        const initialViewKey = configurationPayload.useAveraging ? 'averaged' : 'raw';
+        const initialView = result.views?.[initialViewKey];
+        const initialCalls = initialView?.calls?.operations?.length ?? 0;
+        const initialPuts = initialView?.puts?.operations?.length ?? 0;
+        if (initialCalls > 0) {
+          setActivePreview(CLIPBOARD_SCOPES.CALLS);
+        } else if (initialPuts > 0) {
+          setActivePreview(CLIPBOARD_SCOPES.PUTS);
+        } else {
+          setActivePreview(CLIPBOARD_SCOPES.CALLS);
+        }
       } catch (error) {
         setReport(null);
         setWarningCodes([]);
@@ -86,6 +102,7 @@ const ProcessorScreen = () => {
     setProcessingError(null);
     setActionFeedback(null);
     setWarningCodes([]);
+    setActivePreview(CLIPBOARD_SCOPES.CALLS);
     if (!file) {
       setReport(null);
     }
@@ -114,7 +131,8 @@ const ProcessorScreen = () => {
 
   const handleToggleAveraging = async (nextValue) => {
     setAveraging(nextValue);
-    if (selectedFile) {
+    setActionFeedback(null);
+    if (selectedFile && report && !report.views) {
       await runProcessing(selectedFile, { useAveraging: nextValue });
     }
   };
@@ -125,7 +143,8 @@ const ProcessorScreen = () => {
     }
     try {
       const clipboard = typeof navigator !== 'undefined' ? navigator.clipboard : undefined;
-      await copyReportToClipboard({ report, scope, clipboard });
+      const view = useAveraging ? 'averaged' : 'raw';
+      await copyReportToClipboard({ report, scope, view, clipboard });
       setActionFeedback({ type: 'success', message: processorStrings.actions.copySuccess });
     } catch (error) {
       setActionFeedback({ type: 'error', message: processorStrings.actions.copyError });
@@ -137,16 +156,37 @@ const ProcessorScreen = () => {
       return;
     }
     try {
-      await exportReportToCsv({ report, scope });
+      const view = useAveraging ? 'averaged' : 'raw';
+      await exportReportToCsv({ report, scope, view });
       setActionFeedback(null);
     } catch (error) {
       setActionFeedback({ type: 'error', message: processorStrings.actions.downloadError });
     }
   };
 
-  const hasCalls = report?.calls?.operations?.length > 0;
-  const hasPuts = report?.puts?.operations?.length > 0;
-  const hasData = hasCalls || hasPuts;
+  const handleCopyActive = () => {
+    const scope = activePreview === CLIPBOARD_SCOPES.PUTS
+      ? CLIPBOARD_SCOPES.PUTS
+      : CLIPBOARD_SCOPES.CALLS;
+    handleCopy(scope);
+  };
+
+  const handleDownloadActive = () => {
+    const scope = activePreview === CLIPBOARD_SCOPES.PUTS
+      ? EXPORT_SCOPES.PUTS
+      : EXPORT_SCOPES.CALLS;
+    handleDownload(scope);
+  };
+
+  const handlePreviewChange = (_event, value) => {
+    if (value !== activePreview) {
+      setActivePreview(value);
+    }
+  };
+
+  const handleNavigateSettings = () => {
+    navigate(ROUTES.settings);
+  };
 
   const warningMessages = useMemo(() => {
     if (!warningCodes || warningCodes.length === 0) {
@@ -168,6 +208,42 @@ const ProcessorScreen = () => {
       })
       .filter(Boolean);
   }, [warningCodes, processorStrings.warnings]);
+
+  const currentViewKey = useAveraging ? 'averaged' : 'raw';
+  const currentView = report?.views?.[currentViewKey] ?? null;
+  const callsOperations = currentView?.calls?.operations ?? report?.calls?.operations ?? [];
+  const putsOperations = currentView?.puts?.operations ?? report?.puts?.operations ?? [];
+  const summary = currentView?.summary ?? report?.summary ?? null;
+
+  const hasCalls = callsOperations.length > 0;
+  const hasPuts = putsOperations.length > 0;
+  const hasData = hasCalls || hasPuts;
+
+  useEffect(() => {
+    if (!report) {
+      setActivePreview(CLIPBOARD_SCOPES.CALLS);
+      return;
+    }
+
+    const callsCount = callsOperations.length;
+    const putsCount = putsOperations.length;
+
+    if (activePreview === CLIPBOARD_SCOPES.CALLS && callsCount === 0 && putsCount > 0) {
+      setActivePreview(CLIPBOARD_SCOPES.PUTS);
+    } else if (activePreview === CLIPBOARD_SCOPES.PUTS && putsCount === 0 && callsCount > 0) {
+      setActivePreview(CLIPBOARD_SCOPES.CALLS);
+    }
+  }, [report, currentViewKey, activePreview, callsOperations.length, putsOperations.length]);
+
+  const displayedOperations = activePreview === CLIPBOARD_SCOPES.PUTS ? putsOperations : callsOperations;
+  const activeScope = activePreview === CLIPBOARD_SCOPES.PUTS
+    ? CLIPBOARD_SCOPES.PUTS
+    : CLIPBOARD_SCOPES.CALLS;
+  const tabStrings = processorStrings.viewControls ?? {};
+  const activeScopeLabel = activePreview === CLIPBOARD_SCOPES.PUTS
+    ? tabStrings.putsTab ?? processorStrings.tables.putsTitle
+    : tabStrings.callsTab ?? processorStrings.tables.callsTitle;
+  const activeHasData = displayedOperations.length > 0;
 
   return (
     <Stack spacing={3}>
@@ -200,7 +276,14 @@ const ProcessorScreen = () => {
 
       {report && (
         <Stack spacing={3}>
-          <SummaryPanel summary={report.summary} strings={processorStrings} />
+          <SummaryPanel summary={summary} strings={processorStrings} />
+
+          <ProcessorTabs
+            strings={tabStrings}
+            activePreview={activePreview}
+            onPreviewChange={handlePreviewChange}
+            onNavigateSettings={handleNavigateSettings}
+          />
 
           <ProcessorActions
             strings={processorStrings}
@@ -208,6 +291,11 @@ const ProcessorScreen = () => {
             hasCalls={hasCalls}
             hasPuts={hasPuts}
             hasData={hasData}
+            activeScope={activeScope}
+            activeScopeLabel={activeScopeLabel}
+            activeHasData={activeHasData}
+            onCopyActive={handleCopyActive}
+            onDownloadActive={handleDownloadActive}
             onCopyCalls={() => handleCopy(CLIPBOARD_SCOPES.CALLS)}
             onCopyPuts={() => handleCopy(CLIPBOARD_SCOPES.PUTS)}
             onCopyCombined={() => handleCopy(CLIPBOARD_SCOPES.COMBINED)}
@@ -220,24 +308,14 @@ const ProcessorScreen = () => {
             <Alert severity={actionFeedback.type}>{actionFeedback.message}</Alert>
           )}
 
-          <Grid container spacing={2}>
-            <Grid item xs={12} md={6}>
-              <OperationsTable
-                title={processorStrings.tables.callsTitle}
-                operations={report.calls?.operations ?? []}
-                strings={processorStrings}
-                testId="calls-table"
-              />
-            </Grid>
-            <Grid item xs={12} md={6}>
-              <OperationsTable
-                title={processorStrings.tables.putsTitle}
-                operations={report.puts?.operations ?? []}
-                strings={processorStrings}
-                testId="puts-table"
-              />
-            </Grid>
-          </Grid>
+          <OperationsTable
+            title={activePreview === CLIPBOARD_SCOPES.PUTS
+              ? processorStrings.tables.putsTitle
+              : processorStrings.tables.callsTitle}
+            operations={displayedOperations}
+            strings={processorStrings}
+            testId="processor-results-table"
+          />
         </Stack>
       )}
     </Stack>

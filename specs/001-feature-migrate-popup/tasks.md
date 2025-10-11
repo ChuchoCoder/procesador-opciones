@@ -76,16 +76,16 @@
 
 ### Tests for User Story 2 (write first)
 
-- [ ] T022 [US2] Write unit tests in `frontend/tests/unit/config-service.spec.js` validating load/save/reset behavior of configuration persistence (flat keys, defaults fallback).
-- [ ] T023 [P] [US2] Create integration test `frontend/tests/integration/settings-flow.spec.jsx` exercising symbol/expiration edits, persistence after reload (using mocked storage), and restore defaults.
+- [X] T022 [US2] Write unit tests in `frontend/tests/unit/config-service.spec.js` validating load/save/reset behavior of configuration persistence (flat keys, defaults fallback).
+- [X] T023 [P] [US2] Create integration test `frontend/tests/integration/settings-flow.spec.jsx` exercising symbol/expiration edits, persistence after reload (using mocked storage), and restore defaults.
 
 ### Implementation for User Story 2
 
-- [ ] T024 [US2] Implement configuration service `frontend/src/services/storage/config-service.js` encapsulating defaults, schema validation, and persistence through the storage utility.
-- [ ] T025 [US2] Extend `frontend/src/state/config-context.jsx` with reducer/actions for add/remove symbol, manage expiration suffix lists, set active selections, and sync with storage service.
-- [ ] T026 [P] [US2] Build symbol management UI `frontend/src/components/Settings/SymbolManager.jsx` handling add/remove, validation, and es-AR messaging.
-- [ ] T027 [P] [US2] Build expiration management UI `frontend/src/components/Settings/ExpirationManager.jsx` with suffix array editing, restore defaults control, and warnings when empty.
-- [ ] T028 [US2] Assemble `frontend/src/components/Settings/SettingsScreen.jsx` integrating managers, persisting changes via context, and exposing navigation from the main layout.
+- [X] T024 [US2] Implement configuration service `frontend/src/services/storage/config-service.js` encapsulating defaults, schema validation, and persistence through the storage utility.
+- [X] T025 [US2] Extend `frontend/src/state/config-context.jsx` with reducer/actions for add/remove symbol, manage expiration suffix lists, set active selections, and sync with storage service.
+- [X] T026 [P] [US2] Build symbol management UI `frontend/src/components/Settings/SymbolManager.jsx` handling add/remove, validation, and es-AR messaging.
+- [X] T027 [P] [US2] Build expiration management UI `frontend/src/components/Settings/ExpirationManager.jsx` with suffix array editing, restore defaults control, and warnings when empty.
+- [X] T028 [US2] Assemble `frontend/src/components/Settings/SettingsScreen.jsx` integrating managers, persisting changes via context, and exposing navigation from the main layout.
 
 **Checkpoint**: Settings tab fully functional with persistence and defaults restoration verified independently of processing flow.
 
@@ -99,15 +99,15 @@
 
 ### Tests for User Story 3 (write first)
 
-- [ ] T029 [US3] Add unit tests in `frontend/tests/unit/averaging-toggle.spec.js` ensuring consolidation respects averaging flag and that toggling recalculates row counts without mutating source data.
-- [ ] T030 [P] [US3] Create integration test `frontend/tests/integration/view-toggle.spec.jsx` confirming tab switching, CALLS/PUTS preview navigation, and scoped copy/download actions.
+- [X] T029 [US3] Add unit tests in `frontend/tests/unit/averaging-toggle.spec.js` ensuring consolidation respects averaging flag and that toggling recalculates row counts without mutating source data.
+- [X] T030 [P] [US3] Create integration test `frontend/tests/integration/view-toggle.spec.jsx` confirming tab switching, CALLS/PUTS preview navigation, and scoped copy/download actions.
 
 ### Implementation for User Story 3
 
-- [ ] T031 [US3] Enhance consolidation logic (`frontend/src/services/csv/consolidator.js`) and orchestration (`process-operations.js`) to honor averaging toggle, maintaining baseline dataset plus averaged projection.
-- [ ] T032 [US3] Implement view controls component `frontend/src/components/Processor/ProcessorTabs.jsx` managing Processor/Settings navigation, CALLS/PUTS preview tabs, and exposing Spanish labels from strings module.
-- [ ] T033 [P] [US3] Update clipboard/export services to support scoped datasets (CALLS, PUTS, COMBINED), ensure UI commands pass the correct scope, and preserve en-US CSV formatting alongside es-AR UI presentation.
-- [ ] T034 [US3] Persist averaging mode in config context/storage and ensure processor UI re-renders consolidated data instantly upon toggle.
+- [X] T031 [US3] Enhance consolidation logic (`frontend/src/services/csv/consolidator.js`) and orchestration (`process-operations.js`) to honor averaging toggle, maintaining baseline dataset plus averaged projection.
+- [X] T032 [US3] Implement view controls component `frontend/src/components/Processor/ProcessorTabs.jsx` managing Processor/Settings navigation, CALLS/PUTS preview tabs, and exposing Spanish labels from strings module.
+- [X] T033 [P] [US3] Update clipboard/export services to support scoped datasets (CALLS, PUTS, COMBINED), ensure UI commands pass the correct scope, and preserve en-US CSV formatting alongside es-AR UI presentation.
+- [X] T034 [US3] Persist averaging mode in config context/storage and ensure processor UI re-renders consolidated data instantly upon toggle.
 
 **Checkpoint**: Averaging toggle and view management operate independently with scoped actions validated.
 
@@ -120,6 +120,12 @@
 - [ ] T035 [Polish] Configure ESLint + Prettier in `frontend/` with React/Vite presets, add npm scripts (`lint`, `lint:fix`), and ensure localization orphans are reported.
 - [ ] T036 [Polish] Update project documentation (`README.md`, `specs/001-feature-migrate-popup/quickstart.md`) with SPA usage instructions, performance notes, and offline caveats after validation.
 - [ ] T037 [P] [Polish] Execute full manual smoke per quickstart checklist (CSV ≤500 rows, large CSV warning, averaging toggle, persistence) and capture results in `specs/001-feature-migrate-popup/checklist.md`.
+
+---
+
+## New Follow-Ups (Post-US3)
+
+- [ ] T038 [Polish] Replace deprecated MUI Grid v1 usage in `frontend/src/components/Settings/SettingsScreen.jsx` with `<Stack>` / `<Box>` layout to remove runtime warnings.
 
 ---
 

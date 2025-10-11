@@ -37,9 +37,21 @@ const formatDecimal = (value) => {
   return String(value);
 };
 
-const getOperations = (report, scope) => {
-  const calls = report?.calls?.operations ?? [];
-  const puts = report?.puts?.operations ?? [];
+const resolveViewData = (report, viewKey) => {
+  if (viewKey && report?.views && report.views[viewKey]) {
+    return report.views[viewKey];
+  }
+
+  return {
+    calls: report?.calls,
+    puts: report?.puts,
+    summary: report?.summary,
+  };
+};
+
+const getOperations = (viewData, scope) => {
+  const calls = viewData?.calls?.operations ?? [];
+  const puts = viewData?.puts?.operations ?? [];
 
   switch (scope) {
     case CLIPBOARD_SCOPES.CALLS:
@@ -87,19 +99,20 @@ const buildCombinedLines = (calls, puts) => {
   return [header, ...callRows, ...putRows];
 };
 
-const buildFileName = (report, scope) => {
-  const symbol = report?.summary?.activeSymbol ?? 'OPERACIONES';
-  const expiration = report?.summary?.activeExpiration ?? 'GEN';
+const buildFileName = (summary, scope) => {
+  const symbol = summary?.activeSymbol ?? 'OPERACIONES';
+  const expiration = summary?.activeExpiration ?? 'GEN';
   const suffix = scope ?? 'COMBINED';
   return `${symbol}_${expiration}_${suffix}.csv`;
 };
 
-export const exportReportToCsv = async ({ report, scope, documentRef }) => {
+export const exportReportToCsv = async ({ report, scope, view, documentRef }) => {
   if (!report) {
     throw new Error('No hay datos para exportar.');
   }
 
-  const { operations, calls, puts } = getOperations(report, scope);
+  const viewData = resolveViewData(report, view);
+  const { operations, calls, puts } = getOperations(viewData, scope);
   if (!operations || operations.length === 0) {
     throw new Error('No hay datos disponibles en el ámbito seleccionado.');
   }
@@ -110,7 +123,7 @@ export const exportReportToCsv = async ({ report, scope, documentRef }) => {
       : buildCsvLines(operations);
 
   const csvContent = `${lines.join('\n')}\n`;
-  const fileName = buildFileName(report, scope);
+  const fileName = buildFileName(viewData?.summary ?? report.summary, scope);
 
   const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
   const url = (typeof URL !== 'undefined' && URL.createObjectURL)
