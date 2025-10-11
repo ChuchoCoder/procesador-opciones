@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "lint": "eslint .",
+  "lint": "eslint .",
+  "lint:fix": "eslint . --fix",
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest --watch"

@@ -192,7 +192,7 @@ export const processOperations = async ({
   }
 
   const views = buildConsolidatedViews(validated.operations);
-  const activeViewKey = Boolean(activeConfiguration.useAveraging) ? 'averaged' : 'raw';
+  const activeViewKey = activeConfiguration.useAveraging ? 'averaged' : 'raw';
   const processedAt = formatTimestamp(new Date());
   const warnings = buildWarnings(parseMeta);
 

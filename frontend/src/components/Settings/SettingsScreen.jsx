@@ -1,7 +1,6 @@
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
-import Grid from '@mui/material/Grid';
 import LinearProgress from '@mui/material/LinearProgress';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
@@ -12,8 +11,7 @@ import SymbolManager from './SymbolManager.jsx';
 import ExpirationManager from './ExpirationManager.jsx';
 
 const SettingsScreen = () => {
-  const strings = useStrings();
-  const settingsStrings = strings.settings;
+  const settingsStrings = useStrings().settings;
   const { resetDefaults, storageEnabled, hydrated } = useConfig();
 
   return (
@@ -33,14 +31,19 @@ const SettingsScreen = () => {
 
       {!hydrated && <LinearProgress />}
 
-      <Grid container spacing={3}>
-        <Grid item xs={12} lg={6}>
+      <Stack
+        direction={{ xs: 'column', lg: 'row' }}
+        spacing={3}
+        alignItems="stretch"
+        data-testid="settings-layout"
+      >
+        <Box flex={1}>
           <SymbolManager />
-        </Grid>
-        <Grid item xs={12} lg={6}>
+        </Box>
+        <Box flex={1}>
           <ExpirationManager />
-        </Grid>
-      </Grid>
+        </Box>
+      </Stack>
 
       <Box
         display="flex"

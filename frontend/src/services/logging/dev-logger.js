@@ -10,15 +10,21 @@ const resolveEnvironment = () => {
         return import.meta.env.MODE;
       }
     }
-  } catch (error) {
+  } catch {
     // Ignore errors accessing import.meta in non-module contexts.
   }
 
-  if (typeof process !== 'undefined' && process.env) {
-    const { NODE_ENV } = process.env;
-    if (typeof NODE_ENV === 'string' && NODE_ENV.length > 0) {
-      return NODE_ENV;
+  try {
+    // eslint-disable-next-line no-undef
+    if (typeof process !== 'undefined' && process.env) {
+      // eslint-disable-next-line no-undef
+      const { NODE_ENV } = process.env;
+      if (typeof NODE_ENV === 'string' && NODE_ENV.length > 0) {
+        return NODE_ENV;
+      }
     }
+  } catch {
+    /* ignore */
   }
 
   return 'production';
@@ -26,12 +32,7 @@ const resolveEnvironment = () => {
 
 const isDevelopment = () => resolveEnvironment() !== 'production';
 
-const formatMessage = (scope, message) => {
-  if (scope && scope.length > 0) {
-    return `${PREFIX} ${scope} - ${message}`;
-  }
-  return `${PREFIX} ${message}`;
-};
+const formatMessage = (scope, message) => (scope ? `${PREFIX} ${scope} - ${message}` : `${PREFIX} ${message}`);
 
 const safeConsoleLog = (fn, ...args) => {
   if (typeof fn === 'function') {

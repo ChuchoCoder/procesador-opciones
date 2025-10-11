@@ -86,10 +86,10 @@ const ProcessorScreen = () => {
         } else {
           setActivePreview(CLIPBOARD_SCOPES.CALLS);
         }
-      } catch (error) {
+      } catch (err) {
         setReport(null);
         setWarningCodes([]);
-        setProcessingError(error?.message ?? processorStrings.errors.processingFailed);
+        setProcessingError(err?.message ?? processorStrings.errors.processingFailed);
       } finally {
         setIsProcessing(false);
       }
@@ -146,7 +146,7 @@ const ProcessorScreen = () => {
       const view = useAveraging ? 'averaged' : 'raw';
       await copyReportToClipboard({ report, scope, view, clipboard });
       setActionFeedback({ type: 'success', message: processorStrings.actions.copySuccess });
-    } catch (error) {
+    } catch {
       setActionFeedback({ type: 'error', message: processorStrings.actions.copyError });
     }
   };
@@ -159,7 +159,7 @@ const ProcessorScreen = () => {
       const view = useAveraging ? 'averaged' : 'raw';
       await exportReportToCsv({ report, scope, view });
       setActionFeedback(null);
-    } catch (error) {
+    } catch {
       setActionFeedback({ type: 'error', message: processorStrings.actions.downloadError });
     }
   };

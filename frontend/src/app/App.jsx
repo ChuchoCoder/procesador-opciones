@@ -47,7 +47,6 @@ const NavigationBar = () => {
 };
 
 const App = () => {
-  const strings = useStrings();
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
