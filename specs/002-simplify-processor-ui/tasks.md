@@ -21,6 +21,7 @@ Tests First:
 - [ ] T012 [P] [US1] Unit test enrichOperationRow precedence explicit vs token (FR-004, FR-005)
 - [ ] T013 [P] [US1] Unit test deriveGroups aggregation counts (FR-007, FR-008, FR-016)
 - [ ] T014 [P] [US1] Unit test non-option symbol grouping with suffix -> expiration or NONE (FR-022)
+- [ ] T015 [P] [US1] Unit test type classification across explicit and token-driven paths (FR-003)
 
 Implementation:
 
@@ -34,6 +35,7 @@ Implementation:
 - [ ] T027 [US1] Ensure unknown rows preserved (FR-015)
 - [ ] T028 [US1] Add error collection without abort (FR-018)
 - [ ] T029 [US1] Update existing unit tests snapshot adjustments (SC-003 regression)
+- [ ] T030 [US1] Ensure classification logic emits CALL/PUT/UNKNOWN per spec (FR-003)
 
 ## Phase 2: Group Filter UI (User Story 2)
 
@@ -97,7 +99,7 @@ Implementation:
 
 ## Traceability Summary
 
-- FR-001..FR-008, FR-015..FR-018, FR-022 => Phase 1 tasks
+- FR-001..FR-003, FR-004..FR-008, FR-015..FR-018, FR-022 => Phase 1 tasks (FR-003 => T015/T030)
 - FR-009..FR-014 => Phase 2 tasks
 - FR-019 => Phase 3 tasks
 - FR-020 => Phase 2 (filter switching) integration

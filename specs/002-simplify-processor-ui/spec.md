@@ -80,7 +80,7 @@ As a user I want to understand which operations had fields inferred so that I ca
 - Row has partial malformed token (fails regex) and no symbol/expiration → Keep symbol/expiration as provided (if any) else `UNKNOWN`; do not drop row.
 - All rows fail option token detection and lack explicit option structure but have a Symbol (e.g., GGAL, AL30) → They are treated as non-option instrument operations aggregated by that symbol with `type=UNKNOWN` (instrument type not classified as CALL/PUT) and grouped using `symbol` plus a placeholder expiration (see Functional Requirements clarification once finalized).
 - Duplicate rows / repeated operations → All included; grouping counts reflect duplicates.
-- Very large CSV (performance) → Parsing should still complete without timeouts for typical file sizes (< X rows) (Assumption: up to 10k rows acceptable). 
+- Very large CSV (performance) → Parsing should still complete without timeouts for large files (≤10,000 rows) to remain within performance targets.
 
 ## Requirements *(mandatory)*
 
@@ -114,6 +114,13 @@ As a user I want to understand which operations had fields inferred so that I ca
 - **FR-021**: System MUST process typical datasets (≤500 rows) in under 100 ms on a mid-tier laptop (per constitution Principle 4) and SHOULD process large datasets (≤10,000 rows) in under 10 seconds while keeping group-selection interactions under 500 ms.
 - **FR-022**: System MUST treat rows that do not match the option token pattern but have a Symbol value as non-option instrument operations; they are grouped by symbol (with placeholder expiration policy clarified below) and retained with `type=UNKNOWN` unless another classification rule applies.
   - Clarification: Non-matching tokens are not discarded nor forced into `UNKNOWN::UNKNOWN`; they form symbol-based groups (e.g., `GGAL`, `AL30`).
+
+### Non-Functional Requirements
+
+- **NFR-001**: Processing MUST meet the constitution performance budget—≤100 ms for typical datasets (≤500 rows) and ≤10 seconds for large datasets (≤10,000 rows), with group filter interactions staying under 500 ms (Principle 4; aligns with FR-021, SC-001, SC-004, SC-009).
+- **NFR-002**: All newly introduced user-visible text MUST be localized in Spanish (Argentina) and routed through centralized string resources (Principle 6).
+- **NFR-003**: Significant parsing or filtering logic changes MUST ship with failing-first automated tests prior to implementation to satisfy Principle 3 and keep CALL/PUT detection deterministic.
+- **NFR-004**: UI responsiveness SHOULD keep group-selection updates under 200 ms for typical workloads to preserve a fluid popup experience.
 
 ### Assumptions
 
