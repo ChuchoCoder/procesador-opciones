@@ -1,187 +1,227 @@
-# Procesador de Opciones - Extensión de Chrome
+<div align="center">
 
-Una extensión de Chrome para procesar operaciones financieras de opciones desde archivos CSV. Permite configurar símbolos y vencimientos dinámicamente, procesar datos con o sin promedios, y exportar resultados con persistencia de datos en el navegador.
+# Procesador de Opciones
 
-## Características
+Extensión / SPA para procesar operaciones de opciones desde archivos CSV con vistas separadas CALLS / PUTS y modo de promedios por strike.
 
-- **Procesamiento de archivos CSV**: Carga y procesa archivos CSV con datos de operaciones financieras
-- **Configuración dinámica**: Personaliza completamente los símbolos de activos y vencimientos disponibles
-- **Configuración flexible**: Selecciona símbolo del activo, vencimiento y modo de procesamiento
-- **Persistencia de datos**: Los datos procesados se guardan automáticamente en el almacenamiento del navegador
-- **Vista previa de resultados**: Visualiza los datos procesados antes de exportarlos
-- **Exportación múltiple**: Descarga archivos CSV o copia datos al portapapeles
-- **Sin autenticación**: Acceso directo a la funcionalidad sin necesidad de login
+</div>
 
-## Historial de versiones
+## ⚠️ Estado del Proyecto
 
-- Consulta el historial completo en `CHANGELOG.md`.
-- Última versión: 1.0.1 — fix: corrección de error cuando las cantidades eran iguales a 0.
+Migración en curso desde un popup HTML (Vanilla JS) a una Single Page Application React + Vite + Material UI. El código legacy (archivos `popup.html`, `popup.js`, `operations-processor.js`) convive temporalmente mientras se completa la transición. La funcionalidad principal nueva vive bajo `frontend/`.
 
-## Instalación
+## ✨ Características Clave
 
-1. Descarga o clona este repositorio
-2. Abre Chrome y ve a `chrome://extensions/`
-3. Activa el "Modo de desarrollador" en la esquina superior derecha
-4. Haz clic en "Cargar extensión sin empaquetar"
-5. Selecciona la carpeta `procesador-opciones`
+- Procesamiento de archivos CSV (Papaparse) con filtros por símbolo y vencimiento
+- Vista dividida: pestañas CALLS / PUTS + indicador de vista actual
+- Modo de promedios (opcional): consolida operaciones por strike sumando cantidades y recalculando precio promedio ponderado
+- Acciones de exportación: copiar o descargar CSV (vista actual, CALLS, PUTS o combinado)
+- Persistencia local (localStorage) de configuración (símbolos, vencimientos, selección actual, preferencia de promedios)
+- Advertencias para archivos grandes (>25.000 filas) y corte duro a 50.000 filas
+- Mensajes de error y estado en español (locale `es-AR`)
+- Pruebas unitarias + integración (Vitest + Testing Library)
+- Linter (ESLint) + formateo consistente (Prettier)
 
-## Uso
-
-### 1. Configuración Inicial
-
-#### Configuración de Símbolos de Activos
-
-- **Agregar símbolos**: En "Configuración Avanzada", ingresa nuevos símbolos (ej: GGAL, YPF, COM, etc.)
-- **Eliminar símbolos**: Usa el botón ✕ junto a cada símbolo para eliminarlo
-- **Símbolos por defecto**: GFG, YPF, COM, PAM, TEN, REP, TGNO4, ALUA, BYMA, MIRG
-
-#### Configuración de Vencimientos
-
-- **Agregar vencimientos**: Ingresa código (ej: ENE), nombre (ej: Enero) y sufijos (ej: E,EN)
-- **Eliminar vencimientos**: Usa el botón ✕ junto a cada vencimiento
-- **Vencimientos por defecto**: Todos los meses del año con sus sufijos correspondientes
-
-#### Configuración de Procesamiento
-
-- **Símbolo del Activo**: Selecciona de tu lista personalizada
-- **Vencimiento**: Elige de tu configuración personalizada
-- **Usar Promedios**: Activa/desactiva el procesamiento con promedios por strike
-
-### 2. Procesamiento de Archivos
-
-1. **Cargar archivo**: Haz clic en "Seleccionar archivo CSV" y elige tu archivo
-2. **Configurar procesamiento**:
-   - Selecciona el símbolo del activo de tu lista personalizada
-   - Elige el vencimiento de tu configuración personalizada
-   - Activa/desactiva el modo de promedios según necesites
-3. **Procesar**: Haz clic en "Procesar Operaciones"
-4. **Persistencia**: Los datos se procesarán y guardarán automáticamente en el navegador
-
-### 3. Visualización de Resultados
-
-- **Resumen**: Estadísticas generales del procesamiento
-- **Vista Previa**: Muestra las primeras 10 operaciones de CALLS y PUTS
-- **Pestañas**: Cambia entre CALLS y PUTS para ver cada tipo por separado
-
-### 4. Exportación
-
-- **Descargar Todo**: Genera un archivo CSV con todas las operaciones
-- **Descargar CALLS/PUTS**: Archivos separados por tipo de opción
-- **Copiar al Portapapeles**: Copia los datos formateados para Excel
-
-### 5. Gestión de Configuración
-
-- **Restaurar por defecto**: Vuelve a la configuración inicial con símbolos y vencimientos estándar
-- **Guardar configuración**: Los cambios se guardan automáticamente, pero puedes forzar el guardado
-- **Persistencia**: La configuración se mantiene entre sesiones del navegador
-
-### 6. Gestión de Datos
-
-- **Datos Guardados**: Muestra información sobre la última sesión procesada
-- **Limpiar Datos**: Elimina todos los datos procesados del almacenamiento
-
-## Formato del Archivo CSV
-
-El archivo CSV debe contener las siguientes columnas:
-
-- `event_subtype`: Debe ser "execution_report"
-- `ord_status`: Debe ser "Ejecutada" o "Parcialmente ejecutada"
-- `text`: No debe ser "Order Updated"
-- `order_id`: Identificador único de la orden
-- `symbol`: Símbolo de la opción (ej: "GFGC53566O")
-- `side`: "BUY" o "SELL"
-- `last_price`: Precio de ejecución
-- `last_qty`: Cantidad ejecutada
-
-## Persistencia de Datos
-
-- Los datos procesados se guardan automáticamente en `chrome.storage.local`
-- La configuración (símbolo, vencimiento, modo) se persiste entre sesiones
-- Los datos permanecen disponibles hasta que se cargue un nuevo archivo o se limpien manualmente
-- No se requiere conexión a internet para el funcionamiento
-
-## Símbolos Soportados
-
-- GFG
-- YPF
-- COM
-- PAM
-- TEN
-- REP
-- TGNO4
-- ALUA
-- BYMA
-- MIRG
-
-## Vencimientos Soportados
-
-- ENE (Enero)
-- FEB (Febrero)
-- MAR (Marzo)
-- ABR (Abril)
-- MAY (Mayo)
-- JUN (Junio)
-- JUL (Julio)
-- AGO (Agosto)
-- SEP (Septiembre)
-- OCT (Octubre)
-- NOV (Noviembre)
-- DIC (Diciembre)
-
-## Características Principales
-
-Esta extensión simplificada incluye:
-
-- ✅ **Sin autenticación**: Acceso directo a la funcionalidad
-- ✅ **Procesamiento especializado**: Enfocada únicamente en el procesador de operaciones
-- ✅ **Persistencia local**: Usa chrome.storage para mantener datos entre sesiones
-- ✅ **Interfaz simplificada**: Solo las funciones esenciales del procesador
-- ✅ **Configuración dinámica**: Personaliza símbolos y vencimientos según necesidades
-- ✅ **Exportación múltiple**: Descarga archivos CSV o copia datos al portapapeles
-
-## Desarrollo
-
-### Estructura de Archivos
+## 🗂 Estructura (parcial)
 
 ```
 procesador-opciones/
-├── manifest.json          # Configuración de la extensión
-├── popup.html            # Interfaz principal
-├── popup.js              # Lógica del popup
-├── operations-processor.js # Procesador de operaciones
-├── icon16.png            # Icono 16x16
-├── icon48.png            # Icono 48x48
-├── icon128.png           # Icono 128x128
-└── README.md             # Este archivo
+├── manifest.json                 # Manifest MV3 base (versión legacy 1.0.x)
+├── popup.html / popup.js         # UI legacy (en proceso de migración)
+├── operations-processor.js       # Lógica legacy de procesamiento
+├── frontend/                     # Nueva SPA React
+│   ├── src/
+│   │   ├── main.jsx             # Entrada React
+│   │   ├── state/               # Contexto y hooks de configuración
+│   │   ├── components/          # Componentes UI
+│   │   ├── services/            # Servicios (parsing, export, clipboard)
+│   │   ├── processors/          # Lógica de consolidación / promedios
+│   │   └── strings/es-AR.js     # Textos
+│   ├── tests/                   # Unit + integration tests
+│   ├── vite.config.js
+│   └── vitest.config.js
+└── README.md
 ```
 
-### Tecnologías Utilizadas
+> Nota: Algunas carpetas pueden no existir aún si la migración está en progreso; ajustar según evolucione el repositorio.
 
-- **Manifest V3**: Última versión del sistema de extensiones de Chrome
-- **Chrome Storage API**: Para persistencia de datos
-- **Vanilla JavaScript**: Sin dependencias externas
-- **CSS Grid/Flexbox**: Para el diseño responsive
+## 🚀 Instalación (Modo Desarrollo SPA)
 
-## Solución de Problemas
+Requisitos: Node.js 18+ (recomendado LTS), npm.
 
-### El archivo CSV no se procesa
+```
+git clone https://github.com/ChuchoCoder/procesador-opciones.git
+cd procesador-opciones/frontend
+npm install
+npm run dev
+```
 
-- Verifica que el archivo tenga el formato correcto
-- Asegúrate de que las columnas requeridas estén presentes
-- Comprueba que el símbolo y vencimiento seleccionados coincidan con los datos
+Abrí el navegador en la URL que imprima Vite (por defecto `http://localhost:5173`).
 
-### Los datos no se guardan
+### Construir para producción (bundle SPA)
 
-- Verifica que la extensión tenga permisos de almacenamiento
-- Revisa la consola del navegador para errores
-- Intenta recargar la extensión
+```
+cd frontend
+npm run build
+```
 
-### Error al exportar archivos
+Los artefactos quedarán en `frontend/dist/`.
 
-- Verifica que el navegador permita descargas
-- Comprueba que hay datos procesados disponibles
-- Intenta limpiar los datos y procesar nuevamente
+### Empaquetar la extensión MV3 con la SPA
 
-## Licencia
+Se provee un script que genera `extension-dist/` lista para cargar en `chrome://extensions`.
 
-Este proyecto es de código abierto y está disponible para el procesamiento de operaciones financieras de opciones.
+Paso a paso:
+
+```
+npm run build:ext
+```
+
+Esto realiza:
+1. `npm run build` dentro de `frontend/`.
+2. Copia `manifest.json` e íconos a `extension-dist/`.
+3. Copia el contenido de `frontend/dist/`.
+4. Renombra `index.html` a `popup.html` y asegura que `manifest.json` apunte a ese archivo.
+
+Luego:
+1. Abrí `chrome://extensions`.
+2. Activá Modo desarrollador.
+3. Clic en “Cargar descomprimida” y seleccioná `extension-dist/`.
+
+> Si necesitás mantener el popup legacy por transición, podés conservarlo separado; este flujo lo reemplaza por la SPA.
+
+## 🧪 Pruebas
+
+Ejecutar todo el suite:
+
+```
+cd frontend
+npm test
+```
+
+Modo watch:
+
+```
+npm run test:watch
+```
+
+Cobertura (si se añade configuración): ejecutar Vitest con `--coverage` (no configurado por defecto en este commit).
+
+## 🧰 Linter & Formato
+
+```
+npm run lint       # Revisa reglas
+npm run lint:fix   # Aplica autofix
+```
+
+Prettier se usa vía configuración `.prettierrc` (singleQuote, trailing commas, ancho 100).
+
+## 🔧 Configuración y Persistencia
+
+La configuración se guarda en `localStorage` del navegador:
+
+- Lista de símbolos personalizados
+- Lista de vencimientos (nombre + sufijos)
+- Símbolo activo y vencimiento activo
+- Preferencia de “promediar por strike”
+
+Si el almacenamiento falla (modo privado estricto, etc.) se muestra un aviso y la sesión trabaja en memoria.
+
+## 📄 Formato CSV Esperado
+
+Columnas mínimas utilizadas por el procesador React:
+
+| Columna        | Uso / Validación                                                     |
+|----------------|-----------------------------------------------------------------------|
+| event_subtype  | Se filtra a `execution_report`                                        |
+| ord_status     | Se aceptan estados ejecutados / parcialmente ejecutados               |
+| text           | Se excluyen filas con `Order Updated`                                 |
+| order_id       | Identificador único (evita duplicados)                                |
+| symbol         | Símbolo completo de la opción (usado para separar CALLS / PUTS)       |
+| side           | BUY / SELL                                                            |
+| last_price     | Precio numérico                                                       |
+| last_qty       | Cantidad numérica                                                     |
+
+Reglas adicionales:
+
+- Se ignoran filas corruptas (se informan mediante advertencia general)
+- Límite suave: aviso >25.000 filas; límite duro: procesa solo hasta 50.000
+- Precios se mantienen con hasta 4 decimales internos; salida formateada acorde
+
+## 📊 Modo de Promedios
+
+Cuando está activado “Promediar por strike”:
+
+1. Agrupa operaciones por strike dentro de cada tipo (CALLS / PUTS).
+2. Suma cantidades netas (BUY positivo, SELL negativo si aplica lógica interna—ver implementación).
+3. Calcula un precio promedio ponderado por cantidad absoluta acumulada.
+4. Genera una tabla compacta reduciendo ruido de múltiples fills.
+
+Desactivar el modo muestra las operaciones originales (raw) sin consolidar.
+
+## 🖥 Interfaz (SPA)
+
+- Barra de navegación: pestañas “Procesador” y “Configuración”.
+- Sección Procesar: selector de archivo, símbolo, vencimiento, switch de promedios, botón Procesar.
+- Resumen: totales CALLS / PUTS y estado de promedios.
+- Acciones: copiar / descargar según alcance (vista actual, llamadas, puts, combinado).
+- Tablas: una por tipo, con columnas Cantidad, Strike, Precio.
+
+## 📁 Exportación
+
+Opciones disponibles (según selección actual):
+
+- Copiar vista actual (portapapeles)
+- Descargar vista actual (CSV)
+- Copiar / descargar CALLS
+- Copiar / descargar PUTS
+- Copiar / descargar combinados
+
+Los CSV generados incluyen encabezados estándar y formateo consistente.
+
+## 🧪 Pruebas (detalle)
+
+- Unit: parsing, consolidación (promedios), servicios de exportación y clipboard, configuración.
+- Integración: flujo de procesamiento, persistencia, toggle de vistas, settings.
+
+## 🐛 Troubleshooting
+
+| Problema | Posibles causas | Acciones |
+|----------|-----------------|----------|
+| Archivo no procesa | Formato inválido, columnas faltantes | Verificar encabezados y encoding UTF-8 |
+| Lento / congelado | Archivo muy grande >25k filas | Esperar, dividir archivo o limpiar filas innecesarias |
+| No persiste config | Almacenamiento bloqueado | Revisar modo incógnito / permisos browser |
+| Copiar falla | Permisos del portapapeles | Reintentar foco en ventana activa |
+
+## 🔄 Diferencias con Versión Legacy
+
+| Aspecto | Legacy Popup | Nueva SPA |
+|---------|--------------|----------|
+| UI | HTML + JS plano | React + MUI |
+| Persistencia | chrome.storage | localStorage (por ahora) |
+| Promedios | Básico / limitado | Agrupación por strike con precio ponderado |
+| Testing | Manual | Unit + Integración automatizada |
+| Linter | No | Sí (ESLint + Prettier) |
+
+## 📦 Roadmap Breve
+
+- [ ] Integrar build SPA al paquete de extensión final
+- [ ] Documentar estrategia de empaquetado MV3 + React
+- [ ] Mejorar manejo de errores de parseo con listado detallado
+- [ ] Agregar métricas de performance (tiempos de parse y consolidación)
+
+## 📝 Changelog
+
+Ver `CHANGELOG.md` para detalles de versiones (1.0.x) y desarrollo en curso (1.0.2 / migración React).
+
+## 🤝 Contribuciones
+
+Abrí un issue con propuestas o problemas. PRs bienvenidos una vez alineado el objetivo.
+
+## 📄 Licencia
+
+Uso abierto orientado a análisis de operaciones de opciones. Evaluar requisitos regulatorios y privacidad antes de usar con datos sensibles.
+
+---
+
+_Documento generado y actualizado durante la migración a la arquitectura React (locale es-AR)._ 
