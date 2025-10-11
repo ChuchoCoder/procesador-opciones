@@ -1,50 +1,89 @@
-# Quickstart Guide
+# Quickstart (es-AR)
 
-## Prerequisites
+Guía rápida para ejecutar y usar la nueva SPA React del Procesador de Opciones.
 
-- Node.js 18+ (includes npm 9+)
-- Git (for cloning repository)
+## 1. Requisitos
 
-## Setup
+- Node.js 18+ (npm incluido)
+- Git
+
+## 2. Instalación
 
 ```cmd
-cd C:\git\procesador-opciones
-cd frontend
+cd C:\git\procesador-opciones\frontend
 npm install
 ```
 
-## Development Workflow
+## 3. Ejecutar en desarrollo
 
-1. **Start the dev server** (Vite + React 18):
+```cmd
+npm run dev
+```
 
-   ```cmd
-   npm run dev
-   ```
+Abrí `http://localhost:5173`.
 
-   - Access the SPA at `http://localhost:5173`.
-   - The app runs entirely client-side; ensure CSV files reside locally for upload tests.
+## 4. Probar con un CSV mínimo
 
-2. **Run unit/integration tests** (Vitest + React Testing Library):
+Creá un archivo `sample.csv`:
+```
+event_subtype,ord_status,text,order_id,symbol,side,last_price,last_qty
+execution_report,Ejecutada,,1,GGALC30ENE,BUY,12.5,3
+execution_report,Ejecutada,,2,GGALC30ENE,SELL,13,2
+```
 
-   ```cmd
-   npm test
-   ```
+Pasos:
+1. Elegí símbolo GGAL y vencimiento ENE (si existen; agregalos en Configuración si no).
+2. Activá o desactivá "Promediar por strike" para comparar.
+3. Seleccioná el archivo y presioná Procesar.
 
-   - Use `npm run test:watch` (to be added in package scripts) for TDD per Constitution Principle 3.
+## 5. Revisar tablas y acciones
 
-3. **Lint & type checks** (to be added):
-   - Plan to introduce ESLint + TypeScript/JS type validations; integrate as part of future tooling tasks.
+- Cambiá entre CALLS / PUTS.
+- Mirá el resumen para verificar totales.
+- Usá las acciones para copiar o descargar la vista actual.
 
-## Manual Verification Checklist
+## 6. Configuración
 
-- Upload sample CSV ≤500 rows and confirm processing completes in <100ms.
-- Toggle averaging mode and verify row consolidation updates instantly.
-- Confirm CALLS/PUTS tables respect Spanish localization while downloads use en-US numeric formatting.
-- Trigger large file warning (>25k rows) using synthetic CSV to confirm the banner displays.
-- Validate configuration persistence by refreshing the page and observing saved state restoration.
+En la pestaña Configuración podés:
+- Agregar símbolos (ticker en mayúsculas, sin espacios)
+- Agregar vencimientos (nombre + uno o más sufijos)
+- Marcar símbolo y vencimiento activos
+- Restaurar valores por defecto
 
-## Troubleshooting
+Los cambios se guardan automáticamente (localStorage).
 
-- **Blank screen or runtime errors**: Check browser console for `PO:` prefixed logs; ensure dev server running.
-- **Clipboard copy blocked**: Confirm browser permissions allow clipboard writes (Chrome requires user gesture).
-- **Localization issues**: Verify strings originate from `src/strings/es-AR.js` and not hardcoded inside components.
+## 7. Scripts disponibles
+
+```cmd
+npm run dev        # Servidor desarrollo
+npm run build      # Build producción (dist)
+npm test           # Ejecutar pruebas
+npm run test:watch # Modo watch
+npm run lint       # Linter
+npm run lint:fix   # Linter con autofix
+```
+
+## 8. Checklist rápida (manual)
+
+- [ ] Procesa CSV pequeño (<500 filas) sin demoras perceptibles
+- [ ] Cambiar switch de promedios actualiza tabla sin recargar página
+- [ ] Advertencia visible para CSV grande (>25k filas) (usar archivo sintético)
+- [ ] Persisten símbolo / vencimiento tras recargar
+- [ ] Exportar (copiar y descargar) genera datos consistentes
+
+## 9. Problemas comunes
+
+| Situación | Posible causa | Acción |
+|-----------|---------------|-------|
+| No aparece nada | Error en consola | Revisar logs `PO:` y recargar |
+| Copiar falla | Restricción navegador | Reintentar con foco / permitir portapapeles |
+| Lento | Archivo muy grande | Considerar dividir archivo |
+
+## 10. Próximos pasos
+
+- Integrar build con empaquetado MV3
+- Mejores mensajes de errores de parseo
+- Métricas de performance
+
+---
+_Quickstart actualizado (migración React, es-AR)._ 
