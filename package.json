@@ -1,0 +1,13 @@
+{
+  "name": "procesador-opciones-extension",
+  "private": true,
+  "version": "1.0.2",
+  "type": "module",
+  "scripts": {
+    "build:spa": "npm --prefix frontend run build",
+    "build:ext": "node scripts/build-extension.mjs"
+  },
+  "devDependencies": {
+    "fs-extra": "^11.2.0"
+  }
+}
