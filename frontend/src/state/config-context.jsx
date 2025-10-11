@@ -1,116 +1,155 @@
-import { createContext, useContext, useEffect, useMemo, useReducer } from 'react';
+import { createContext, useContext, useEffect, useMemo, useReducer, useState } from 'react';
 
 import {
-  readItem,
-  removeItem,
-  storageAvailable,
-  storageKeys,
-  writeItem,
-} from '../services/storage/local-storage.js';
-
-const DEFAULT_STATE = {
-  symbols: ['GGAL', 'YPFD', 'PAMP'],
-  expirations: {
-    Enero: { suffixes: ['ENE'] },
-    Febrero: { suffixes: ['FEB'] },
-  },
-  activeSymbol: 'GGAL',
-  activeExpiration: 'Enero',
-  useAveraging: false,
-};
+  DEFAULT_CONFIGURATION,
+  loadConfiguration,
+  resetConfiguration,
+  sanitizeConfiguration,
+  saveConfiguration,
+} from '../services/storage/config-service.js';
+import { storageAvailable } from '../services/storage/local-storage.js';
 
 const ConfigContext = createContext(null);
 
+const applyChanges = (state, changes) => sanitizeConfiguration({ ...state, ...changes });
+
 const reducer = (state, action) => {
   switch (action.type) {
-    case 'LOAD_STATE':
-      return { ...state, ...action.payload };
-    case 'SET_SYMBOLS':
-      return { ...state, symbols: action.payload };
-    case 'SET_EXPIRATIONS':
-      return { ...state, expirations: action.payload };
+    case 'HYDRATE':
+      return sanitizeConfiguration(action.payload);
+    case 'ADD_SYMBOL': {
+      const symbols = [...state.symbols, action.payload];
+      return applyChanges(state, { symbols });
+    }
+    case 'REMOVE_SYMBOL': {
+      const symbols = state.symbols.filter((symbol) => symbol !== action.payload);
+      return applyChanges(state, {
+        symbols,
+        activeSymbol: state.activeSymbol === action.payload ? undefined : state.activeSymbol,
+      });
+    }
     case 'SET_ACTIVE_SYMBOL':
-      return { ...state, activeSymbol: action.payload };
-    case 'SET_ACTIVE_EXPIRATION':
-      return { ...state, activeExpiration: action.payload };
+      return applyChanges(state, { activeSymbol: action.payload });
     case 'SET_AVERAGING':
-      return { ...state, useAveraging: action.payload };
+      return applyChanges(state, { useAveraging: action.payload });
+    case 'ADD_EXPIRATION': {
+      const { name, suffixes } = action.payload;
+      const expirations = {
+        ...state.expirations,
+        [name]: { suffixes },
+      };
+
+      return applyChanges(state, {
+        expirations,
+        activeExpiration: action.setActive ? name : state.activeExpiration,
+      });
+    }
+    case 'REMOVE_EXPIRATION': {
+      const { [action.payload]: _, ...remaining } = state.expirations;
+      return applyChanges(state, {
+        expirations: remaining,
+        activeExpiration: state.activeExpiration === action.payload ? undefined : state.activeExpiration,
+      });
+    }
+    case 'RENAME_EXPIRATION': {
+      const { from, to } = action.payload;
+      const current = state.expirations[from];
+      if (!current) {
+        return state;
+      }
+
+      const normalizedName = typeof to === 'string' ? to.trim() : '';
+      if (!normalizedName || normalizedName === from) {
+        return state;
+      }
+
+      const nextExpirations = { ...state.expirations };
+      delete nextExpirations[from];
+      nextExpirations[normalizedName] = current;
+
+      return applyChanges(state, {
+        expirations: nextExpirations,
+        activeExpiration:
+          state.activeExpiration === from ? normalizedName : state.activeExpiration,
+      });
+    }
+    case 'ADD_SUFFIX': {
+      const { name, suffix } = action.payload;
+      const existing = state.expirations[name];
+      if (!existing) {
+        return state;
+      }
+
+      const updated = {
+        ...state.expirations,
+        [name]: { suffixes: [...existing.suffixes, suffix] },
+      };
+
+      return applyChanges(state, { expirations: updated });
+    }
+    case 'REMOVE_SUFFIX': {
+      const { name, suffix } = action.payload;
+      const existing = state.expirations[name];
+      if (!existing) {
+        return state;
+      }
+
+      const updatedSuffixes = existing.suffixes.filter((value) => value !== suffix);
+      const nextExpirations = {
+        ...state.expirations,
+        [name]: { suffixes: updatedSuffixes },
+      };
+
+      return applyChanges(state, { expirations: nextExpirations });
+    }
+    case 'SET_ACTIVE_EXPIRATION':
+      return applyChanges(state, { activeExpiration: action.payload });
     case 'RESET_DEFAULTS':
-      return { ...DEFAULT_STATE };
+      return sanitizeConfiguration(DEFAULT_CONFIGURATION);
     default:
       return state;
   }
 };
 
-const persistSlice = (key, value) => {
-  if (!storageAvailable()) {
-    return;
-  }
-
-  writeItem(key, value);
-};
-
-const loadPersistedConfig = () => {
-  if (!storageAvailable()) {
-    return DEFAULT_STATE;
-  }
-
-  const persisted = {
-    symbols: readItem(storageKeys.symbols) ?? DEFAULT_STATE.symbols,
-    expirations: readItem(storageKeys.expirations) ?? DEFAULT_STATE.expirations,
-    activeSymbol: readItem(storageKeys.activeSymbol) ?? DEFAULT_STATE.activeSymbol,
-    activeExpiration:
-      readItem(storageKeys.activeExpiration) ?? DEFAULT_STATE.activeExpiration,
-    useAveraging: readItem(storageKeys.useAveraging) ?? DEFAULT_STATE.useAveraging,
-  };
-
-  return persisted;
-};
-
 export const ConfigProvider = ({ children }) => {
-  const [state, dispatch] = useReducer(reducer, DEFAULT_STATE);
+  const storageEnabled = storageAvailable();
+  const [state, dispatch] = useReducer(reducer, sanitizeConfiguration(DEFAULT_CONFIGURATION));
+  const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
-    dispatch({ type: 'LOAD_STATE', payload: loadPersistedConfig() });
+    const loaded = loadConfiguration();
+    dispatch({ type: 'HYDRATE', payload: loaded });
+    setHydrated(true);
   }, []);
 
   useEffect(() => {
-    persistSlice(storageKeys.symbols, state.symbols);
-  }, [state.symbols]);
+    if (!hydrated) {
+      return;
+    }
 
-  useEffect(() => {
-    persistSlice(storageKeys.expirations, state.expirations);
-  }, [state.expirations]);
-
-  useEffect(() => {
-    persistSlice(storageKeys.activeSymbol, state.activeSymbol);
-  }, [state.activeSymbol]);
-
-  useEffect(() => {
-    persistSlice(storageKeys.activeExpiration, state.activeExpiration);
-  }, [state.activeExpiration]);
-
-  useEffect(() => {
-    persistSlice(storageKeys.useAveraging, state.useAveraging);
-  }, [state.useAveraging]);
+    saveConfiguration(state);
+  }, [hydrated, state]);
 
   const actions = useMemo(
     () => ({
-      setSymbols: (symbols) => dispatch({ type: 'SET_SYMBOLS', payload: symbols }),
-      setExpirations: (expirations) =>
-        dispatch({ type: 'SET_EXPIRATIONS', payload: expirations }),
-      setActiveSymbol: (symbol) =>
-        dispatch({ type: 'SET_ACTIVE_SYMBOL', payload: symbol }),
+      addSymbol: (symbol) => dispatch({ type: 'ADD_SYMBOL', payload: symbol }),
+      removeSymbol: (symbol) => dispatch({ type: 'REMOVE_SYMBOL', payload: symbol }),
+      setActiveSymbol: (symbol) => dispatch({ type: 'SET_ACTIVE_SYMBOL', payload: symbol }),
+      setAveraging: (use) => dispatch({ type: 'SET_AVERAGING', payload: use }),
+      addExpiration: ({ name, suffixes, setActive = false }) =>
+        dispatch({ type: 'ADD_EXPIRATION', payload: { name, suffixes }, setActive }),
+      removeExpiration: (name) => dispatch({ type: 'REMOVE_EXPIRATION', payload: name }),
+      renameExpiration: (from, to) =>
+        dispatch({ type: 'RENAME_EXPIRATION', payload: { from, to } }),
+      addSuffix: (name, suffix) =>
+        dispatch({ type: 'ADD_SUFFIX', payload: { name, suffix } }),
+      removeSuffix: (name, suffix) =>
+        dispatch({ type: 'REMOVE_SUFFIX', payload: { name, suffix } }),
       setActiveExpiration: (expiration) =>
         dispatch({ type: 'SET_ACTIVE_EXPIRATION', payload: expiration }),
-      setAveraging: (use) => dispatch({ type: 'SET_AVERAGING', payload: use }),
-      resetDefaults: () => dispatch({ type: 'RESET_DEFAULTS' }),
-      clearPersisted: () => {
-        removeItem(storageKeys.symbols);
-        removeItem(storageKeys.expirations);
-        removeItem(storageKeys.activeSymbol);
-        removeItem(storageKeys.activeExpiration);
-        removeItem(storageKeys.useAveraging);
+      resetDefaults: () => {
+        const defaults = resetConfiguration();
+        dispatch({ type: 'HYDRATE', payload: defaults });
       },
     }),
     [],
@@ -120,9 +159,10 @@ export const ConfigProvider = ({ children }) => {
     () => ({
       ...state,
       ...actions,
-      storageEnabled: storageAvailable(),
+      storageEnabled,
+      hydrated,
     }),
-    [actions, state],
+    [actions, hydrated, state, storageEnabled],
   );
 
   return <ConfigContext.Provider value={value}>{children}</ConfigContext.Provider>;

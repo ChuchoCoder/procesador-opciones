@@ -58,6 +58,7 @@ const App = () => {
             <Routes>
               <Route path={ROUTES.processor} element={<ProcessorScreen />} />
               <Route path={ROUTES.settings} element={<SettingsScreen />} />
+              <Route path="/settings" element={<SettingsScreen />} />
               <Route path="/" element={<Navigate to={ROUTES.processor} replace />} />
               <Route path="*" element={<Navigate to={ROUTES.processor} replace />} />
             </Routes>

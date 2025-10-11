@@ -6,6 +6,8 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     globals: true,
+    setupFiles: ['./tests/setup/vitest.setup.js'],
+    threads: false,
     coverage: {
       reporter: ['text', 'html'],
     },

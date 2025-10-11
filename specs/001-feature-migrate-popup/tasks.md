@@ -34,8 +34,8 @@
 - [X] T006 [P] [Foundational] Create localization module `frontend/src/strings/es-AR.js` exporting Spanish strings and a helper to retrieve keys for UI/components.
 - [X] T007 [P] [Foundational] Build storage utility `frontend/src/services/storage/local-storage.js` providing safe read/write/remove for keys (`symbols`, `expirations`, `activeSymbol`, `activeExpiration`, `useAveraging`) with offline guards.
 - [X] T008 [Foundational] Implement configuration context provider `frontend/src/state/config-context.jsx` exposing hooks for configuration state, loading persisted values via storage utility, and broadcasting change events.
-- [ ] T009 [P] [Foundational] Add CSV parsing helper `frontend/src/services/csv/parser.js` wrapping papaparse with schema hints, error propagation, and 50k row handling.
-- [ ] T010 [Foundational] Introduce dev logging utility `frontend/src/services/logging/dev-logger.js` to emit `PO:` prefixed metrics only in development mode per FR-022.
+- [X] T009 [P] [Foundational] Add CSV parsing helper `frontend/src/services/csv/parser.js` wrapping papaparse with schema hints, error propagation, and 50k row handling.
+- [X] T010 [Foundational] Introduce dev logging utility `frontend/src/services/logging/dev-logger.js` to emit `PO:` prefixed metrics only in development mode per FR-022.
 
 **Checkpoint**: Foundation ready — user stories can now proceed in priority order.
 
@@ -49,20 +49,20 @@
 
 ### Tests for User Story 1 (write first)
 
-- [ ] T011 [US1] Author Vitest unit tests in `frontend/tests/unit/process-operations.spec.js` covering required column validation, execution status filtering, symbol/expiration matching, and consolidation outputs (CALLS/PUTS counts, warnings).
-- [ ] T012 [P] [US1] Create Testing Library integration test `frontend/tests/integration/processor-flow.spec.jsx` that uploads a fixture CSV, asserts summary metrics, table rendering, and enables copy/download controls.
+- [X] T011 [US1] Author Vitest unit tests in `frontend/tests/unit/process-operations.spec.js` covering required column validation, execution status filtering, symbol/expiration matching, and consolidation outputs (CALLS/PUTS counts, warnings).
+- [X] T012 [P] [US1] Create Testing Library integration test `frontend/tests/integration/processor-flow.spec.jsx` that uploads a fixture CSV, asserts summary metrics, table rendering, and enables copy/download controls.
 
 ### Implementation for User Story 1
 
-- [ ] T013 [US1] Implement validation utilities in `frontend/src/services/csv/validators.js` to enforce required columns, status filtering, and symbol/expiration scope; integrate dev logging for exclusion counts.
-- [ ] T014 [US1] Implement consolidation utilities in `frontend/src/services/csv/consolidator.js` to aggregate rows into `ConsolidatedOperation` data structures, compute VWAP, totals, and performance warning metadata.
-- [ ] T015 [US1] Compose orchestration module `frontend/src/services/csv/process-operations.js` that ties parser, validators, and consolidator together and returns `OperationsReport` aligned with contract schema.
-- [ ] T016 [P] [US1] Implement clipboard service `frontend/src/services/csv/clipboard-service.js` to generate tab-delimited text for CALLS/PUTS/COMBINED scopes and write to `navigator.clipboard`, handling errors with Spanish messages.
-- [ ] T017 [P] [US1] Implement export service `frontend/src/services/csv/export-service.js` generating Blob URLs and filenames `<symbol>_<expiration>_<TYPE>.csv` for CALLS, PUTS, COMBINED datasets while formatting numeric fields with en-US locale to keep exports separate from the es-AR UI.
-- [ ] T018 [US1] Build file selection component `frontend/src/components/Processor/FilePicker.jsx` with Material UI controls, validation messaging, and disabled state when processing.
-- [ ] T019 [US1] Build results presentation components (`frontend/src/components/Processor/SummaryPanel.jsx`, `frontend/src/components/Processor/OperationsTable.jsx`) to show summary metrics and CALLS/PUTS tables with locale-aware formatting.
-- [ ] T020 [US1] Assemble `frontend/src/components/Processor/ProcessorScreen.jsx` to manage upload flow, call processing services, display warnings/errors, and surface copy/download actions respecting disabled states.
-- [ ] T021 [US1] Wire processor routes into app (`frontend/src/app/routes.jsx`) and ensure Spanish strings are used for all UI surfaces introduced in this story.
+- [X] T013 [US1] Implement validation utilities in `frontend/src/services/csv/validators.js` to enforce required columns, status filtering, and symbol/expiration scope; integrate dev logging for exclusion counts.
+- [X] T014 [US1] Implement consolidation utilities in `frontend/src/services/csv/consolidator.js` to aggregate rows into `ConsolidatedOperation` data structures, compute VWAP, totals, and performance warning metadata.
+- [X] T015 [US1] Compose orchestration module `frontend/src/services/csv/process-operations.js` that ties parser, validators, and consolidator together and returns `OperationsReport` aligned with contract schema.
+- [X] T016 [P] [US1] Implement clipboard service `frontend/src/services/csv/clipboard-service.js` to generate tab-delimited text for CALLS/PUTS/COMBINED scopes and write to `navigator.clipboard`, handling errors with Spanish messages.
+- [X] T017 [P] [US1] Implement export service `frontend/src/services/csv/export-service.js` generating Blob URLs and filenames `<symbol>_<expiration>_<TYPE>.csv` for CALLS, PUTS, COMBINED datasets while formatting numeric fields with en-US locale to keep exports separate from the es-AR UI.
+- [X] T018 [US1] Build file selection component `frontend/src/components/Processor/FilePicker.jsx` with Material UI controls, validation messaging, and disabled state when processing.
+- [X] T019 [US1] Build results presentation components (`frontend/src/components/Processor/SummaryPanel.jsx`, `frontend/src/components/Processor/OperationsTable.jsx`) to show summary metrics and CALLS/PUTS tables with locale-aware formatting.
+- [X] T020 [US1] Assemble `frontend/src/components/Processor/ProcessorScreen.jsx` to manage upload flow, call processing services, display warnings/errors, and surface copy/download actions respecting disabled states.
+- [X] T021 [US1] Wire processor routes into app (`frontend/src/app/routes.jsx`) and ensure Spanish strings are used for all UI surfaces introduced in this story.
 
 **Checkpoint**: Processor flow functional end-to-end; CSV upload to summary works and actions respond per acceptance criteria.
 
