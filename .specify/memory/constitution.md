@@ -1,14 +1,14 @@
 <!--
 Sync Impact Report
-Version change: (none) -> 1.0.0
-Modified principles: (initial creation)
-Added sections: Core Principles, Technical Constraints, Workflow & Quality Gates, Governance
+Version change: 1.0.0 -> 1.1.0
+Modified principles: (new) 6. Spanish (Argentina) User Interface Localization
+Added sections: None (principle added under Core Principles)
 Removed sections: None
-Templates requiring updates: 
-	.specify/templates/plan-template.md ✅ (Constitution Check will map to principles below)
-	.specify/templates/spec-template.md ✅ (User story independence aligns with Principle 3)
-	.specify/templates/tasks-template.md ✅ (Task independence & phase gating align with principles)
-	.specify/templates/agent-file-template.md ⚠ (Will need regeneration after first feature plans)
+Templates requiring updates:
+	.specify/templates/plan-template.md ✅ (Add localization check to Constitution Check gate)
+	.specify/templates/spec-template.md ✅ (Ensure user-visible text requirements align with locale mandate)
+	.specify/templates/tasks-template.md ✅ (Tasks may need category for localization adjustments)
+	.specify/templates/agent-file-template.md ⚠ (Regenerate to list localization technology guidance once plans created)
 Deferred TODOs: None
 -->
 
@@ -42,11 +42,19 @@ No additional frameworks or build steps beyond what is strictly necessary (curre
 Before adding a dependency, a justification documenting: benefit, size, simpler alternative rejection. Remove
 unused code and dependencies promptly. Rationale: Small artifact, low attack surface, easy audits.
 
+### 6. Spanish (Argentina) User Interface Localization
+
+All user-visible interface text MUST be provided in Spanish (Argentina) (es-AR). Any newly added UI element
+MUST ship with Spanish wording; English placeholders are forbidden in production. Centralize strings in a
+single constants module enabling future translation keys. Numeric, date or currency formatting MUST use
+locale-aware APIs (Intl) with `es-AR`. Temporary deviations require a `// DEVIATION:6` comment and tracking
+issue. Rationale: Target user base is Argentina; consistent localized language increases clarity and trust.
+
 ## Technical Constraints
 
 1. Runtime: Chrome/Chromium extension environment (Manifest V3). No server or backend services.
 2. Storage: Use `chrome.storage` or `localStorage` only when the value must persist across sessions; otherwise
-	 keep ephemeral state in memory.
+  keep ephemeral state in memory.
 3. Security: Never eval dynamic strings; sanitize any user-pasted content only if executing (currently not).
 4. Internationalization: All user-visible strings centralized in a single constants module for future i18n.
 5. Error Handling: User-facing failures MUST show a concise, actionable message; internal details only in console.
@@ -57,6 +65,7 @@ unused code and dependencies promptly. Rationale: Small artifact, low attack sur
 ## Workflow & Quality Gates
 
 Workflow Steps:
+
 1. Clarify: Define the smallest user-visible outcome (update README if feature-level change).
 2. Test Stub: If logic change, write failing test (principle 3) or add manual test notes if purely UI cosmetic.
 3. Implement: Keep functions <60 lines; extract early if complexity grows.
@@ -64,6 +73,7 @@ Workflow Steps:
 5. Validate: Run tests + manual open popup smoke test before merge.
 
 Quality Gates:
+
 - Lint passes (when linter added) and no TODO left untagged (Use `TODO(username): reason`).
 - All changed logic covered by at least one test (where applicable).
 - Bundle / script size increase >10KB requires justification.
@@ -71,6 +81,7 @@ Quality Gates:
 - Performance: Manual spot check with DevTools performance panel for large input features.
 
 Violation Handling:
+
 - Minor (documentation omission): fix in same PR or follow-up within 24h.
 - Major (missing tests for logic change or perf regression): block merge until resolved.
 
@@ -79,27 +90,32 @@ Violation Handling:
 Authority Hierarchy: This constitution supersedes ad-hoc style preferences or historical patterns once ratified.
 
 Amendments:
+
 - Patch (x.y.z): Clarifications, wording, typo, reformat without semantic change.
 - Minor (x.y.0): Add a new principle, section, or expand a mandate materially.
 - Major (x.0.0): Remove or redefine a principle, or introduce a process that invalidates prior guarantees.
 
 Amendment Process:
+
 1. Draft proposal (issue or PR) referencing current version and intended bump level with rationale.
 2. Provide diff of principle text + impact analysis (testing, files, potential refactors).
 3. On approval, update constitution, increment version per above, set `Last Amended` date (ISO), keep
-	 original ratification date.
+   original ratification date.
 
 Compliance Review:
+
 - Each PR reviewer MUST check changed files against Principles 1–5. Missing rationale = request changes.
 - Quarterly (or every 10 merged feature PRs) perform a drift audit: list any files exceeding complexity or
-	duplicated logic and create remediation tasks.
+  duplicated logic and create remediation tasks.
 
 Derogations:
+
 - Temporary deviations MUST include an inline `// DEVIATION:<principle #> reason + expiry` comment and an
-	issue link. Expired derogations removed immediately.
+  issue link. Expired derogations removed immediately.
 
 Sunset / Retirement:
-- If project scope evolves (e.g., adds React or build tooling), a Minor or Major bump introduces new
-	constraints accompanied by migration notes appended as an addendum.
 
-**Version**: 1.0.0 | **Ratified**: 2025-10-08 | **Last Amended**: 2025-10-08
+- If project scope evolves (e.g., adds React or build tooling), a Minor or Major bump introduces new
+  constraints accompanied by migration notes appended as an addendum.
+
+**Version**: 1.1.0 | **Ratified**: 2025-10-08 | **Last Amended**: 2025-10-08
