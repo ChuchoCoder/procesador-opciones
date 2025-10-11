@@ -73,8 +73,8 @@ Implementation:
 
 ## Phase 4: Performance & Polish
 
-- [ ] T070 [P] Perf measure: 5k row parse timing logged (SC-001)
-- [ ] T071 [P] Interaction latency measure for group switch (SC-004)
+- [ ] T070 [P] Perf measure: benchmark 500-row (<100ms), 5k-row (<6s), and 10k-row (<10s) parses on mid-tier laptop (SC-001, SC-008, SC-009)
+- [ ] T071 [P] Interaction latency measure for group switch: <200ms typical, <500ms after large dataset (SC-004, SC-009)
 - [ ] T072 Review error handling paths & add test for malformed tokens list (SC-007)
 - [ ] T073 Confirm 0 lost rows vs input count (SC-003)
 - [ ] T074 Confirm export row count equals filtered count (SC-005)
@@ -102,5 +102,5 @@ Implementation:
 - FR-019 => Phase 3 tasks
 - FR-020 => Phase 2 (filter switching) integration
 - FR-021 => Perf tasks T070/T071 (processing row scale)
-- SC-001 => T070, SC-002 => T010/T011/T012 + validation sample, SC-003 => T073, SC-004 => T071 & T057, SC-005 => T041/T042/T074, SC-006 => T075, SC-007 => T072
+- SC-001 => T070, SC-002 => T010/T011/T012 + validation sample, SC-003 => T073, SC-004 => T071 & T057, SC-005 => T041/T042/T074, SC-006 => T075, SC-007 => T072, SC-008 => T070, SC-009 => T071
 

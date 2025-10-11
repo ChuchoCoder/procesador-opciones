@@ -17,7 +17,7 @@ Remove pre-upload symbol/expiration selectors by auto-detecting option attribute
 **Testing**: Vitest + React Testing Library (present in repo) – expand unit + integration coverage.
 **Target Platform**: Modern desktop browsers (Chromium / Firefox) running the extension / web popup.
 **Project Type**: Web application (frontend only for this feature scope).
-**Performance Goals**: Parse 5k rows <5s (SC-001), group filter interaction <200ms (SC-004), handle 10k rows within acceptable UX (<8s parse stretch).
+**Performance Goals**: Parse ≤500 rows <100ms (SC-008), parse 5k rows <6s (SC-001), keep group filter interaction <500ms (SC-009), and handle 10k rows within 10s (SC-009).
 **Constraints**: Client-only processing, keep bundle growth minimal (< +5KB gzip) and avoid new heavy deps; memory should handle 10k operations comfortably (< ~10MB additional JS objects).
 **Scale/Scope**: Typical user uploads tens to thousands of rows; edge up to 10k.
 

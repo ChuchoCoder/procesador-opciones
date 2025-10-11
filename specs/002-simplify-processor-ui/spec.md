@@ -111,7 +111,7 @@ As a user I want to understand which operations had fields inferred so that I ca
 - **FR-018**: System MUST expose errors (parsing issues) in an `errors` array without aborting successful rows.
 - **FR-019**: System MUST visually indicate in the UI which operations had inferred fields (e.g., icon or tooltip) (technology-agnostic requirement).
 - **FR-020**: System MUST allow user to switch group selection without re-uploading the file.
-- **FR-021**: System SHOULD handle up to 10,000 rows in under a target processing time (see Success Criteria) (Assumption: performance expectation typical for client-side parsing). 
+- **FR-021**: System MUST process typical datasets (≤500 rows) in under 100 ms on a mid-tier laptop (per constitution Principle 4) and SHOULD process large datasets (≤10,000 rows) in under 10 seconds while keeping group-selection interactions under 500 ms.
 - **FR-022**: System MUST treat rows that do not match the option token pattern but have a Symbol value as non-option instrument operations; they are grouped by symbol (with placeholder expiration policy clarified below) and retained with `type=UNKNOWN` unless another classification rule applies.
   - Clarification: Non-matching tokens are not discarded nor forced into `UNKNOWN::UNKNOWN`; they form symbol-based groups (e.g., `GGAL`, `AL30`).
 
@@ -153,10 +153,12 @@ All previously identified questions have been resolved in Clarifications section
 
 ### Measurable Outcomes
 
-- **SC-001**: User can upload a valid CSV and see grouped results (including filtering UI) in under 5 seconds for a 5,000-row file on a standard laptop.
+- **SC-001**: User can upload a valid CSV and see grouped results (including filtering UI) in under 6 seconds for a 5,000-row file on a standard laptop.
 - **SC-002**: 100% of rows with recognizable tokens and missing fields are correctly enriched (manual validation sample: 0 false positives in sample set of 200 inferred rows).
 - **SC-003**: Rows without recognizable tokens still appear in results (0% loss of valid rows due to detection failure).
 - **SC-004**: Selecting a different group updates the operations view in under 200 ms (per interaction) for up to 5,000 rows total.
 - **SC-005**: Copy/Download actions reflect exactly the currently filtered set (spot check: difference between filtered row count and exported row count = 0).
 - **SC-006**: At least 90% of test users (QA review) report the new flow requires fewer steps (drop from >=3 to 2: upload + view/filter) compared to previous pre-selection flow.
 - **SC-007**: No critical errors logged when processing malformed tokens (error handling degrades gracefully).
+- **SC-008**: Processing a typical dataset (≤500 rows) completes in under 100 ms on a mid-tier laptop (constitution Principle 4).
+- **SC-009**: Processing a large dataset (≤10,000 rows) completes in under 10 seconds and subsequent group filter interactions remain under 500 ms.
