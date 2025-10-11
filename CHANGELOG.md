@@ -26,7 +26,7 @@ Todas las modificaciones notables de este proyecto se documentarán en este arch
 - Integrar build de la SPA al empaquetado final MV3.
 - Documentar empaquetado final y distribución.
 
-## [1.0.2] - en proceso (branch legacy)
+## [1.0.2] - 2025-10-08
 
 - Ajuste: precios ahora mantienen 4 decimales en cálculo y visualización.
 - Cálculo de promedios y sanitización sin truncar a 2 decimales.
