@@ -87,13 +87,14 @@ describe('Processor flow integration', () => {
       const totalMetric = screen.getByTestId('summary-total-count');
       expect(totalMetric).toHaveTextContent('3');
 
-      const callsTable = screen.getByTestId('calls-table');
-      const callRows = within(callsTable).getAllByRole('row');
-      expect(callRows.length).toBeGreaterThan(1);
+  const resultsTable = screen.getByTestId('processor-results-table');
+  const callRows = within(resultsTable).getAllByRole('row');
+  expect(callRows.length).toBeGreaterThan(1);
 
-      const putsTable = screen.getByTestId('puts-table');
-      const putRows = within(putsTable).getAllByRole('row');
-      expect(putRows.length).toBeGreaterThan(1);
+  const putsTab = screen.getByRole('tab', { name: /puts/i });
+  await user.click(putsTab);
+  const putsRows = within(screen.getByTestId('processor-results-table')).getAllByRole('row');
+  expect(putsRows.length).toBeGreaterThan(1);
 
       const copyCallsButton = screen.getByTestId('copy-calls-button');
       const downloadCombinedButton = screen.getByTestId('download-combined-button');

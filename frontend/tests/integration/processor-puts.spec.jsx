@@ -71,8 +71,11 @@ describe('Processor flow integration - GGAL PUTs fixture', () => {
       const callsCount = screen.getByTestId('summary-calls-count');
       expect(callsCount).toHaveTextContent('0');
 
-      const putsTable = await screen.findByTestId('puts-table');
-      const rows = within(putsTable).getAllByRole('row');
+  const putsTab = await screen.findByRole('tab', { name: /puts/i });
+  expect(putsTab).toHaveAttribute('aria-selected', 'true');
+
+  const putsTable = await screen.findByTestId('processor-results-table');
+  const rows = within(putsTable).getAllByRole('row');
       expect(rows.length).toBeGreaterThan(1);
 
       ['-12', '-6', '-17', '-15'].forEach((quantity) => {

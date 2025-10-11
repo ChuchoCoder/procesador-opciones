@@ -1,6 +1,6 @@
 import { parseOperationsCsv } from './parser.js';
 import { validateAndFilterRows } from './validators.js';
-import { consolidateOperations } from './consolidator.js';
+import { buildConsolidatedViews } from './consolidator.js';
 import { createDevLogger } from '../logging/dev-logger.js';
 import { normalizeOperationRows } from './legacy-normalizer.js';
 
@@ -191,75 +191,106 @@ export const processOperations = async ({
     throw error;
   }
 
-  const consolidation = consolidateOperations(validated.operations, {
-    useAveraging: Boolean(activeConfiguration.useAveraging),
-  });
+  const views = buildConsolidatedViews(validated.operations);
+  const activeViewKey = Boolean(activeConfiguration.useAveraging) ? 'averaged' : 'raw';
+  const processedAt = formatTimestamp(new Date());
+  const warnings = buildWarnings(parseMeta);
 
-  const combinedExclusions = combineExclusions(validated.exclusions, consolidation.exclusions);
-  const totalExcluded = sumExclusions(combinedExclusions);
+  const viewSnapshots = Object.fromEntries(
+    Object.entries(views).map(([key, consolidated]) => {
+      const callsStats = computeGroupStats(consolidated.calls);
+      const putsStats = computeGroupStats(consolidated.puts);
+      const viewCombinedExclusions = combineExclusions(validated.exclusions, consolidated.exclusions);
+      const viewTotalExcluded = sumExclusions(viewCombinedExclusions);
+
+      const callsRows = consolidated.calls.length;
+      const putsRows = consolidated.puts.length;
+      const totalRows = callsRows + putsRows;
+
+      return [
+        key,
+        {
+          key,
+          averagingEnabled: consolidated.useAveraging,
+          calls: {
+            operations: consolidated.calls,
+            stats: {
+              ...callsStats,
+              notional: roundNumber(callsStats.notional, 4),
+            },
+          },
+          puts: {
+            operations: consolidated.puts,
+            stats: {
+              ...putsStats,
+              notional: roundNumber(putsStats.notional, 4),
+            },
+          },
+          summary: {
+            callsRows,
+            putsRows,
+            totalRows,
+            averagingEnabled: consolidated.useAveraging,
+            activeSymbol: activeConfiguration.activeSymbol ?? '',
+            activeExpiration: activeConfiguration.activeExpiration ?? '',
+            processedAt,
+            fileName: resolvedFileName,
+            rawRowCount: parseMeta.rowCount,
+            validRowCount: validated.operations.length,
+            excludedRowCount: viewTotalExcluded,
+            warnings,
+            durationMs: 0,
+          },
+          exclusions: {
+            combined: viewCombinedExclusions,
+            validation: validated.exclusions,
+            consolidation: consolidated.exclusions,
+          },
+        },
+      ];
+    }),
+  );
+
+  const activeViewSnapshot = viewSnapshots[activeViewKey];
+  const totalExcluded = activeViewSnapshot.summary.excludedRowCount;
 
   logger.log(
     `Filtrado completo - filas válidas: ${validated.operations.length}, excluidas: ${totalExcluded}`,
   );
   logger.log(
-    `Clasificación - CALLS: ${consolidation.calls.length}, PUTS: ${consolidation.puts.length}`,
+    `Clasificación (${activeViewKey}) - CALLS: ${activeViewSnapshot.calls.operations.length}, PUTS: ${activeViewSnapshot.puts.operations.length}`,
   );
-  logger.log('Detalle exclusiones', combinedExclusions);
+  logger.log('Detalle exclusiones', activeViewSnapshot.exclusions.combined);
 
-  const callsStats = computeGroupStats(consolidation.calls);
-  const putsStats = computeGroupStats(consolidation.puts);
-
-  const warnings = buildWarnings(parseMeta);
-  const processedAt = formatTimestamp(new Date());
-
-  const callsRows = consolidation.calls.length;
-  const putsRows = consolidation.puts.length;
-  const totalRows = callsRows + putsRows;
+  const alternateViewKey = activeViewKey === 'raw' ? 'averaged' : 'raw';
+  const alternateViewSnapshot = viewSnapshots[alternateViewKey];
+  if (alternateViewSnapshot) {
+    logger.log(
+      `Clasificación (${alternateViewKey}) - CALLS: ${alternateViewSnapshot.calls.operations.length}, PUTS: ${alternateViewSnapshot.puts.operations.length}`,
+    );
+  }
 
   const durationFromLogger = timer({
     fileName: resolvedFileName,
-    totalRows,
+    totalRows: activeViewSnapshot.summary.totalRows,
     warnings,
+    view: activeViewKey,
   });
 
   const durationMs = roundNumber(durationFromLogger || getNow() - startTime, 2);
   logger.log(`Procesamiento completo - duración: ${durationMs}ms`);
 
+  Object.values(viewSnapshots).forEach((view) => {
+    view.summary.durationMs = durationMs;
+  });
+
   return {
-    summary: {
-      callsRows,
-      putsRows,
-      totalRows,
-      averagingEnabled: Boolean(activeConfiguration.useAveraging),
-      activeSymbol: activeConfiguration.activeSymbol ?? '',
-      activeExpiration: activeConfiguration.activeExpiration ?? '',
-      processedAt,
-      fileName: resolvedFileName,
-      rawRowCount: parseMeta.rowCount,
-      validRowCount: validated.operations.length,
-      excludedRowCount: totalExcluded,
-      warnings,
-      durationMs,
-    },
-    calls: {
-      operations: consolidation.calls,
-      stats: {
-        ...callsStats,
-        notional: roundNumber(callsStats.notional, 4),
-      },
-    },
-    puts: {
-      operations: consolidation.puts,
-      stats: {
-        ...putsStats,
-        notional: roundNumber(putsStats.notional, 4),
-      },
-    },
-    exclusions: {
-      combined: combinedExclusions,
-      validation: validated.exclusions,
-      consolidation: consolidation.exclusions,
-    },
+    summary: activeViewSnapshot.summary,
+    calls: activeViewSnapshot.calls,
+    puts: activeViewSnapshot.puts,
+    exclusions: activeViewSnapshot.exclusions,
+    views: viewSnapshots,
+    activeView: activeViewKey,
     meta: {
       parse: parseMeta,
     },
