@@ -65,7 +65,30 @@ cd frontend
 npm run build
 ```
 
-Los artefactos quedarán en `frontend/dist/` (aun no integrados al empaquetado final de la extensión). Para usar la versión React dentro de Chrome como extensión se requiere un paso adicional de integración (pendiente de documentación futura).
+Los artefactos quedarán en `frontend/dist/`.
+
+### Empaquetar la extensión MV3 con la SPA
+
+Se provee un script que genera `extension-dist/` lista para cargar en `chrome://extensions`.
+
+Paso a paso:
+
+```
+npm run build:ext
+```
+
+Esto realiza:
+1. `npm run build` dentro de `frontend/`.
+2. Copia `manifest.json` e íconos a `extension-dist/`.
+3. Copia el contenido de `frontend/dist/`.
+4. Renombra `index.html` a `popup.html` y asegura que `manifest.json` apunte a ese archivo.
+
+Luego:
+1. Abrí `chrome://extensions`.
+2. Activá Modo desarrollador.
+3. Clic en “Cargar descomprimida” y seleccioná `extension-dist/`.
+
+> Si necesitás mantener el popup legacy por transición, podés conservarlo separado; este flujo lo reemplaza por la SPA.
 
 ## 🧪 Pruebas
 
