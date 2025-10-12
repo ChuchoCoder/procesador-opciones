@@ -1,14 +1,4 @@
-import { extractInstrumentToken } from './legacy-normalizer.js';
-
-const REQUIRED_COLUMNS = [
-  'order_id',
-  'symbol',
-  'side',
-  'option_type',
-  'strike',
-  'quantity',
-  'price',
-];
+const REQUIRED_COLUMNS = ['order_id', 'side', 'quantity', 'price'];
 
 const EXECUTION_EVENT = 'execution_report';
 
@@ -34,7 +24,6 @@ const EXCLUSION_REASONS = {
   invalidStatus: 'invalidStatus',
   invalidSide: 'invalidSide',
   invalidOptionType: 'invalidOptionType',
-  outOfScope: 'outOfScope',
   invalidStrike: 'invalidStrike',
   invalidQuantity: 'invalidQuantity',
   invalidPrice: 'invalidPrice',
@@ -68,85 +57,6 @@ const parseNumber = (value) => {
   return parsed;
 };
 
-const resolveSuffixes = (configuration) => {
-  const { expirations = {}, activeExpiration } = configuration;
-  const selected = expirations?.[activeExpiration];
-  if (!selected || !Array.isArray(selected.suffixes)) {
-    return [];
-  }
-  return selected.suffixes.map((suffix) => normalizeString(suffix)).filter(Boolean);
-};
-
-const resolveCandidateSymbols = (row) => {
-  const values = [];
-
-  if (typeof row === 'string') {
-    values.push(row);
-  } else if (row && typeof row === 'object') {
-    values.push(row.symbol, row.security_id, row.instrument);
-
-    if (typeof row.symbol === 'string' && row.symbol.includes(' - ')) {
-      const parts = row.symbol.split(' - ');
-      values.push(parts[parts.length - 1], parts[parts.length - 2]);
-    }
-  }
-
-  return values
-    .map((candidate) => normalizeString(candidate))
-    .filter(Boolean)
-    .flatMap((candidate) => {
-      const upperCandidate = candidate.toUpperCase();
-      const variants = [upperCandidate];
-      const token = extractInstrumentToken(upperCandidate);
-      if (token && token !== upperCandidate) {
-        variants.push(token);
-      }
-      return variants;
-    });
-};
-
-const matchesScope = (row, configuration) => {
-  const activeSymbol = normalizeString(configuration.activeSymbol);
-  if (!activeSymbol) {
-    return { matched: false, reason: EXCLUSION_REASONS.outOfScope };
-  }
-
-  const activeSymbolUpper = activeSymbol.toUpperCase();
-  const suffixes = resolveSuffixes(configuration);
-  const suffixesUpper = suffixes.map((suffix) => suffix.toUpperCase());
-
-  const candidates = resolveCandidateSymbols(row);
-
-  for (let index = 0; index < candidates.length; index += 1) {
-    const candidate = candidates[index];
-    if (!candidate.startsWith(activeSymbolUpper)) {
-      continue;
-    }
-
-    const remainder = candidate.slice(activeSymbolUpper.length);
-    const remainderWithoutOption = remainder.replace(/^(C|V)/, '');
-
-    if (suffixes.length === 0) {
-      return { matched: true, matchedSymbol: activeSymbol, matchedExpirationSuffix: '' };
-    }
-
-    const matchedIndex = suffixesUpper.findIndex((suffix) =>
-      remainderWithoutOption.startsWith(suffix) || remainderWithoutOption.endsWith(suffix),
-    );
-    if (matchedIndex === -1) {
-      continue;
-    }
-
-    return {
-      matched: true,
-      matchedSymbol: activeSymbol,
-      matchedExpirationSuffix: suffixes[matchedIndex] ?? '',
-    };
-  }
-
-  return { matched: false, reason: EXCLUSION_REASONS.outOfScope };
-};
-
 const ensureRequiredColumns = (rows) => {
   if (!Array.isArray(rows) || rows.length === 0) {
     return;
@@ -160,7 +70,7 @@ const ensureRequiredColumns = (rows) => {
   }
 };
 
-export const validateAndFilterRows = ({ rows = [], configuration }) => {
+export const validateAndFilterRows = ({ rows = [], configuration: _configuration }) => {
   ensureRequiredColumns(rows);
 
   const exclusions = Object.values(EXCLUSION_REASONS).reduce(
@@ -200,14 +110,11 @@ export const validateAndFilterRows = ({ rows = [], configuration }) => {
       return;
     }
 
-    const optionType = normalizeString(rawRow.option_type).toUpperCase();
-    if (!ALLOWED_OPTION_TYPES.has(optionType)) {
-      exclusions[EXCLUSION_REASONS.invalidOptionType] += 1;
-      return;
-    }
+    const optionTypeRaw = normalizeString(rawRow.option_type).toUpperCase();
+    const optionType = ALLOWED_OPTION_TYPES.has(optionTypeRaw) ? optionTypeRaw : '';
 
     const strike = parseNumber(rawRow.strike);
-    if (strike === null) {
+    if (rawRow.strike !== undefined && rawRow.strike !== null && strike === null) {
       exclusions[EXCLUSION_REASONS.invalidStrike] += 1;
       return;
     }
@@ -224,30 +131,27 @@ export const validateAndFilterRows = ({ rows = [], configuration }) => {
       return;
     }
 
-    const scopeMatch = matchesScope(rawRow, configuration);
-    if (!scopeMatch.matched) {
-      exclusions[scopeMatch.reason] += 1;
-      return;
-    }
-
-    validated.push({
-      orderId: normalizeString(rawRow.order_id),
-      originalSymbol: normalizeString(rawRow.symbol),
+    const sanitizedRow = {
+      order_id: normalizeString(rawRow.order_id),
+      symbol: normalizeString(rawRow.symbol),
+      expiration: normalizeString(rawRow.expiration ?? rawRow.expire_date ?? ''),
+      security_id: normalizeString(rawRow.security_id ?? rawRow.securityId ?? ''),
+      instrument: normalizeString(rawRow.instrument),
+      text: normalizeString(rawRow.text),
       side,
-      optionType,
+      option_type: optionType || null,
       strike,
       quantity,
       price,
-      matchedSymbol: scopeMatch.matchedSymbol,
-      matchedExpirationSuffix: scopeMatch.matchedExpirationSuffix,
-      metadata: {
-        status,
-      },
-    });
+      status,
+      raw: rawRow,
+    };
+
+    validated.push(sanitizedRow);
   });
 
   return {
-    operations: validated,
+    rows: validated,
     exclusions,
   };
 };

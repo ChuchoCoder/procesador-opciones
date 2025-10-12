@@ -1,11 +1,12 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { render, screen, within } from '@testing-library/react';
+import { render, screen, within, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 
 import App from '../../src/app/App.jsx';
 import { ConfigProvider } from '../../src/state/config-context.jsx';
 import { storageKeys } from '../../src/services/storage/local-storage.js';
+import * as exportService from '../../src/services/csv/export-service.js';
 import ggalPutsCsv from './data/GGAL-PUTS.csv?raw';
 
 const TEST_TIMEOUT = 15000;
@@ -54,6 +55,10 @@ describe('Processor flow integration - GGAL PUTs fixture', () => {
   it(
     'detects PUT operations listed in the GGAL fixture',
     async () => {
+      const exportSpy = vi
+        .spyOn(exportService, 'exportReportToCsv')
+        .mockResolvedValue('GGAL_O_PUTS.csv');
+
       const user = userEvent.setup();
       renderProcessorApp();
 
@@ -87,6 +92,32 @@ describe('Processor flow integration - GGAL PUTs fixture', () => {
       });
 
       expect(within(putsTable).getAllByText(/4734/).length).toBeGreaterThan(0);
+
+      const groupFilter = await screen.findByTestId('group-filter');
+      expect(within(groupFilter).getByText('GFG O')).toBeInTheDocument();
+      expect(within(groupFilter).getByText('TZXM6 24hs')).toBeInTheDocument();
+
+      const gfgButton = within(groupFilter).getByText('GFG O').closest('button');
+      expect(gfgButton).not.toBeNull();
+      await user.click(gfgButton);
+      await waitFor(() => {
+        expect(gfgButton).toHaveAttribute('aria-pressed', 'true');
+      });
+
+      const downloadPutsButton = await screen.findByTestId('download-puts-button');
+      await user.click(downloadPutsButton);
+
+      await waitFor(() => {
+        expect(exportSpy).toHaveBeenCalledTimes(1);
+      });
+      const [[payload]] = exportSpy.mock.calls;
+      expect(payload.scope).toBe(exportService.EXPORT_SCOPES.PUTS);
+
+      const exportedSummary = payload.report?.summary ?? {};
+      const exportedPuts = payload.report?.puts?.operations ?? [];
+
+      expect(exportedSummary.totalRows).toBe(exportedSummary.putsRows);
+      expect(exportedPuts.length).toBe(exportedSummary.putsRows);
     },
     TEST_TIMEOUT,
   );

@@ -1,11 +1,15 @@
 import Paper from '@mui/material/Paper';
+import Stack from '@mui/material/Stack';
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
 import TableContainer from '@mui/material/TableContainer';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
+import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
+
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 
 const quantityFormatter = typeof Intl !== 'undefined'
   ? new Intl.NumberFormat('es-AR', {
@@ -70,9 +74,28 @@ const OperationsTable = ({ title, operations, strings, testId }) => (
           ) : (
             operations.map((operation) => {
               const rowKey = `${operation.originalSymbol ?? 'op'}-${operation.strike}-${operation.totalQuantity}-${operation.averagePrice}`;
+              const hasInferredSource = Boolean(
+                operation?.legs?.some((leg) => leg?.meta?.detectedFromToken),
+              );
+
               return (
                 <TableRow key={rowKey}>
-                  <TableCell>{formatQuantity(operation.totalQuantity)}</TableCell>
+                  <TableCell>
+                    <Stack direction="row" spacing={1} alignItems="center">
+                      {hasInferredSource && (
+                        <Tooltip title={strings.tables.inferredTooltip} disableInteractive>
+                          <InfoOutlinedIcon
+                            fontSize="inherit"
+                            sx={{ fontSize: '1rem' }}
+                            data-testid="operations-inferred-indicator"
+                            titleAccess={strings.tables.inferredTooltip}
+                            color="info"
+                          />
+                        </Tooltip>
+                      )}
+                      <span>{formatQuantity(operation.totalQuantity)}</span>
+                    </Stack>
+                  </TableCell>
                   <TableCell>{formatDecimal(operation.strike)}</TableCell>
                   <TableCell>{formatDecimal(operation.averagePrice)}</TableCell>
                 </TableRow>

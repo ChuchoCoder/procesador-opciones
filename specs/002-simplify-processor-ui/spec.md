@@ -99,7 +99,7 @@ As a user I want to understand which operations had fields inferred so that I ca
 - **FR-006**: System MUST set `meta.detectedFromToken=true` for any operation where token-based inference filled at least one missing field.
 - **FR-007**: System MUST group operations by `(symbol, expiration)` producing `GroupSummary` objects with id `${symbol}::${expiration}` and counts (calls, puts, total).
 - **FR-008**: System MUST generate group summaries after parsing and before rendering operations tables.
-- **FR-009**: System MUST render a post-processing group selection UI (e.g., dropdown or chips) listing all groups plus an "All" option when more than one group exists.
+- **FR-009**: System MUST render a post-processing group selection UI (e.g., dropdown or chips) that allows selecting exactly one group at a time and lists all groups plus an "All" option when more than one group exists.
 - **FR-010**: System MUST default the selection to the first (and only) group when exactly one group exists; when multiple groups exist it MUST default to "All" (entire dataset visible initially).
 - **FR-011**: System MUST filter the displayed operations table(s) according to the active group selection.
 - **FR-012**: System MUST update group summary panel counts to reflect current selection (or show global counts alongside selected counts—Assumption: show counts for selected scope only).
@@ -144,6 +144,7 @@ All previously identified questions have been resolved in Clarifications section
 - Q: What expiration value to use for non-option instrument rows? → A: Use the provided suffix token (e.g., `24HS`, `CI`, `1D`, `2D`, `3D`) as the expiration; if no recognizable suffix, use `NONE`.
 - Q: What is the default group selection when multiple groups exist? → A: Select "All".
 - Q: How should group summary counts behave when filtered? → A: Show only counts for the selected scope (no global totals concurrently).
+- Q: How should the group filter behave? → A: Single-selection control (one group plus "All" option).
 
 ### Key Entities *(include if feature involves data)*
 
