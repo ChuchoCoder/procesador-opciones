@@ -9,6 +9,10 @@ const strings = {
     settings: 'Configuración',
   },
   processor: {
+    filters: {
+      filterLabel: 'Filtrar por grupo',
+      all: 'Todos',
+    },
     viewControls: {
       previewLabel: 'Vista de resultados',
       callsTab: 'CALLS',
@@ -19,10 +23,6 @@ const strings = {
     upload: {
       title: 'Procesar operaciones',
       description: 'Seleccioná un archivo CSV con tus operaciones para generar el informe.',
-      symbolLabel: 'Símbolo',
-      symbolHelper: 'Elegí el símbolo activo para filtrar las operaciones.',
-      expirationLabel: 'Vencimiento',
-      expirationHelper: 'Elegí el vencimiento activo para procesar el archivo.',
       selectButton: 'Seleccionar archivo',
       noFileSelected: 'Ningún archivo seleccionado',
       processButton: 'Procesar',
@@ -56,6 +56,7 @@ const strings = {
       downloadCalls: 'Descargar CALLS',
       downloadPuts: 'Descargar PUTS',
       downloadCombined: 'Descargar combinados',
+      downloadAll: 'Descargar todo',
       downloadError: 'No se pudo generar el archivo para descargar.',
     },
     tables: {
@@ -65,6 +66,7 @@ const strings = {
       strike: 'Strike',
       price: 'Precio',
       empty: 'Sin datos para mostrar.',
+      inferredTooltip: 'Datos inferidos automáticamente a partir del token detectado.',
     },
     warnings: {
       largeFile: 'El archivo supera las 25.000 filas. El procesamiento puede demorar.',
