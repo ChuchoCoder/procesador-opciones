@@ -5,6 +5,38 @@
 **Status**: Draft  
 **Input**: User description: "redesign the current settings screen. I want to be able to start by creating a new option configuration for the symbol (e.g. GGAL). So I should be able to see each symbol that I add as a new tab in the main screen After that, when I am position in the TAB of the Symbol I want to be able to define the options prefix (GFG) and the default decimal places. Then I should be able to see the Expirations as a vertical TAB. Expirations are every 2 months  DIC, FEB, ABR, JUN, AGO and OCT (in spanish). By default, each expiration can use 1 or 2 letters as the suffix (e.g. OCT could be O or OC, DIC could be D or DI, etc). Within each expiration I could also set the default decimal places and I could explicitly map specific numbers to a specific strike. For example: I could map 47343 to be 4734.3 or 473.43 or 4734.3234"
 
+## Clarifications
+
+### Session 2025-10-13
+
+- Q: Which save model should the settings use (autosave vs explicit save vs hybrid)? → A: A (Immediate autosave on every change)
+- Q: Where should autosaved data be persisted? → A: A (Use existing localStorage only)
+- Q: What undo/versioning strategy should be provided for autosaved changes? → A: C (No per-change undo; provide "Reset to saved" only)
+- Q: Autosave frequency/trigger? → D (Only write on field blur/navigation)
+
+
+- Sections touched: `Clarifications`, `Requirements`, `Edge Cases`.
+
+- Coverage summary (taxonomy status):
+  - Functional Scope & Behavior: Clear — user stories, acceptance scenarios, and functional requirements are present; out-of-scope backend sync declared.
+  - Domain & Data Model: Partial — key entities (Symbol Configuration, Expiration Setting, Strike Override) defined, but attribute types, explicit uniqueness rules for expirations/overrides, and lifecycle transitions need detail.
+  - Interaction & UX Flow: Partial — critical journeys present (tab creation, expiration selection), but loading/error states, accessibility, and detailed field-level flows are not specified.
+  - Non-Functional Quality Attributes: Missing — performance, scalability, observability, and security/privacy metrics are not specified and should be added during planning.
+  - Integration & External Dependencies: Partial — backend sync explicitly out-of-scope for this iteration; no API contract or failure modes documented.
+  - Edge Cases & Failure Handling: Partial — several edge cases listed, but concurrency/conflict resolution and rate-limiting behavior are not defined.
+  - Constraints & Tradeoffs: Partial — browser `localStorage` choice documented; other technical constraints and tradeoffs (storage limits, migration path) need articulation.
+  - Terminology & Consistency: Partial — terms used consistently, but a short glossary would help avoid ambiguity.
+  - Completion Signals: Clear — measurable success criteria are present.
+  - Misc / Placeholders: Clear — no TODO markers remain in the spec.
+
+
+- Deferred / Outstanding (recommend for `/speckit.plan`):
+  - Non-Functional Quality Attributes (Missing) — add measurable targets (latency, availability, logging) during planning.
+  - Integration/API contracts (Partial) — define whether and how backend sync will be implemented in a future iteration.
+  - Concurrency / conflict resolution (Partial) — specify behavior when multiple browser tabs or processes edit the same symbol concurrently.
+
+- Suggested next command: `/speckit.plan` to produce an implementation plan that covers deferred items (NFRs, API contracts, migration strategy).
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Create a symbol configuration (Priority: P1)
@@ -60,6 +92,8 @@ Within a symbol, the analyst navigates vertical expiration tabs (DIC, FEB, ABR, 
 - Creating two strike overrides for the same raw number within one expiration must surface a conflict and keep the original mapping intact.
 - Removing a strike override should fall back to that expiration’s default decimal formatting without breaking other overrides.
 
+- **Undo/versioning**: This iteration WILL NOT implement a per-change version history. The UI MUST provide a clear "Reset to saved" control that re-loads the last persisted configuration from `localStorage` for the active symbol (single-step reload). Users cannot revert individual intermediate edits beyond this reset.
+
 ## Requirements *(mandatory)*
 
 ### Functional Requirements
@@ -73,7 +107,8 @@ Within a symbol, the analyst navigates vertical expiration tabs (DIC, FEB, ABR, 
 - **FR-007**: Analysts MUST be able to set expiration-specific default decimal precision that overrides the symbol default when formatting strikes for that expiration.
 - **FR-008**: Analysts MUST be able to create, edit, and remove strike overrides that map a raw numeric token to a custom formatted strike value per expiration.
 - **FR-009**: The system MUST validate strike overrides so that each raw numeric token is unique within an expiration and the formatted value matches the allowed decimal constraints.
-- **FR-010**: All symbol, expiration, and override changes MUST be saved to the configuration store immediately or on explicit save, ensuring they are available to any process that relies on option settings.
+- **FR-010**: All symbol, expiration, and override changes MUST be persisted automatically using a write-on-blur strategy: changes are written to the browser's `localStorage` when a field loses focus or when the user navigates away from the symbol view. For this feature iteration persistence will be to the browser's `localStorage` (per-user, client-side). Backend synchronization is out of scope for this iteration and must be planned separately if needed.
+- **FR-011**: The settings UI MUST provide a "Reset to saved" control that reloads the latest persisted configuration from `localStorage` for the active symbol. No multi-version history or per-change undo is required in this iteration.
 
 ### Key Entities *(include if feature involves data)*
 
