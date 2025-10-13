@@ -15,7 +15,7 @@ import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import DownloadIcon from '@mui/icons-material/Download';
 
 import GroupFilter from './GroupFilter.jsx';
-import { getNonOptionOperations } from '../../services/csv/buy-sell-matcher.js';
+import { getBuySellOperations } from '../../services/csv/buy-sell-matcher.js';
 
 const quantityFormatter = typeof Intl !== 'undefined'
   ? new Intl.NumberFormat('es-AR', {
@@ -129,7 +129,7 @@ const CompraVentaView = ({
   const filterStrings = strings?.filters ?? {};
 
   const { buys, sells } = useMemo(() => {
-    return getNonOptionOperations(operations);
+    return getBuySellOperations(operations);
   }, [operations]);
 
   return (
