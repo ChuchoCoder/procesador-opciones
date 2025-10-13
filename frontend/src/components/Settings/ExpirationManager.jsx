@@ -16,7 +16,7 @@ import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
 import DeleteIcon from '@mui/icons-material/Delete';
 
-import { useConfig } from '../../state/config-context.jsx';
+import { useConfig } from '../../state/index.js';
 import { useStrings } from '../../strings/index.js';
 
 const normalizeName = (value) => (typeof value === 'string' ? value.trim() : '');

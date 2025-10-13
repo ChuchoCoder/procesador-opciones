@@ -70,7 +70,7 @@ const ensureRequiredColumns = (rows) => {
   }
 };
 
-export const validateAndFilterRows = ({ rows = [], configuration: _configuration }) => {
+export const validateAndFilterRows = ({ rows = [] }) => {
   ensureRequiredColumns(rows);
 
   const exclusions = Object.values(EXCLUSION_REASONS).reduce(

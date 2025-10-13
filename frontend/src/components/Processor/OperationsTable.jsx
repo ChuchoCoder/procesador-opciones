@@ -47,21 +47,67 @@ const formatDecimal = (value) => {
 };
 
 const OperationsTable = ({ title, operations, strings, testId }) => (
-  <Paper elevation={2} sx={{ flex: 1 }}>
-    <TableContainer>
-      <Table size="small" data-testid={testId}>
+  <Paper
+    elevation={2}
+    sx={{
+      flex: 1,
+      display: 'flex',
+      flexDirection: 'column',
+      minHeight: 0,
+      overflow: 'hidden',
+    }}
+  >
+    <TableContainer sx={{ flex: 1, overflow: 'auto' }}>
+      <Table size="small" data-testid={testId} stickyHeader>
         <TableHead>
           <TableRow>
-            <TableCell colSpan={3}>
+            <TableCell
+              colSpan={3}
+              sx={{
+                position: 'sticky',
+                top: 0,
+                backgroundColor: 'background.paper',
+                zIndex: 2,
+              }}
+            >
               <Typography variant="subtitle1" component="h3">
                 {title}
               </Typography>
             </TableCell>
           </TableRow>
           <TableRow>
-            <TableCell>{strings.tables.quantity}</TableCell>
-            <TableCell>{strings.tables.strike}</TableCell>
-            <TableCell>{strings.tables.price}</TableCell>
+            <TableCell
+              sx={{
+                position: 'sticky',
+                top: 48,
+                backgroundColor: '#fafafa',
+                zIndex: 1,
+              }}
+            >
+              {strings.tables.quantity}
+            </TableCell>
+            <TableCell
+              align="right"
+              sx={{
+                position: 'sticky',
+                top: 48,
+                backgroundColor: '#fafafa',
+                zIndex: 1,
+              }}
+            >
+              {strings.tables.strike}
+            </TableCell>
+            <TableCell
+              align="right"
+              sx={{
+                position: 'sticky',
+                top: 48,
+                backgroundColor: '#fafafa',
+                zIndex: 1,
+              }}
+            >
+              {strings.tables.price}
+            </TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
@@ -96,8 +142,8 @@ const OperationsTable = ({ title, operations, strings, testId }) => (
                       <span>{formatQuantity(operation.totalQuantity)}</span>
                     </Stack>
                   </TableCell>
-                  <TableCell>{formatDecimal(operation.strike)}</TableCell>
-                  <TableCell>{formatDecimal(operation.averagePrice)}</TableCell>
+                  <TableCell align="right">{formatDecimal(operation.strike)}</TableCell>
+                  <TableCell align="right">{formatDecimal(operation.averagePrice)}</TableCell>
                 </TableRow>
               );
             })

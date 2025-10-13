@@ -30,11 +30,35 @@ const sanitizeRow = (row) => {
 };
 
 export const parseOperationsCsv = (input, config = {}) =>
-  new Promise((resolve, reject) => {
+  new Promise(async (resolve, reject) => {
     const rows = [];
     let rowCount = 0;
     let exceededMaxRows = false;
     let warningThresholdExceeded = false;
+
+    // Normalize input so Papa.parse always receives a string or a File/Blob it knows how to handle.
+    let normalizedInput = input;
+    try {
+      if (input && typeof input === 'object') {
+        // If tests pass a mock File-like without slice/read methods, fallback to reading arrayBuffer
+        if (input.arrayBuffer && typeof input.arrayBuffer === 'function') {
+          const buf = await input.arrayBuffer();
+          // Decode assuming UTF-8
+            normalizedInput = new TextDecoder('utf-8').decode(buf);
+        } else if (input instanceof Blob) {
+          // leave as is (Papa can handle real Blob/File)
+        } else if (input.data) {
+          // Some mocks might send { data: 'csv...' }
+          normalizedInput = input.data;
+        }
+      }
+    } catch (e) {
+      // If normalization fails, proceed with original input so Papa can attempt parse
+      // but log (in dev) silently.
+      if (typeof console !== 'undefined' && console.warn) {
+        console.warn('CSV normalization failed; continuing with original input', e); // eslint-disable-line no-console
+      }
+    }
 
     const parserConfig = {
       header: true,
@@ -87,7 +111,7 @@ export const parseOperationsCsv = (input, config = {}) =>
       },
     };
 
-    Papa.parse(input, parserConfig);
+    Papa.parse(normalizedInput, parserConfig);
   });
 
 export const createCsvStringFromRows = (rows, headers) => {

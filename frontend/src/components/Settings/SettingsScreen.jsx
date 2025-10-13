@@ -5,7 +5,7 @@ import LinearProgress from '@mui/material/LinearProgress';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 
-import { useConfig } from '../../state/config-context.jsx';
+import { useConfig } from '../../state/index.js';
 import { useStrings } from '../../strings/index.js';
 import SymbolManager from './SymbolManager.jsx';
 import ExpirationManager from './ExpirationManager.jsx';

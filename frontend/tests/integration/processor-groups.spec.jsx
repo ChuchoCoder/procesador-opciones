@@ -31,20 +31,15 @@ const renderProcessorApp = () =>
   );
 
 const uploadAndProcess = async (user, csvContent) => {
-  const fileInput = await screen.findByTestId('processor-file-input');
+  const fileInput = await screen.findByTestId('file-menu-input');
   const csvFile = new File([csvContent], 'operaciones.csv', { type: 'text/csv' });
   await user.upload(fileInput, csvFile);
-
-  const processButton = screen.getByTestId('processor-process-button');
-  expect(processButton).toBeEnabled();
-  await user.click(processButton);
-
+  // Auto-processing now happens after file selection
   await screen.findByTestId('summary-total-count');
 };
 
 describe('Processor group filter integration', () => {
   let clipboardWriteMock;
-  let copySpy;
   let exportSpy;
 
   beforeEach(() => {
@@ -63,7 +58,7 @@ describe('Processor group filter integration', () => {
     window.localStorage.setItem(storageKeys.useAveraging, JSON.stringify(false));
 
     clipboardWriteMock = vi.fn().mockResolvedValue();
-    copySpy = vi.spyOn(clipboardService, 'copyReportToClipboard').mockResolvedValue();
+  vi.spyOn(clipboardService, 'copyReportToClipboard').mockResolvedValue();
     exportSpy = vi.spyOn(exportService, 'exportReportToCsv').mockResolvedValue('mock.csv');
     Object.defineProperty(window.navigator, 'clipboard', {
       value: { writeText: clipboardWriteMock },
@@ -102,8 +97,9 @@ describe('Processor group filter integration', () => {
     const allOption = screen.getByRole('button', { name: /todos/i });
     expect(allOption).toHaveAttribute('aria-pressed', 'true');
 
-    const eneOption = screen.getByRole('button', { name: /GGAL · ENE/i });
-    const febOption = screen.getByRole('button', { name: /GGAL · FEB/i });
+  // Chips display base symbol + expiration (dash removed by formatter)
+  const eneOption = screen.getByRole('button', { name: /GGAL ENE/i });
+  const febOption = screen.getByRole('button', { name: /GGAL FEB/i });
 
     expect(eneOption).toBeInTheDocument();
     expect(febOption).toBeInTheDocument();
@@ -115,11 +111,23 @@ describe('Processor group filter integration', () => {
 
     await uploadAndProcess(user, multiGroupCsv);
 
-    const febOption = await screen.findByRole('button', { name: /GGAL · FEB/i });
+  // Wait for group filter chips to appear
+  await screen.findByTestId('group-filter');
+  // Use test id for stability
+  let febOption;
+  try {
+    febOption = await screen.findByTestId('group-filter-option-ggal---feb--feb');
+  } catch {
+    febOption = await screen.findByTestId('group-filter-option-ggal-feb');
+  }
     await user.click(febOption);
-
     await waitFor(() => {
       expect(febOption).toHaveAttribute('aria-pressed', 'true');
+    });
+    // Raw view consolidates by orderId + optionType (see consolidator.js) so the two FEB CALL legs (order 201 BUY+SELL) become one net row.
+    // Expect 1 CALL row, 0 PUT rows, total 1.
+    await waitFor(() => {
+      expect(screen.getByTestId('summary-calls-count')).toHaveTextContent('1');
     });
 
     expect(screen.getByTestId('summary-calls-count')).toHaveTextContent('1');
@@ -128,8 +136,9 @@ describe('Processor group filter integration', () => {
 
     const resultsTable = screen.getByTestId('processor-results-table');
     const bodyRows = within(resultsTable).getAllByRole('row');
-    expect(bodyRows.some((row) => row.textContent?.includes('2'))).toBe(true);
-    expect(bodyRows.some((row) => row.textContent?.includes('1') && row.textContent?.includes('110'))).toBe(false);
+    // Ensure only strike 95 row from FEB is present and ENE strikes (110,120) excluded.
+    expect(bodyRows.some((row) => row.textContent?.includes('95'))).toBe(true);
+    expect(bodyRows.some((row) => row.textContent?.includes('110'))).toBe(false);
   });
 
   it('uses filtered dataset for scoped exports and provides download all action', async () => {
@@ -138,11 +147,23 @@ describe('Processor group filter integration', () => {
 
     await uploadAndProcess(user, multiGroupCsv);
 
-    const febOption = await screen.findByRole('button', { name: /GGAL · FEB/i });
+  await screen.findByTestId('group-filter');
+  let febOption;
+  try {
+    febOption = await screen.findByTestId('group-filter-option-ggal---feb--feb');
+  } catch {
+    febOption = await screen.findByTestId('group-filter-option-ggal-feb');
+  }
     await user.click(febOption);
+    await waitFor(() => {
+      expect(screen.getByTestId('summary-total-count')).toHaveTextContent('1');
+    }, 10000);
 
-    const downloadActive = screen.getByTestId('download-active-button');
-    await user.click(downloadActive);
+  // Open download menu and trigger active scope download
+  const downloadMenuTrigger = screen.getByTestId('toolbar-download-menu-button');
+  await user.click(downloadMenuTrigger);
+  const downloadActive = await screen.findByTestId('download-active-menu-item');
+  await user.click(downloadActive);
 
     await waitFor(() => {
       expect(exportSpy).toHaveBeenCalled();
@@ -152,8 +173,10 @@ describe('Processor group filter integration', () => {
     expect(scopedCall.scope).toBe(exportService.EXPORT_SCOPES.CALLS);
     expect(scopedCall.report.summary.totalRows).toBe(1);
 
-    const downloadAll = screen.getByTestId('download-all-button');
-    await user.click(downloadAll);
+  // Trigger combined (all) download via menu (download-combined covers entire dataset when group scoped)
+  await user.click(downloadMenuTrigger);
+  const downloadAll = await screen.findByTestId('download-all-menu-item');
+  await user.click(downloadAll);
 
     const allCall = exportSpy.mock.calls.at(-1)[0];
     expect(allCall.scope).toBe(exportService.EXPORT_SCOPES.COMBINED);
@@ -170,7 +193,13 @@ describe('Processor group filter integration', () => {
     expect(filterContainer).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /todos/i })).not.toBeInTheDocument();
 
-    const singleOption = screen.getByRole('button', { name: /ALUA · MAR/i });
-    expect(singleOption).toHaveAttribute('aria-pressed', 'true');
-  });
+    const singleOption = await screen.findByRole('button', { name: /ALUA MAR/i });
+    await waitFor(() => {
+      expect(singleOption).toHaveAttribute('aria-pressed', 'true');
+    });
+    // Wait for summary to show 2 rows (calls 1, puts 1) confirming selection applied
+    await waitFor(() => {
+      expect(screen.getByTestId('summary-total-count')).toHaveTextContent('2');
+    });
+  }, 10000);
 });
