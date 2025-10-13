@@ -13,6 +13,12 @@ const strings = {
       filterLabel: 'Filtrar por grupo',
       all: 'Todos',
     },
+    operationTypeTabs: {
+      opciones: 'Opciones',
+      compraVenta: 'Compra y Venta',
+      arbitrajes: 'Arbitrajes de Plazo',
+      ariaLabel: 'Seleccionar tipo de operación',
+    },
     viewControls: {
       previewLabel: 'Vista de resultados',
       callsTab: 'CALLS',
@@ -62,11 +68,19 @@ const strings = {
     tables: {
       callsTitle: 'Operaciones CALLS',
       putsTitle: 'Operaciones PUTS',
+      buyTitle: 'Operaciones de Compra',
+      sellTitle: 'Operaciones de Venta',
+      buySellPairsTitle: 'Pares Compra/Venta',
+      arbitrajesTitle: 'Arbitrajes de Plazo',
       quantity: 'Cantidad',
       strike: 'Strike',
       price: 'Precio',
+      symbol: 'Símbolo',
+      settlement: 'Plazo',
+      side: 'Operación',
       empty: 'Sin datos para mostrar.',
       inferredTooltip: 'Datos inferidos automáticamente a partir del token detectado.',
+      comingSoon: 'Esta funcionalidad estará disponible próximamente.',
     },
     warnings: {
       largeFile: 'El archivo supera las 25.000 filas. El procesamiento puede demorar.',
