@@ -15,6 +15,12 @@ import { exportReportToCsv, EXPORT_SCOPES } from '../../services/csv/export-serv
 import { useConfig } from '../../state/index.js';
 import { useStrings } from '../../strings/index.js';
 import { ROUTES } from '../../app/routes.jsx';
+import {
+  readItem,
+  writeItem,
+  removeItem,
+  storageKeys,
+} from '../../services/storage/local-storage.js';
 
 import OperationTypeTabs, { OPERATION_TYPES } from './OperationTypeTabs.jsx';
 import OpcionesView from './OpcionesView.jsx';
@@ -23,6 +29,7 @@ import ArbitrajesView from './ArbitrajesView.jsx';
 import EmptyState from './EmptyState.jsx';
 
 const ALL_GROUP_ID = '__ALL__';
+const LAST_SESSION_STORAGE_VERSION = 1;
 
 const sanitizeForTestId = (value = '') => value.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase();
 
@@ -365,6 +372,7 @@ const ProcessorScreen = () => {
   const [selectedGroupId, setSelectedGroupId] = useState(ALL_GROUP_ID);
   const [activeOperationType, setActiveOperationType] = useState(OPERATION_TYPES.OPCIONES);
   const scopedDataCacheRef = useRef(new Map());
+  const sessionRestoredRef = useRef(false);
 
   const buildConfiguration = useCallback(
     (overrides = {}) => ({
@@ -412,6 +420,7 @@ const ProcessorScreen = () => {
       } catch (err) {
         setReport(null);
         setWarningCodes([]);
+        removeItem(storageKeys.lastReport);
         setProcessingError(err?.message ?? processorStrings.errors.processingFailed);
       } finally {
         setIsProcessing(false);
@@ -429,6 +438,7 @@ const ProcessorScreen = () => {
     setSelectedGroupId(ALL_GROUP_ID);
     if (!file) {
       setReport(null);
+      removeItem(storageKeys.lastReport);
     }
   };
 
@@ -569,7 +579,7 @@ const ProcessorScreen = () => {
       return mapped;
     };
 
-  const optionGroups = groups.filter(isOptionGroup);
+    const optionGroups = groups.filter(isOptionGroup);
 
     return {
       optionGroupOptions: buildOptions(optionGroups),
@@ -649,7 +659,7 @@ const ProcessorScreen = () => {
       return;
     }
 
-  const optionGroups = groups.filter(isOptionGroup);
+    const optionGroups = groups.filter(isOptionGroup);
 
     if (selectedGroupId === ALL_GROUP_ID) {
       if (optionGroups.length === 1) {
@@ -683,6 +693,69 @@ const ProcessorScreen = () => {
 
     setSelectedGroupId(ALL_GROUP_ID);
   }, [activeOperationType, selectedGroupId, groups]);
+
+  useEffect(() => {
+    if (sessionRestoredRef.current) {
+      return;
+    }
+
+    const stored = readItem(storageKeys.lastReport);
+    if (!stored || typeof stored !== 'object') {
+      sessionRestoredRef.current = true;
+      return;
+    }
+
+    if (stored.version !== LAST_SESSION_STORAGE_VERSION || !stored.report) {
+      removeItem(storageKeys.lastReport);
+      sessionRestoredRef.current = true;
+      return;
+    }
+
+    try {
+      const storedReport = stored.report;
+      if (!storedReport || typeof storedReport !== 'object') {
+        throw new Error('invalid report');
+      }
+
+      setReport(storedReport);
+      setWarningCodes(Array.isArray(storedReport?.summary?.warnings) ? storedReport.summary.warnings : []);
+      setSelectedFile(stored.fileName ? { name: stored.fileName } : { name: 'Operaciones previas' });
+      if (typeof stored.selectedGroupId === 'string') {
+        setSelectedGroupId(stored.selectedGroupId);
+      }
+
+      if (Object.values(OPERATION_TYPES).includes(stored.activeOperationType)) {
+        setActiveOperationType(stored.activeOperationType);
+      }
+
+      if (Object.values(CLIPBOARD_SCOPES).includes(stored.activePreview)) {
+        setActivePreview(stored.activePreview);
+      }
+    } catch (restoreError) {
+      console.warn('PO: Failed to restore last session', restoreError);
+      removeItem(storageKeys.lastReport);
+    } finally {
+      sessionRestoredRef.current = true;
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!report || !selectedFile) {
+      return;
+    }
+
+    const snapshot = {
+      version: LAST_SESSION_STORAGE_VERSION,
+      savedAt: Date.now(),
+      fileName: selectedFile.name ?? null,
+      report,
+      selectedGroupId,
+      activeOperationType,
+      activePreview,
+    };
+
+    writeItem(storageKeys.lastReport, snapshot);
+  }, [report, selectedFile, selectedGroupId, activeOperationType, activePreview]);
 
   const renderActiveView = () => {
     if (!report) {
