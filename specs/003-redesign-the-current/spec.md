@@ -9,7 +9,7 @@
 
 ### Session 2025-10-13
 
-- Q: Which save model should the settings use (autosave vs explicit save vs hybrid)? → A: A (Immediate autosave on every change)
+- Q: Which save model should the settings use (autosave vs explicit save vs hybrid)? → A: D (Write-on-blur: persist when a field loses focus or when navigating away)
 - Q: Where should autosaved data be persisted? → A: A (Use existing localStorage only)
 - Q: What undo/versioning strategy should be provided for autosaved changes? → A: C (No per-change undo; provide "Reset to saved" only)
 - Q: Autosave frequency/trigger? → D (Only write on field blur/navigation)
@@ -92,6 +92,8 @@ Within a symbol, the analyst navigates vertical expiration tabs (DIC, FEB, ABR, 
 - Creating two strike overrides for the same raw number within one expiration must surface a conflict and keep the original mapping intact.
 - Removing a strike override should fall back to that expiration’s default decimal formatting without breaking other overrides.
 
+- Concurrency / Conflict Policy: If the same symbol configuration is edited from multiple browser tabs, the system uses a last-write-wins policy for persisted values. The UI MUST provide a clear "Reset to saved" control (FR-011) allowing the user to reload the latest persisted configuration from `localStorage` for the active symbol. Implementations may surface a non-blocking notification when an out-of-window update is detected.
+
 - **Undo/versioning**: This iteration WILL NOT implement a per-change version history. The UI MUST provide a clear "Reset to saved" control that re-loads the last persisted configuration from `localStorage` for the active symbol (single-step reload). Users cannot revert individual intermediate edits beyond this reset.
 
 ## Requirements *(mandatory)*
@@ -103,7 +105,7 @@ Within a symbol, the analyst navigates vertical expiration tabs (DIC, FEB, ABR, 
 - **FR-003**: Within each symbol tab, users MUST be able to enter and save an option prefix and default decimal precision that apply when no expiration overrides exist.
 - **FR-004**: Symbol tabs MUST persist their data so that returning to the settings area shows the same selections without additional input.
 - **FR-005**: Each symbol view MUST present expirations as vertical tabs for DIC, FEB, ABR, JUN, AGO, and OCT, ordered chronologically by trading cycle.
-- **FR-006**: For every expiration, the system MUST surface default suffix options supporting both one-letter and two-letter forms and allow the analyst to confirm or adjust which forms are accepted.
+- **FR-006**: For every expiration, the system MUST surface default suffix options supporting exactly one-letter or two-letter forms and allow the analyst to confirm or adjust which forms are accepted. Inputs longer than two characters MUST be rejected or trimmed before persistence; matching is case-insensitive and persisted values must be normalized to uppercase.
 - **FR-007**: Analysts MUST be able to set expiration-specific default decimal precision that overrides the symbol default when formatting strikes for that expiration.
 - **FR-008**: Analysts MUST be able to create, edit, and remove strike overrides that map a raw numeric token to a custom formatted strike value per expiration.
 - **FR-009**: The system MUST validate strike overrides so that each raw numeric token is unique within an expiration and the formatted value matches the allowed decimal constraints.
