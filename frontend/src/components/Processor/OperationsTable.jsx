@@ -8,8 +8,11 @@ import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
+import IconButton from '@mui/material/IconButton';
 
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
+import DownloadIcon from '@mui/icons-material/Download';
 
 const quantityFormatter = typeof Intl !== 'undefined'
   ? new Intl.NumberFormat('es-AR', {
@@ -46,35 +49,67 @@ const formatDecimal = (value) => {
   return String(value);
 };
 
-const OperationsTable = ({ title, operations, strings, testId }) => (
-  <Paper
-    elevation={2}
-    sx={{
-      flex: 1,
-      display: 'flex',
-      flexDirection: 'column',
-      minHeight: 0,
-      overflow: 'hidden',
-    }}
-  >
-    <TableContainer sx={{ flex: 1, overflow: 'auto' }}>
-      <Table size="small" data-testid={testId} stickyHeader>
-        <TableHead>
-          <TableRow>
-            <TableCell
-              colSpan={3}
-              sx={{
-                position: 'sticky',
-                top: 0,
-                backgroundColor: 'background.paper',
-                zIndex: 2,
-              }}
-            >
-              <Typography variant="subtitle1" component="h3">
-                {title}
-              </Typography>
-            </TableCell>
-          </TableRow>
+const OperationsTable = ({ title, operations, strings, testId, onCopy, onDownload }) => {
+  const hasData = operations.length > 0;
+
+  return (
+    <Paper
+      elevation={2}
+      sx={{
+        flex: 1,
+        display: 'flex',
+        flexDirection: 'column',
+        minHeight: 0,
+        overflow: 'hidden',
+      }}
+    >
+      <TableContainer sx={{ flex: 1, overflow: 'auto' }}>
+        <Table size="small" data-testid={testId} stickyHeader>
+          <TableHead>
+            <TableRow>
+              <TableCell
+                colSpan={3}
+                sx={{
+                  position: 'sticky',
+                  top: 0,
+                  backgroundColor: 'background.paper',
+                  zIndex: 2,
+                }}
+              >
+                <Stack 
+                  direction="row" 
+                  alignItems="center" 
+                  justifyContent="space-between"
+                  sx={{ width: '100%' }}
+                >
+                  <Typography variant="subtitle1" component="h3">
+                    {title}
+                  </Typography>
+                  {hasData && (
+                    <Stack direction="row" spacing={0.5}>
+                      <Tooltip title={strings.actions?.copy ?? 'Copiar'}>
+                        <IconButton
+                          onClick={onCopy}
+                          size="small"
+                          data-testid={`${testId}-copy-button`}
+                        >
+                          <ContentCopyIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                      <Tooltip title={strings.actions?.download ?? 'Descargar'}>
+                        <IconButton
+                          onClick={onDownload}
+                          size="small"
+                          data-testid={`${testId}-download-button`}
+                        >
+                          <DownloadIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                    </Stack>
+                  )}
+                </Stack>
+              </TableCell>
+            </TableRow>
           <TableRow>
             <TableCell
               sx={{
@@ -152,6 +187,7 @@ const OperationsTable = ({ title, operations, strings, testId }) => (
       </Table>
     </TableContainer>
   </Paper>
-);
+  );
+};
 
 export default OperationsTable;
