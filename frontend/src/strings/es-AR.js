@@ -83,6 +83,8 @@ const strings = {
       empty: 'Sin datos para mostrar.',
       inferredTooltip: 'Datos inferidos automáticamente a partir del token detectado.',
       comingSoon: 'Esta funcionalidad estará disponible próximamente.',
+      averageByInstrument: 'Promediar',
+      averageTooltip: 'Promediar por instrumento y plazo',
     },
     warnings: {
       largeFile: 'El archivo supera las 25.000 filas. El procesamiento puede demorar.',
