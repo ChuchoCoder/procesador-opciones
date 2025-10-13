@@ -31,12 +31,6 @@ const deriveStrike = (digits) => {
     return undefined;
   }
 
-  if (sanitized.length > 4) {
-    const whole = sanitized.slice(0, -1);
-    const decimal = sanitized.slice(-1);
-    return Number(`${whole}.${decimal}`);
-  }
-
   return Number(sanitized);
 };
 

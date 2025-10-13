@@ -9,6 +9,7 @@ const ProcessorActions = ({
   hasCalls,
   hasPuts,
   hasData,
+  hasAnyData,
   activeScope,
   activeScopeLabel,
   activeHasData,
@@ -20,6 +21,7 @@ const ProcessorActions = ({
   onDownloadCalls,
   onDownloadPuts,
   onDownloadCombined,
+  onDownloadAll,
 }) => {
   const actionStrings = strings.actions;
   const viewName = actionStrings?.viewNames?.[activeScope] ?? activeScopeLabel ?? activeScope;
@@ -113,6 +115,18 @@ const ProcessorActions = ({
             {actionStrings.downloadCombined}
           </Button>
         </Stack>
+        {actionStrings.downloadAll && (
+          <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
+            <Button
+              variant="outlined"
+              onClick={onDownloadAll}
+              disabled={disabled || !hasAnyData}
+              data-testid="download-all-button"
+            >
+              {actionStrings.downloadAll}
+            </Button>
+          </Stack>
+        )}
       </Stack>
     </Paper>
   );

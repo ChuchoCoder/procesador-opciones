@@ -1,14 +1,10 @@
 <!--
 Sync Impact Report
-Version change: 1.0.0 -> 1.1.0
-Modified principles: (new) 6. Spanish (Argentina) User Interface Localization
-Added sections: None (principle added under Core Principles)
-Removed sections: None
-Templates requiring updates:
-	.specify/templates/plan-template.md ✅ (Add localization check to Constitution Check gate)
-	.specify/templates/spec-template.md ✅ (Ensure user-visible text requirements align with locale mandate)
-	.specify/templates/tasks-template.md ✅ (Tasks may need category for localization adjustments)
-	.specify/templates/agent-file-template.md ⚠ (Regenerate to list localization technology guidance once plans created)
+Version change: 1.1.0 -> 2.0.0
+Modified principles: 3. Test On Request (clarified), 4. Simplicity Over Framework Accretion (renumbered), 5. Spanish (Argentina) User Interface Localization (renumbered)
+Added sections: None
+Removed sections: 4. Performance & Responsiveness Budget
+Templates requiring updates: None
 Deferred TODOs: None
 -->
 
@@ -17,32 +13,32 @@ Deferred TODOs: None
 ## Core Principles
 
 ### 1. Minimal Surface, Clear Purpose
+
 All new code MUST directly support an end-user capability of the browser extension. Dead, speculative or
 "future maybe" code is forbidden. Any utility used by only one feature stays colocated with that feature
 until reused twice (then it may be promoted). Each file MUST have a single dominant responsibility.
 Rationale: Keeps cognitive load low and prevents premature abstraction in a small extension codebase.
 
 ### 2. Deterministic Processing & Idempotence
+
 Option processing logic MUST be pure or isolated behind a single side‑effect gateway (DOM updates, storage).
 Given the same input text, processing MUST produce the same normalized output. All parsing and transforms
 MUST be unit testable without DOM. Rationale: Predictability simplifies debugging and enables safe refactor.
 
-### 3. Test Before Complex Change (NON‑NEGOTIABLE)
-Whenever altering logic that transforms or filters option data, add or update a test FIRST that fails with the
-current implementation. Happy path + at least one edge case (empty input OR malformed line). No major logic
-change may merge without a test diff proving intent. Rationale: Guards data integrity and prevents silent drift.
+### 3. Test On Request
 
-### 4. Performance & Responsiveness Budget
-Popup interactive readiness MUST be <150ms from open (p95 on a mid-tier laptop). Processing of a typical
-input payload (<=500 lines) MUST complete in <100ms. Heavy computations MUST batch or yield (e.g., via
-`requestIdleCallback`) if exceeding 16ms frame time. Rationale: Extension UX depends on snappy feedback.
+Whenever altering logic that transforms or filters option data and tests are explicitly requested, add or update a
+test FIRST that fails with the current implementation. Happy path + at least one edge case (empty input OR
+malformed line). If tests are not requested, document the manual validation performed alongside the change.
+Rationale: Aligns testing effort with stakeholder demand while keeping intent verifiable when requested.
 
-### 5. Simplicity Over Framework Accretion
+### 4. Simplicity Over Framework Accretion
+
 No additional frameworks or build steps beyond what is strictly necessary (current stack: raw JS + manifest).
 Before adding a dependency, a justification documenting: benefit, size, simpler alternative rejection. Remove
 unused code and dependencies promptly. Rationale: Small artifact, low attack surface, easy audits.
 
-### 6. Spanish (Argentina) User Interface Localization
+### 5. Spanish (Argentina) User Interface Localization
 
 All user-visible interface text MUST be provided in Spanish (Argentina) (es-AR). Any newly added UI element
 MUST ship with Spanish wording; English placeholders are forbidden in production. Centralize strings in a
@@ -67,7 +63,8 @@ issue. Rationale: Target user base is Argentina; consistent localized language i
 Workflow Steps:
 
 1. Clarify: Define the smallest user-visible outcome (update README if feature-level change).
-2. Test Stub: If logic change, write failing test (principle 3) or add manual test notes if purely UI cosmetic.
+2. Test Stub: If logic change and tests are explicitly requested, write a failing test (principle 3); otherwise add
+  manual test notes describing validation.
 3. Implement: Keep functions <60 lines; extract early if complexity grows.
 4. Review: PR description MUST list which principle(s) are touched and how validated.
 5. Validate: Run tests + manual open popup smoke test before merge.
@@ -75,11 +72,10 @@ Workflow Steps:
 Quality Gates:
 
 - Lint passes (when linter added) and no TODO left untagged (Use `TODO(username): reason`).
-- All changed logic covered by at least one test (where applicable).
+- All changed logic covered by at least one test when tests are explicitly requested; otherwise ensure manual
+  validation steps are documented.
 - Bundle / script size increase >10KB requires justification.
 - No new global variables introduced (except explicitly in manifest scope).
-- Performance: Manual spot check with DevTools performance panel for large input features.
-
 Violation Handling:
 
 - Minor (documentation omission): fix in same PR or follow-up within 24h.
@@ -118,4 +114,4 @@ Sunset / Retirement:
 - If project scope evolves (e.g., adds React or build tooling), a Minor or Major bump introduces new
   constraints accompanied by migration notes appended as an addendum.
 
-**Version**: 1.1.0 | **Ratified**: 2025-10-08 | **Last Amended**: 2025-10-08
+**Version**: 2.0.0 | **Ratified**: 2025-10-08 | **Last Amended**: 2025-10-12

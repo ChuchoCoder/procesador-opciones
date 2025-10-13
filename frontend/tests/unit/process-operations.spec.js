@@ -14,7 +14,7 @@ const baseConfiguration = {
 
 const createRow = (overrides = {}) => ({
   order_id: '1',
-  symbol: 'GGALNOV24C120',
+  symbol: 'GGALC120.NOV24',
   side: 'BUY',
   option_type: 'CALL',
   strike: 120,
@@ -39,19 +39,19 @@ describe('processOperations', () => {
         configuration: baseConfiguration,
         fileName: 'operaciones.csv',
       }),
-    ).rejects.toThrow('Faltan columnas requeridas: option_type, strike, quantity, price.');
+  ).rejects.toThrow('Faltan columnas requeridas: option_type, strike, quantity, price.');
   });
 
-  it('filters rows by execution status, event type, and symbol/expiration scope', async () => {
+  it('filters rows by execution status and event type while retaining valid operations across symbols', async () => {
     const rows = [
       createRow({ order_id: '1' }),
       createRow({ order_id: '2', status: 'received' }),
       createRow({ order_id: '3', event_type: 'order_update' }),
-      createRow({ order_id: '4', symbol: 'GGALDEC24C120' }),
+      createRow({ order_id: '4', symbol: 'ALUAC300.DIC24' }),
       createRow({
         order_id: '5',
         option_type: 'PUT',
-        symbol: 'GGALNOV24P110',
+        symbol: 'GGALV110.NOV24',
         strike: 110,
         quantity: 2,
         price: 8,
@@ -64,18 +64,26 @@ describe('processOperations', () => {
       fileName: 'operaciones.csv',
     });
 
-    expect(report.summary.callsRows).toBe(1);
+    expect(report.summary.callsRows).toBe(2);
     expect(report.summary.putsRows).toBe(1);
-    expect(report.summary.totalRows).toBe(2);
+    expect(report.summary.totalRows).toBe(3);
 
-    expect(report.calls.operations).toHaveLength(1);
+    expect(report.calls.operations).toHaveLength(2);
     expect(report.puts.operations).toHaveLength(1);
 
-    const [callOperation] = report.calls.operations;
-    expect(callOperation.originalSymbol).toBe('GGALNOV24C120');
+    const callSymbols = report.calls.operations.map((operation) => operation.matchedSymbol);
+    expect(callSymbols).toContain('GGAL');
+    expect(callSymbols).toContain('ALUA');
 
     const [putOperation] = report.puts.operations;
-    expect(putOperation.originalSymbol).toBe('GGALNOV24P110');
+    expect(putOperation.matchedSymbol).toBe('GGAL');
+
+    const groupIds = report.groups.map((group) => group.id);
+    expect(groupIds).toContain('GGAL::NOV24');
+    expect(groupIds).toContain('ALUA::DIC24');
+
+    const detected = report.operations.find((operation) => operation.orderId === '1');
+    expect(detected.meta.detectedFromToken).toBe(true);
   });
 
   it('consolidates rows by strike and option type computing net quantity and VWAP', async () => {
@@ -86,7 +94,7 @@ describe('processOperations', () => {
       createRow({
         order_id: '4',
         option_type: 'PUT',
-        symbol: 'GGALNOV24P110',
+        symbol: 'GGALV110.NOV24',
         strike: 110,
         quantity: 2,
         price: 8,
@@ -94,14 +102,14 @@ describe('processOperations', () => {
       createRow({
         order_id: '5',
         option_type: 'PUT',
-        symbol: 'GGALNOV24P110',
+        symbol: 'GGALV110.NOV24',
         strike: 110,
         side: 'SELL',
         quantity: 1,
         price: 7,
       }),
-      createRow({ order_id: '6', symbol: 'GGALNOV24C130', strike: 130, quantity: 1 }),
-      createRow({ order_id: '7', symbol: 'GGALNOV24C130', strike: 130, side: 'SELL', quantity: 1 }),
+      createRow({ order_id: '6', symbol: 'GGALC130.NOV24', strike: 130, quantity: 1 }),
+      createRow({ order_id: '7', symbol: 'GGALC130.NOV24', strike: 130, side: 'SELL', quantity: 1 }),
     ];
 
     const report = await processOperations({
@@ -156,5 +164,25 @@ describe('processOperations', () => {
     expect(quantitiesByOrder['3']).toBe(-1);
     expect(report.summary.callsRows).toBe(3);
     expect(report.summary.totalRows).toBe(3);
+  });
+
+  it('reports zero lost rows between raw count, validated rows, and exclusions', async () => {
+    const rows = [
+      createRow({ order_id: '1' }),
+      createRow({ order_id: '2', status: 'received' }),
+      createRow({ order_id: '3', event_type: 'order_update' }),
+      createRow({ order_id: '4', side: 'HOLD' }),
+    ];
+
+    const report = await processOperations({
+      rows,
+      configuration: baseConfiguration,
+      fileName: 'operaciones.csv',
+    });
+
+    expect(report.summary.rawRowCount).toBe(rows.length);
+    expect(report.summary.validRowCount).toBe(report.calls.operations.length + report.puts.operations.length);
+    expect(report.summary.excludedRowCount).toBe(rows.length - report.summary.validRowCount);
+    expect(report.summary.validRowCount + report.summary.excludedRowCount).toBe(rows.length);
   });
 });

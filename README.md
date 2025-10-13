@@ -14,6 +14,7 @@ Migración en curso desde un popup HTML (Vanilla JS) a una Single Page Applicati
 
 - Procesamiento de archivos CSV (Papaparse) con filtros por símbolo y vencimiento
 - Vista dividida: pestañas CALLS / PUTS + indicador de vista actual
+- Filtro de grupos derivado automáticamente y persistencia de selección reciente
 - Modo de promedios (opcional): consolida operaciones por strike sumando cantidades y recalculando precio promedio ponderado
 - Acciones de exportación: copiar o descargar CSV (vista actual, CALLS, PUTS o combinado)
 - Persistencia local (localStorage) de configuración (símbolos, vencimientos, selección actual, preferencia de promedios)
@@ -24,7 +25,7 @@ Migración en curso desde un popup HTML (Vanilla JS) a una Single Page Applicati
 
 ## 🗂 Estructura (parcial)
 
-```
+```text
 procesador-opciones/
 ├── manifest.json                 # Manifest MV3 base (versión legacy 1.0.x)
 ├── popup.html / popup.js         # UI legacy (en proceso de migración)
@@ -49,7 +50,7 @@ procesador-opciones/
 
 Requisitos: Node.js 18+ (recomendado LTS), npm.
 
-```
+```bash
 git clone https://github.com/ChuchoCoder/procesador-opciones.git
 cd procesador-opciones/frontend
 npm install
@@ -60,7 +61,7 @@ Abrí el navegador en la URL que imprima Vite (por defecto `http://localhost:517
 
 ### Construir para producción (bundle SPA)
 
-```
+```bash
 cd frontend
 npm run build
 ```
@@ -73,17 +74,19 @@ Se provee un script que genera `extension-dist/` lista para cargar en `chrome://
 
 Paso a paso:
 
-```
+```bash
 npm run build:ext
 ```
 
 Esto realiza:
+
 1. `npm run build` dentro de `frontend/`.
 2. Copia `manifest.json` e íconos a `extension-dist/`.
 3. Copia el contenido de `frontend/dist/`.
 4. Renombra `index.html` a `popup.html` y asegura que `manifest.json` apunte a ese archivo.
 
 Luego:
+
 1. Abrí `chrome://extensions`.
 2. Activá Modo desarrollador.
 3. Clic en “Cargar descomprimida” y seleccioná `extension-dist/`.
@@ -94,14 +97,14 @@ Luego:
 
 Ejecutar todo el suite:
 
-```
+```bash
 cd frontend
 npm test
 ```
 
 Modo watch:
 
-```
+```bash
 npm run test:watch
 ```
 
@@ -109,7 +112,7 @@ Cobertura (si se añade configuración): ejecutar Vitest con `--coverage` (no co
 
 ## 🧰 Linter & Formato
 
-```
+```bash
 npm run lint       # Revisa reglas
 npm run lint:fix   # Aplica autofix
 ```
@@ -166,6 +169,16 @@ Desactivar el modo muestra las operaciones originales (raw) sin consolidar.
 - Resumen: totales CALLS / PUTS y estado de promedios.
 - Acciones: copiar / descargar según alcance (vista actual, llamadas, puts, combinado).
 - Tablas: una por tipo, con columnas Cantidad, Strike, Precio.
+
+## 🧭 Flujo Simplificado (Post-Migración)
+
+1. Abrí la pestaña “Procesador” (la aplicación recuerda el último símbolo y vencimiento exitosos).
+2. Arrastrá o seleccioná el archivo CSV con operaciones.
+3. Presioná “Procesar” para generar resumen y grupos detectados automáticamente.
+4. Elegí el grupo relevante desde los chips del encabezado (ej.: `GFG O`), verificá los totales en el panel de resumen.
+5. Utilizá “Descargar PUTs” / “Descargar CALLs” / “Descargar todo” para obtener el CSV ya filtrado.
+
+> Con esta secuencia el flujo se redujo de ~8 interacciones manuales (popup legacy) a 5 pasos guiados, con confirmación visual inmediata antes de exportar.
 
 ## 📁 Exportación
 

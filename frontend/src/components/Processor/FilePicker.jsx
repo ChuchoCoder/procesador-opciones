@@ -2,25 +2,14 @@ import { useRef } from 'react';
 
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
-import FormControl from '@mui/material/FormControl';
 import FormControlLabel from '@mui/material/FormControlLabel';
-import FormHelperText from '@mui/material/FormHelperText';
-import InputLabel from '@mui/material/InputLabel';
-import MenuItem from '@mui/material/MenuItem';
 import Paper from '@mui/material/Paper';
-import Select from '@mui/material/Select';
 import Stack from '@mui/material/Stack';
 import Switch from '@mui/material/Switch';
 import Typography from '@mui/material/Typography';
 
 const FilePicker = ({
   strings,
-  symbols,
-  activeSymbol,
-  onSymbolChange,
-  expirations,
-  activeExpiration,
-  onExpirationChange,
   useAveraging,
   onToggleAveraging,
   isProcessing,
@@ -49,48 +38,6 @@ const FilePicker = ({
           <Typography variant="body2" color="text.secondary">
             {strings.upload.description}
           </Typography>
-        </Stack>
-
-        <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
-          <FormControl fullWidth>
-            <InputLabel id="processor-symbol-label">{strings.upload.symbolLabel}</InputLabel>
-            <Select
-              labelId="processor-symbol-label"
-              value={activeSymbol}
-              label={strings.upload.symbolLabel}
-              onChange={(event) => onSymbolChange(event.target.value)}
-              disabled={isProcessing}
-              data-testid="processor-symbol-select"
-            >
-              {symbols.map((symbol) => (
-                <MenuItem key={symbol} value={symbol}>
-                  {symbol}
-                </MenuItem>
-              ))}
-            </Select>
-            <FormHelperText>{strings.upload.symbolHelper}</FormHelperText>
-          </FormControl>
-
-          <FormControl fullWidth>
-            <InputLabel id="processor-expiration-label">
-              {strings.upload.expirationLabel}
-            </InputLabel>
-            <Select
-              labelId="processor-expiration-label"
-              value={activeExpiration}
-              label={strings.upload.expirationLabel}
-              onChange={(event) => onExpirationChange(event.target.value)}
-              disabled={isProcessing}
-              data-testid="processor-expiration-select"
-            >
-              {Object.keys(expirations).map((expirationKey) => (
-                <MenuItem key={expirationKey} value={expirationKey}>
-                  {expirationKey}
-                </MenuItem>
-              ))}
-            </Select>
-            <FormHelperText>{strings.upload.expirationHelper}</FormHelperText>
-          </FormControl>
         </Stack>
 
         <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} alignItems="center">

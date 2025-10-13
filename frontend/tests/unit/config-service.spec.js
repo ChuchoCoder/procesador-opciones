@@ -11,11 +11,11 @@ const mockStorageModule = () => ({
   removeItem: removeItemMock,
   storageAvailable: storageAvailableMock,
   storageKeys: {
-    symbols: 'po.symbols',
+    prefixRules: 'po.prefixRules',
     expirations: 'po.expirations',
-    activeSymbol: 'po.activeSymbol',
     activeExpiration: 'po.activeExpiration',
     useAveraging: 'po.useAveraging',
+    lastReport: 'po.lastReport.v1',
   },
 });
 
@@ -56,15 +56,34 @@ describe('config-service', () => {
     readItemMock
       .mockImplementation((key) => {
         switch (key) {
-          case 'po.symbols':
-            return ['GGAL', 'ALUA', ''];
+          case 'po.prefixRules':
+            return {
+              ggal: {
+                symbol: ' ggal ',
+                defaultDecimals: 2,
+                strikeOverrides: {
+                  '110': 2,
+                  '': 4,
+                },
+                expirationOverrides: {
+                  ene24: {
+                    defaultDecimals: 3,
+                    strikeOverrides: {
+                      110: 3,
+                    },
+                  },
+                },
+              },
+              alua: {
+                symbol: 'ALUA',
+                defaultDecimals: 0,
+              },
+            };
           case 'po.expirations':
             return {
               Enero: { suffixes: ['ENE', ' Ene '] },
               Marzo: { suffixes: ['MAR'] },
             };
-          case 'po.activeSymbol':
-            return 'ALUA';
           case 'po.activeExpiration':
             return 'Marzo';
           case 'po.useAveraging':
@@ -76,12 +95,33 @@ describe('config-service', () => {
 
     const result = service.loadConfiguration();
 
-    expect(result.symbols).toEqual(['GGAL', 'ALUA']);
+    expect(result.prefixRules).toEqual({
+      GGAL: {
+        symbol: 'GGAL',
+        defaultDecimals: 2,
+        strikeOverrides: {
+          110: 2,
+        },
+        expirationOverrides: {
+          ENE24: {
+            defaultDecimals: 3,
+            strikeOverrides: {
+              110: 3,
+            },
+          },
+        },
+      },
+      ALUA: {
+        symbol: 'ALUA',
+        defaultDecimals: 0,
+        strikeOverrides: {},
+        expirationOverrides: {},
+      },
+    });
     expect(result.expirations).toEqual({
       Enero: { suffixes: ['ENE'] },
       Marzo: { suffixes: ['MAR'] },
     });
-    expect(result.activeSymbol).toBe('ALUA');
     expect(result.activeExpiration).toBe('Marzo');
     expect(result.useAveraging).toBe(true);
   });
@@ -91,12 +131,10 @@ describe('config-service', () => {
 
     readItemMock.mockImplementation((key) => {
       switch (key) {
-        case 'po.symbols':
-          return 'not-an-array';
+        case 'po.prefixRules':
+          return 'not-an-object';
         case 'po.expirations':
           return null;
-        case 'po.activeSymbol':
-          return 'UNKNOWN';
         case 'po.activeExpiration':
           return 'Missing';
         case 'po.useAveraging':
@@ -115,29 +153,67 @@ describe('config-service', () => {
     storageAvailableMock.mockReturnValue(true);
 
     const config = {
-      symbols: [' GGAL ', 'ALUA', 'GGAL'],
+      prefixRules: {
+        ggal: {
+          symbol: ' ggal ',
+          defaultDecimals: '2',
+          strikeOverrides: {
+            '110': '3',
+            '': '5',
+          },
+          expirationOverrides: {
+            ene24: {
+              defaultDecimals: '4',
+              strikeOverrides: {
+                '110': '5',
+              },
+            },
+          },
+        },
+      },
       expirations: {
         Enero: { suffixes: [' ene ', 'ENE'] },
         Marzo: { suffixes: ['MAR'] },
       },
-      activeSymbol: 'GGAL',
       activeExpiration: 'Marzo',
       useAveraging: true,
     };
 
     const result = service.saveConfiguration(config);
 
-    expect(writeItemMock).toHaveBeenCalledTimes(5);
-    expect(writeItemMock).toHaveBeenCalledWith('po.symbols', ['GGAL', 'ALUA']);
+    expect(writeItemMock).toHaveBeenCalledTimes(4);
+    expect(writeItemMock).toHaveBeenCalledWith('po.prefixRules', {
+      GGAL: {
+        symbol: 'GGAL',
+        defaultDecimals: 2,
+        strikeOverrides: {
+          110: 3,
+        },
+        expirationOverrides: {
+          ENE24: {
+            defaultDecimals: 4,
+            strikeOverrides: {
+              110: 5,
+            },
+          },
+        },
+      },
+    });
     expect(writeItemMock).toHaveBeenCalledWith('po.expirations', {
       Enero: { suffixes: ['ENE'] },
       Marzo: { suffixes: ['MAR'] },
     });
-    expect(writeItemMock).toHaveBeenCalledWith('po.activeSymbol', 'GGAL');
     expect(writeItemMock).toHaveBeenCalledWith('po.activeExpiration', 'Marzo');
     expect(writeItemMock).toHaveBeenCalledWith('po.useAveraging', true);
 
-    expect(result.symbols).toEqual(['GGAL', 'ALUA']);
+    expect(result.prefixRules.GGAL.defaultDecimals).toBe(2);
+    expect(result.prefixRules.GGAL.strikeOverrides).toEqual({ 110: 3 });
+    expect(result.prefixRules.GGAL.expirationOverrides).toEqual({
+      ENE24: {
+        defaultDecimals: 4,
+        strikeOverrides: { 110: 5 },
+      },
+    });
     expect(result.expirations.Enero.suffixes).toEqual(['ENE']);
   });
 
@@ -146,12 +222,11 @@ describe('config-service', () => {
 
     const result = service.resetConfiguration();
 
-    expect(writeItemMock).toHaveBeenCalledTimes(5);
-    expect(writeItemMock).toHaveBeenCalledWith('po.symbols', service.DEFAULT_CONFIGURATION.symbols);
+    expect(writeItemMock).toHaveBeenCalledTimes(4);
     expect(writeItemMock).toHaveBeenCalledWith('po.expirations', service.DEFAULT_CONFIGURATION.expirations);
-    expect(writeItemMock).toHaveBeenCalledWith('po.activeSymbol', service.DEFAULT_CONFIGURATION.activeSymbol);
     expect(writeItemMock).toHaveBeenCalledWith('po.activeExpiration', service.DEFAULT_CONFIGURATION.activeExpiration);
     expect(writeItemMock).toHaveBeenCalledWith('po.useAveraging', service.DEFAULT_CONFIGURATION.useAveraging);
+    expect(writeItemMock).toHaveBeenCalledWith('po.prefixRules', service.DEFAULT_CONFIGURATION.prefixRules);
 
     expect(result).toEqual(service.DEFAULT_CONFIGURATION);
   });

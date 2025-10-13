@@ -31,14 +31,23 @@ describe('Processor view toggles', () => {
 
   beforeEach(() => {
     window.localStorage.clear();
-    window.localStorage.setItem(storageKeys.symbols, JSON.stringify(['GGAL']));
+    window.localStorage.setItem(
+      storageKeys.prefixRules,
+      JSON.stringify({
+        GGAL: {
+          symbol: 'GGAL',
+          defaultDecimals: 0,
+          strikeOverrides: {},
+          expirationOverrides: {},
+        },
+      }),
+    );
     window.localStorage.setItem(
       storageKeys.expirations,
       JSON.stringify({
         NOV24: { suffixes: ['NOV24'] },
       }),
     );
-    window.localStorage.setItem(storageKeys.activeSymbol, JSON.stringify('GGAL'));
     window.localStorage.setItem(storageKeys.activeExpiration, JSON.stringify('NOV24'));
     window.localStorage.setItem(storageKeys.useAveraging, JSON.stringify(false));
 
@@ -69,75 +78,67 @@ describe('Processor view toggles', () => {
   });
 
   it(
-    'switches between CALLS and PUTS views, toggles averaging, and scopes copy/download actions',
+    'supports per-table copy/download actions and toggling averaging',
     async () => {
-    const user = userEvent.setup();
-    renderApp();
+      const user = userEvent.setup();
+      renderApp();
 
-    const fileInput = await screen.findByTestId('processor-file-input');
-    const csvFile = new File([csvFixture], 'operaciones.csv', { type: 'text/csv' });
-    await user.upload(fileInput, csvFile);
+      let fileInput = screen.queryByTestId('file-menu-input');
+      if (!fileInput) {
+        await waitFor(() => {
+          expect(document.querySelector('input[type="file"]')).not.toBeNull();
+        });
+        fileInput = document.querySelector('input[type="file"]');
+      }
+      const csvFile = new File([csvFixture], 'operaciones.csv', { type: 'text/csv' });
+      await user.upload(fileInput, csvFile);
 
-    const processButton = screen.getByTestId('processor-process-button');
-    await user.click(processButton);
+      const callsTable = await screen.findByTestId('processor-calls-table');
+      const putsTable = screen.getByTestId('processor-puts-table');
+      const getDataRows = (table) => within(table)
+        .getAllByRole('row')
+        .filter((row) => row.closest('tbody'));
 
-    await waitFor(() => {
-      expect(screen.getByTestId('summary-total-count')).toHaveTextContent('4');
-    });
+      const initialCallRows = getDataRows(callsTable);
+      expect(initialCallRows.length).toBeGreaterThan(1);
+      expect(initialCallRows.some((row) => row.textContent?.includes('2'))).toBe(true);
+      expect(initialCallRows.some((row) => row.textContent?.includes('-1'))).toBe(true);
 
-    const callsTab = screen.getByRole('tab', { name: /calls/i });
-    const putsTab = screen.getByRole('tab', { name: /puts/i });
-    expect(callsTab).toHaveAttribute('aria-selected', 'true');
+      const initialPutRows = getDataRows(putsTable);
+      expect(initialPutRows.length).toBeGreaterThan(0);
+      expect(initialPutRows[0].textContent).toMatch(/110/);
 
-    const resultsTable = await screen.findByTestId('processor-results-table');
-    await waitFor(() => {
-      const callRows = within(resultsTable).getAllByRole('row');
-      expect(callRows.length).toBeGreaterThan(1);
-    });
+      const copyCallsButton = screen.getByTestId('processor-calls-table-copy-button');
+      await user.click(copyCallsButton);
+      await waitFor(() => {
+        expect(clipboardSpy).toHaveBeenCalledTimes(1);
+      });
+      expect(clipboardSpy.mock.calls[0][0].scope).toBe(clipboardService.CLIPBOARD_SCOPES.CALLS);
 
-    const copyActiveButton = screen.getByTestId('copy-active-button');
-    await user.click(copyActiveButton);
-    await waitFor(() => {
-      expect(clipboardSpy).toHaveBeenCalledTimes(1);
-    });
-    expect(clipboardSpy.mock.calls[0][0].scope).toBe(clipboardService.CLIPBOARD_SCOPES.CALLS);
+      const copyPutsButton = screen.getByTestId('processor-puts-table-copy-button');
+      await user.click(copyPutsButton);
+      await waitFor(() => {
+        expect(clipboardSpy.mock.calls.length).toBeGreaterThanOrEqual(2);
+      }, { timeout: 5000 });
+      expect(clipboardSpy.mock.calls[1][0].scope).toBe(clipboardService.CLIPBOARD_SCOPES.PUTS);
 
-    await user.click(putsTab);
-    expect(putsTab).toHaveAttribute('aria-selected', 'true');
+      const downloadPutsButton = screen.getByTestId('processor-puts-table-download-button');
+      await user.click(downloadPutsButton);
+      await waitFor(() => {
+        expect(exportSpy).toHaveBeenCalledTimes(1);
+      }, { timeout: 5000 });
+      expect(exportSpy.mock.calls[0][0].scope).toBe(exportService.EXPORT_SCOPES.PUTS);
 
-    const updatedTable = await screen.findByTestId('processor-results-table');
-    await waitFor(() => {
-      const putRows = within(updatedTable).getAllByRole('row');
-      expect(putRows.length).toBeGreaterThan(1);
-    });
+      const averagingSwitch = screen.getByTestId('processor-calls-table-averaging-switch');
+      await user.click(averagingSwitch);
 
-    await user.click(copyActiveButton);
-    await waitFor(() => {
-      expect(clipboardSpy).toHaveBeenCalledTimes(2);
-    });
-    expect(clipboardSpy.mock.calls[1][0].scope).toBe(clipboardService.CLIPBOARD_SCOPES.PUTS);
-
-    const downloadActiveButton = screen.getByTestId('download-active-button');
-    await user.click(downloadActiveButton);
-    await waitFor(() => {
-      expect(exportSpy).toHaveBeenCalledTimes(1);
-    });
-    expect(exportSpy.mock.calls[0][0].scope).toBe(exportService.EXPORT_SCOPES.PUTS);
-
-    const averagingSwitch = screen.getByTestId('processor-averaging-switch');
-    await user.click(averagingSwitch);
-
-    await waitFor(() => {
-      expect(screen.getByTestId('summary-total-count')).toHaveTextContent('2');
-    });
-
-    await user.click(copyActiveButton);
-    await waitFor(() => {
-      expect(clipboardSpy).toHaveBeenCalledTimes(3);
-    });
-    expect(clipboardSpy.mock.calls[2][0].scope).toBe(clipboardService.CLIPBOARD_SCOPES.PUTS);
-    expect(clipboardSpy.mock.calls[2][0].view).toBe('averaged');
+      await waitFor(() => {
+        expect(getDataRows(callsTable).length).toBeLessThan(initialCallRows.length);
+      });
+      const averagedRows = getDataRows(callsTable);
+      expect(averagedRows.length).toBe(1);
+      expect(averagedRows[0].textContent).toMatch(/2/);
     },
-    15000,
+    25000,
   );
 });
