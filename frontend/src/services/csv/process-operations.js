@@ -278,7 +278,7 @@ export const enrichOperationRow = (row = {}) => {
     expiration = deriveExpirationFallback(row, tokenMatch);
   }
 
-  if ((strike === null || strike === undefined) && tokenStrike !== undefined) {
+  if ((!strike || strike === 0) && tokenStrike !== undefined) {
     strike = tokenStrike;
   }
 
