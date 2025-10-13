@@ -9,15 +9,14 @@ import GroupFilter from './GroupFilter.jsx';
 const ArbitrajesView = ({
   groupOptions,
   selectedGroupId,
-  filtersVisible,
   strings,
   onGroupChange,
 }) => {
   const filterStrings = strings?.filters ?? {};
 
   return (
-    <Stack spacing={2} sx={{ flex: 1, minHeight: 0 }}>
-      {filtersVisible && groupOptions.length > 0 && (
+    <Stack spacing={0} sx={{ flex: 1, minHeight: 0 }}>
+      {groupOptions.length > 0 && (
         <GroupFilter
           options={groupOptions}
           selectedGroupId={selectedGroupId}

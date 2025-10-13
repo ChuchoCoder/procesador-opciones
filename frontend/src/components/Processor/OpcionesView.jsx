@@ -1,4 +1,3 @@
-import { useMemo } from 'react';
 import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
 
@@ -12,17 +11,18 @@ const OpcionesView = ({
   putsOperations,
   groupOptions,
   selectedGroupId,
-  filtersVisible,
   strings,
   onGroupChange,
   onCopy,
   onDownload,
+  averagingEnabled,
+  onToggleAveraging,
 }) => {
   const filterStrings = strings?.filters ?? {};
 
   return (
-    <Stack spacing={2} sx={{ flex: 1, minHeight: 0 }}>
-      {filtersVisible && groupOptions.length > 0 && (
+    <Stack spacing={0} sx={{ flex: 1, minHeight: 0 }}>
+      {groupOptions.length > 0 && (
         <GroupFilter
           options={groupOptions}
           selectedGroupId={selectedGroupId}
@@ -37,7 +37,7 @@ const OpcionesView = ({
           minHeight: 0,
           display: 'flex',
           flexDirection: { xs: 'column', lg: 'row' },
-          gap: 2,
+          gap: 0,
         }}
       >
         {/* CALLS table */}
@@ -48,6 +48,8 @@ const OpcionesView = ({
           testId="processor-calls-table"
           onCopy={() => onCopy(CLIPBOARD_SCOPES.CALLS)}
           onDownload={() => onDownload(EXPORT_SCOPES.CALLS)}
+          averagingEnabled={averagingEnabled}
+          onToggleAveraging={onToggleAveraging}
         />
 
         {/* PUTS table */}
@@ -58,6 +60,8 @@ const OpcionesView = ({
           testId="processor-puts-table"
           onCopy={() => onCopy(CLIPBOARD_SCOPES.PUTS)}
           onDownload={() => onDownload(EXPORT_SCOPES.PUTS)}
+          averagingEnabled={averagingEnabled}
+          onToggleAveraging={onToggleAveraging}
         />
       </Box>
     </Stack>

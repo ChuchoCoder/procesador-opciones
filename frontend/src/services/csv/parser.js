@@ -56,7 +56,7 @@ export const parseOperationsCsv = (input, config = {}) =>
       // If normalization fails, proceed with original input so Papa can attempt parse
       // but log (in dev) silently.
       if (typeof console !== 'undefined' && console.warn) {
-        console.warn('CSV normalization failed; continuing with original input', e); // eslint-disable-line no-console
+        console.warn('CSV normalization failed; continuing with original input', e);  
       }
     }
 

@@ -16,14 +16,14 @@ const App = () => {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <Box sx={{ display: 'flex' }}>
+      <Box sx={{ display: 'flex', width: '100vw', height: '100vh' }}>
         <Sidebar strings={strings} routes={ROUTES} />
         <Box
           component="main"
           sx={{
-            flexGrow: 1,
+            flex: 1,
             minHeight: '100vh',
-            ml: `${Sidebar.DRAWER_WIDTH}px`,
+            overflow: 'auto',
           }}
         >
           <Routes>
