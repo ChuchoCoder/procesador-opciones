@@ -240,8 +240,11 @@ const BuySellTable = ({
                 </TableCell>
               </TableRow>
             )}
-            {operations.map((row) => (
-              <TableRow key={row.key}>
+            {operations.map((row, index) => (
+              <TableRow
+                key={row.key}
+                sx={index % 2 === 1 ? { backgroundColor: 'action.hover' } : undefined}
+              >
                 <TableCell>{row.symbol}</TableCell>
                 <TableCell>{row.settlement}</TableCell>
                 <TableCell
@@ -310,6 +313,10 @@ const CompraVentaView = ({
           display: 'flex',
           flexDirection: { xs: 'column', lg: 'row' },
           gap: 0,
+          '& > :first-of-type': {
+            borderRight: { lg: 1, xs: 0 },
+            borderColor: 'divider',
+          },
         }}
       >
         {/* BUY operations table */}
