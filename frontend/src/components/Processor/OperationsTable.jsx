@@ -97,51 +97,55 @@ const OperationsTable = ({
                   <Typography variant="subtitle1" component="h3">
                     {title}
                   </Typography>
-                  {hasData && (
-                    <Stack direction="row" spacing={0.5} alignItems="center">
-                      {onToggleAveraging && (
-                        <Tooltip title={strings?.upload?.averagingSwitch ?? 'Promediar por strike'}>
-                          <FormControlLabel
-                            sx={{ 
-                              ml: 0, 
-                              mr: 0.5, 
-                              '& .MuiFormControlLabel-label': { display: 'none' } 
-                            }}
-                            control={(
-                              <Switch
-                                size="small"
-                                checked={averagingEnabled}
-                                onChange={(e) => onToggleAveraging?.(e.target.checked)}
-                                color="primary"
-                                data-testid={`${testId}-averaging-switch`}
-                                inputProps={{ 
-                                  'aria-label': 'Promediar por strike',
-                                }}
-                              />
-                            )}
-                          />
-                        </Tooltip>
-                      )}
-                      <Tooltip title={strings.actions?.copy ?? 'Copiar'}>
+                  <Stack direction="row" spacing={0.5} alignItems="center">
+                    {hasData && onToggleAveraging && (
+                      <Tooltip title={strings?.upload?.averagingSwitch ?? 'Promediar por strike'}>
+                        <FormControlLabel
+                          sx={{ 
+                            ml: 0, 
+                            mr: 0.5, 
+                            '& .MuiFormControlLabel-label': { display: 'none' } 
+                          }}
+                          control={(
+                            <Switch
+                              size="small"
+                              checked={averagingEnabled}
+                              onChange={(e) => onToggleAveraging?.(e.target.checked)}
+                              color="primary"
+                              data-testid={`${testId}-averaging-switch`}
+                              inputProps={{ 
+                                'aria-label': 'Promediar por strike',
+                              }}
+                            />
+                          )}
+                        />
+                      </Tooltip>
+                    )}
+                    <Tooltip title={strings.actions?.copy ?? 'Copiar'}>
+                      <span style={{ display: 'inline-flex' }}>
                         <IconButton
                           onClick={onCopy}
                           size="small"
                           data-testid={`${testId}-copy-button`}
+                          disabled={!hasData}
                         >
                           <ContentCopyIcon fontSize="small" />
                         </IconButton>
-                      </Tooltip>
-                      <Tooltip title={strings.actions?.download ?? 'Descargar'}>
+                      </span>
+                    </Tooltip>
+                    <Tooltip title={strings.actions?.download ?? 'Descargar'}>
+                      <span style={{ display: 'inline-flex' }}>
                         <IconButton
                           onClick={onDownload}
                           size="small"
                           data-testid={`${testId}-download-button`}
+                          disabled={!hasData}
                         >
                           <DownloadIcon fontSize="small" />
                         </IconButton>
-                      </Tooltip>
-                    </Stack>
-                  )}
+                      </span>
+                    </Tooltip>
+                  </Stack>
                 </Stack>
               </TableCell>
             </TableRow>

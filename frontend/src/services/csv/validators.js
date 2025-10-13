@@ -17,6 +17,7 @@ const STATUS_NORMALIZATION = {
 const ALLOWED_STATUSES = new Set(['fully_executed', 'partially_executed']);
 const ALLOWED_SIDES = new Set(['BUY', 'SELL']);
 const ALLOWED_OPTION_TYPES = new Set(['CALL', 'PUT']);
+const ALLOWED_EXEC_TYPES = new Set(['F']);
 
 const EXCLUSION_REASONS = {
   missingRequiredField: 'missingRequiredField',
@@ -27,6 +28,7 @@ const EXCLUSION_REASONS = {
   invalidStrike: 'invalidStrike',
   invalidQuantity: 'invalidQuantity',
   invalidPrice: 'invalidPrice',
+  invalidExecType: 'invalidExecType',
 };
 
 const normalizeString = (value) => {
@@ -101,6 +103,14 @@ export const validateAndFilterRows = ({ rows = [] }) => {
     const status = normalizeStatus(rawRow.status ?? rawRow.ord_status ?? rawRow.exec_status);
     if (status && !ALLOWED_STATUSES.has(status)) {
       exclusions[EXCLUSION_REASONS.invalidStatus] += 1;
+      return;
+    }
+
+    const execType = normalizeString(
+      rawRow.exec_type ?? rawRow.execution_type ?? rawRow.execType ?? rawRow.executionType,
+    ).toUpperCase();
+    if (execType && !ALLOWED_EXEC_TYPES.has(execType)) {
+      exclusions[EXCLUSION_REASONS.invalidExecType] += 1;
       return;
     }
 
