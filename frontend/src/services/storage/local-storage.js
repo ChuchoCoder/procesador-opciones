@@ -31,6 +31,7 @@ export const storageKeys = {
   activeSymbol: 'po.activeSymbol',
   activeExpiration: 'po.activeExpiration',
   useAveraging: 'po.useAveraging',
+  lastReport: 'po.lastReport.v1',
 };
 
 export const readItem = (key) =>
