@@ -18,14 +18,14 @@ import DownloadIcon from '@mui/icons-material/Download';
 
 const quantityFormatter = typeof Intl !== 'undefined'
   ? new Intl.NumberFormat('es-AR', {
-      useGrouping: false,
+      useGrouping: true,
       maximumFractionDigits: 0,
     })
   : null;
 
 const decimalFormatter = typeof Intl !== 'undefined'
   ? new Intl.NumberFormat('es-AR', {
-      useGrouping: false,
+      useGrouping: true,
       minimumFractionDigits: 0,
       maximumFractionDigits: 4,
     })
