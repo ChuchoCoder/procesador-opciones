@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Container, Box, Typography } from '@mui/material';
 import AddSymbol from './AddSymbol.jsx';
 import SymbolTabs from './SymbolTabs.jsx';
+import SymbolSettings from './SymbolSettings.jsx';
 import { getAllSymbols, loadSymbolConfig } from '../../../services/storage-settings.js';
 import strings from '../../../strings/es-AR.js';
 
@@ -40,6 +41,10 @@ export default function SettingsScreen() {
     setActiveSymbol(symbol);
   };
 
+  const handleConfigUpdate = (updatedConfig) => {
+    setConfig(updatedConfig);
+  };
+
   return (
     <Container maxWidth="lg" sx={{ py: 3 }}>
       <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -69,20 +74,11 @@ export default function SettingsScreen() {
           />
 
           {config && (
-            <Box sx={{ mt: 3 }}>
-              <Typography variant="h6" gutterBottom>
-                {config.symbol}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Prefijo: {config.prefix || '(sin definir)'}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Decimales: {config.defaultDecimals}
-              </Typography>
-              <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
-                (Los controles de edición se implementarán en User Story 2)
-              </Typography>
-            </Box>
+            <SymbolSettings
+              symbol={activeSymbol}
+              config={config}
+              onConfigUpdate={handleConfigUpdate}
+            />
           )}
         </>
       )}
