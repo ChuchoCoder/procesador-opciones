@@ -14,7 +14,7 @@ import FormControlLabel from '@mui/material/FormControlLabel';
 import Tooltip from '@mui/material/Tooltip';
 
 import GroupFilter from './GroupFilter.jsx';
-import { getNonOptionOperations } from '../../services/csv/buy-sell-matcher.js';
+import { getBuySellOperations } from '../../services/csv/buy-sell-matcher.js';
 
 const quantityFormatter = typeof Intl !== 'undefined'
   ? new Intl.NumberFormat('es-AR', {
@@ -272,7 +272,7 @@ const CompraVentaView = ({
   const [averagingEnabled, setAveragingEnabled] = useState(true);
 
   const { buys, sells } = useMemo(() => {
-    return getNonOptionOperations(operations);
+    return getBuySellOperations(operations);
   }, [operations]);
 
   const buyRows = useMemo(() => buildRows(buys, 'BUY'), [buys]);

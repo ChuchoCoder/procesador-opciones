@@ -38,6 +38,138 @@ const buildGroupKey = (symbol = '', expiration = 'NONE') => `${symbol}::${expira
 const DEFAULT_EXPIRATION = 'NONE';
 const UNKNOWN_EXPIRATION = 'UNKNOWN';
 
+const OPTION_OPERATION_TYPES = new Set(['CALL', 'PUT']);
+
+const normalizeGroupSymbol = (value = '') => {
+  if (typeof value !== 'string') {
+    return String(value ?? '').trim().toUpperCase() || 'UNKNOWN';
+  }
+  const trimmed = value.trim();
+  return trimmed ? trimmed.toUpperCase() : 'UNKNOWN';
+};
+
+const normalizeGroupExpiration = (value = '') => {
+  if (typeof value !== 'string') {
+    return DEFAULT_EXPIRATION;
+  }
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return DEFAULT_EXPIRATION;
+  }
+  return trimmed.toUpperCase();
+};
+
+const SETTLEMENT_TOKENS = new Set([
+  'CI', 'CONTADO', '24HS', '48HS', '72HS', '24H', '48H', '72H', 'T0', 'T1', 'T2', 'T+1', 'T+2',
+]);
+
+const MARKET_TOKENS = new Set([
+  'MERV', 'XMEV', 'BCBA', 'BYMA', 'ROFEX', 'MATBA', 'MAE', 'NYSE', 'NASDAQ', 'CME', 'ICE',
+]);
+
+const MONTH_TOKENS = new Set([
+  'EN', 'ENE', 'ENERO',
+  'FE', 'FEB', 'FEBRERO',
+  'MR', 'MAR', 'MARZO',
+  'AB', 'ABR', 'ABRIL',
+  'MY', 'MAY', 'MAYO',
+  'JN', 'JUN', 'JUNIO',
+  'JL', 'JUL', 'JULIO', 'JU',
+  'AG', 'AGO', 'AGOSTO',
+  'SE', 'SEP', 'SET', 'SEPT', 'SEPTIEMBRE',
+  'OC', 'OCT', 'OCTUBRE',
+  'NV', 'NOV', 'NOVIEMBRE',
+  'DC', 'DIC', 'DICIEMBRE',
+  'DU', 'DEU',
+]);
+
+const sanitizeInstrumentSegments = (symbol) => {
+  if (!symbol) {
+    return [];
+  }
+
+  const normalized = normalizeGroupSymbol(symbol);
+  if (!normalized || normalized === 'UNKNOWN') {
+    return normalized ? [normalized] : [];
+  }
+
+  const segments = normalized
+    .split('-')
+    .map((segment) => segment.trim())
+    .filter(Boolean);
+
+  if (!segments.length) {
+    return [normalized];
+  }
+
+  const filtered = segments.slice();
+
+  while (filtered.length > 1 && MARKET_TOKENS.has(filtered[0])) {
+    filtered.shift();
+  }
+
+  while (filtered.length > 1 && MARKET_TOKENS.has(filtered[0])) {
+    filtered.shift();
+  }
+
+  while (filtered.length > 1 && SETTLEMENT_TOKENS.has(filtered[filtered.length - 1])) {
+    filtered.pop();
+  }
+
+  return filtered.length ? filtered : segments;
+};
+
+const splitInstrumentSymbol = (symbol = '') => {
+  const segments = sanitizeInstrumentSegments(symbol);
+
+  if (segments.length === 0) {
+    return 'UNKNOWN';
+  }
+
+  if (segments.length === 1) {
+    return segments[0];
+  }
+
+  if (segments.length === 2 && MONTH_TOKENS.has(segments[1])) {
+    return segments.join(' ');
+  }
+
+  if (segments.length >= 2) {
+    const last = segments[segments.length - 1];
+    if (MONTH_TOKENS.has(last)) {
+      return `${segments[segments.length - 2]} ${last}`;
+    }
+  }
+
+  return segments[segments.length - 1];
+};
+
+const getOperationGroupId = (operation = {}) => {
+  const normalizedSymbol = normalizeGroupSymbol(operation.symbol);
+  if (OPTION_OPERATION_TYPES.has(operation.optionType)) {
+    const normalizedExpiration = normalizeGroupExpiration(operation.expiration);
+    const expiration = normalizedExpiration || DEFAULT_EXPIRATION;
+    return buildGroupKey(normalizedSymbol, expiration);
+  }
+
+  const baseSymbol = splitInstrumentSymbol(normalizedSymbol);
+  return buildGroupKey(baseSymbol, DEFAULT_EXPIRATION);
+};
+
+const isOptionGroup = (group) => {
+  if (!group) {
+    return false;
+  }
+
+  if (group.kind === 'option') {
+    return true;
+  }
+
+  const calls = group.counts?.calls ?? 0;
+  const puts = group.counts?.puts ?? 0;
+  return calls + puts > 0;
+};
+
 const extractBaseSymbol = (symbol = '') => {
   const trimmed = symbol.trim();
   if (!trimmed) {
@@ -87,6 +219,13 @@ const formatExpirationLabel = (expiration = '') => {
 const formatGroupLabel = (group) => {
   if (!group) {
     return '';
+  }
+
+  if (!isOptionGroup(group)) {
+    const [baseIdSymbol] = (group.id ?? '').split('::');
+    if (baseIdSymbol) {
+      return baseIdSymbol;
+    }
   }
 
   const baseSymbol = extractBaseSymbol(group.symbol ?? '');
@@ -393,7 +532,10 @@ const ProcessorScreen = () => {
     }
 
     const operationsByKey = operations.reduce((acc, operation) => {
-      const key = buildGroupKey(operation.symbol ?? '', operation.expiration ?? 'NONE');
+      if (!operation) {
+        return acc;
+      }
+      const key = getOperationGroupId(operation);
       if (!acc.has(key)) {
         acc.set(key, []);
       }
@@ -402,8 +544,7 @@ const ProcessorScreen = () => {
     }, new Map());
 
     groups.forEach((group) => {
-      const key = buildGroupKey(group.symbol ?? '', group.expiration ?? 'NONE');
-      map.set(group.id, operationsByKey.get(key) ?? []);
+      map.set(group.id, operationsByKey.get(group.id) ?? []);
     });
 
     return map;
@@ -413,26 +554,37 @@ const ProcessorScreen = () => {
     scopedDataCacheRef.current = new Map();
   }, [report, groups, groupedOperations]);
 
-  const groupOptions = useMemo(() => {
+  const { optionGroupOptions, allGroupOptions } = useMemo(() => {
     if (!groups.length) {
-      return [];
+      return { optionGroupOptions: [], allGroupOptions: [] };
     }
 
-    const mapped = groups.map((group) => ({
-      id: group.id,
-      label: formatGroupLabel(group),
-      testId: sanitizeForTestId(group.id),
-    }));
+    const buildOptions = (sourceGroups) => {
+      if (!sourceGroups.length) {
+        return [];
+      }
 
-    if (groups.length > 1) {
+      const mapped = sourceGroups.map((group) => ({
+        id: group.id,
+        label: formatGroupLabel(group),
+        testId: sanitizeForTestId(group.id),
+      }));
+
       mapped.unshift({
         id: ALL_GROUP_ID,
-          label: filterStrings.all ?? 'All',
+        label: filterStrings.all ?? 'All',
         testId: 'all',
       });
-    }
 
-    return mapped;
+      return mapped;
+    };
+
+    const optionGroups = groups.filter(isOptionGroup);
+
+    return {
+      optionGroupOptions: buildOptions(optionGroups),
+      allGroupOptions: buildOptions(groups),
+    };
   }, [groups, filterStrings.all]);
 
   const scopedData = useMemo(
@@ -503,6 +655,46 @@ const ProcessorScreen = () => {
   };
 
   useEffect(() => {
+    if (activeOperationType !== OPERATION_TYPES.OPCIONES) {
+      return;
+    }
+
+    const optionGroups = groups.filter(isOptionGroup);
+
+    if (selectedGroupId === ALL_GROUP_ID) {
+      if (optionGroups.length === 1) {
+        const onlyGroupId = optionGroups[0].id;
+        if (onlyGroupId !== ALL_GROUP_ID) {
+          setSelectedGroupId(onlyGroupId);
+        }
+      }
+      return;
+    }
+
+    const selectedGroup = groups.find((group) => group.id === selectedGroupId);
+    if (isOptionGroup(selectedGroup)) {
+      return;
+    }
+
+    if (optionGroups.length === 0) {
+      if (selectedGroupId !== ALL_GROUP_ID) {
+        setSelectedGroupId(ALL_GROUP_ID);
+      }
+      return;
+    }
+
+    if (optionGroups.length === 1) {
+      const onlyGroupId = optionGroups[0].id;
+      if (selectedGroupId !== onlyGroupId) {
+        setSelectedGroupId(onlyGroupId);
+      }
+      return;
+    }
+
+    setSelectedGroupId(ALL_GROUP_ID);
+  }, [activeOperationType, selectedGroupId, groups]);
+
+  useEffect(() => {
     if (sessionRestoredRef.current) {
       return;
     }
@@ -571,7 +763,6 @@ const ProcessorScreen = () => {
     }
 
     const commonProps = {
-      groupOptions,
       selectedGroupId,
       strings: processorStrings,
       onGroupChange: handleGroupChange,
@@ -582,6 +773,7 @@ const ProcessorScreen = () => {
         return (
           <OpcionesView
             {...commonProps}
+            groupOptions={optionGroupOptions}
             callsOperations={callsOperations}
             putsOperations={putsOperations}
             onCopy={handleCopy}
@@ -595,6 +787,7 @@ const ProcessorScreen = () => {
         return (
           <CompraVentaView
             {...commonProps}
+            groupOptions={allGroupOptions}
             operations={scopedData.filteredOperations}
           />
         );
@@ -603,6 +796,7 @@ const ProcessorScreen = () => {
         return (
           <ArbitrajesView
             {...commonProps}
+            groupOptions={allGroupOptions}
           />
         );
 

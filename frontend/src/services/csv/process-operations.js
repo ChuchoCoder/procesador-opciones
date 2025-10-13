@@ -312,6 +312,111 @@ export const enrichOperationRow = (row = {}) => {
   };
 };
 
+const OPTION_GROUP_TYPES = new Set(['CALL', 'PUT']);
+
+const SETTLEMENT_TOKENS = new Set([
+  'CI', 'CONTADO', '24HS', '48HS', '72HS', '24H', '48H', '72H', 'T0', 'T1', 'T2', 'T+1', 'T+2',
+]);
+
+const MARKET_TOKENS = new Set([
+  'MERV', 'XMEV', 'BCBA', 'BYMA', 'ROFEX', 'MATBA', 'MAE', 'NYSE', 'NASDAQ', 'CME', 'ICE',
+]);
+
+const MONTH_TOKENS = new Set([
+  'EN', 'ENE', 'ENERO',
+  'FE', 'FEB', 'FEBRERO',
+  'MR', 'MAR', 'MARZO',
+  'AB', 'ABR', 'ABRIL',
+  'MY', 'MAY', 'MAYO',
+  'JN', 'JUN', 'JUNIO',
+  'JL', 'JUL', 'JULIO', 'JU',
+  'AG', 'AGO', 'AGOSTO',
+  'SE', 'SEP', 'SET', 'SEPT', 'SEPTIEMBRE',
+  'OC', 'OCT', 'OCTUBRE',
+  'NV', 'NOV', 'NOVIEMBRE',
+  'DC', 'DIC', 'DICIEMBRE',
+  'DU', 'DEU',
+]);
+
+const sanitizeInstrumentSegments = (symbol) => {
+  if (!symbol) {
+    return [];
+  }
+
+  const normalized = normalizeString(symbol).toUpperCase();
+  if (!normalized) {
+    return [];
+  }
+
+  const segments = normalized
+    .split('-')
+    .map((segment) => segment.trim())
+    .filter(Boolean);
+
+  if (!segments.length) {
+    return [];
+  }
+
+  const filtered = segments.slice();
+
+  while (filtered.length > 1 && MARKET_TOKENS.has(filtered[0])) {
+    filtered.shift();
+  }
+
+  while (filtered.length > 1 && MARKET_TOKENS.has(filtered[0])) {
+    filtered.shift();
+  }
+
+  while (filtered.length > 1 && SETTLEMENT_TOKENS.has(filtered[filtered.length - 1])) {
+    filtered.pop();
+  }
+
+  return filtered.length ? filtered : segments;
+};
+
+const splitInstrumentSymbol = (symbol) => {
+  const segments = sanitizeInstrumentSegments(symbol);
+
+  if (!segments.length) {
+    return 'UNKNOWN';
+  }
+
+  if (segments.length === 1) {
+    return segments[0];
+  }
+
+  if (segments.length === 2 && MONTH_TOKENS.has(segments[1])) {
+    return segments.join(' ');
+  }
+
+  if (segments.length >= 2) {
+    const last = segments[segments.length - 1];
+    if (MONTH_TOKENS.has(last)) {
+      return `${segments[segments.length - 2]} ${last}`;
+    }
+  }
+
+  return segments[segments.length - 1];
+};
+
+const resolveGroupDescriptor = (operation) => {
+  const normalizedSymbol = toUpperCase(operation?.symbol) || 'UNKNOWN';
+  const normalizedExpiration = toUpperCase(operation?.expiration) || DEFAULT_EXPIRATION;
+  const isOption = OPTION_GROUP_TYPES.has(operation?.type);
+
+  if (isOption) {
+    const symbol = normalizedSymbol;
+    const expiration = normalizedExpiration || DEFAULT_EXPIRATION;
+    const id = `${symbol}::${expiration}`;
+    return { id, symbol, expiration, kind: 'option' };
+  }
+
+  const baseSymbol = splitInstrumentSymbol(normalizedSymbol);
+  const expiration = DEFAULT_EXPIRATION;
+  const id = `${baseSymbol}::${expiration}`;
+  return { id, symbol: baseSymbol, expiration, kind: 'instrument' };
+};
+
 export const deriveGroups = (operations = []) => {
   if (!Array.isArray(operations) || operations.length === 0) {
     return [];
@@ -324,17 +429,14 @@ export const deriveGroups = (operations = []) => {
       return;
     }
 
-    const symbol = toUpperCase(operation.symbol ?? 'UNKNOWN');
-    const expirationRaw = normalizeString(operation.expiration);
-    const expiration = expirationRaw ? expirationRaw.toUpperCase() : DEFAULT_EXPIRATION;
+    const descriptor = resolveGroupDescriptor(operation);
 
-    const key = `${symbol}::${expiration}`;
-
-    if (!groupsMap.has(key)) {
-      groupsMap.set(key, {
-        id: key,
-        symbol,
-        expiration,
+    if (!groupsMap.has(descriptor.id)) {
+      groupsMap.set(descriptor.id, {
+        id: descriptor.id,
+        symbol: descriptor.symbol,
+        expiration: descriptor.expiration,
+        kind: descriptor.kind,
         counts: {
           calls: 0,
           puts: 0,
@@ -343,7 +445,12 @@ export const deriveGroups = (operations = []) => {
       });
     }
 
-    const group = groupsMap.get(key);
+    const group = groupsMap.get(descriptor.id);
+    if (group.kind !== 'option' && descriptor.kind === 'option') {
+      group.kind = 'option';
+    }
+    group.symbol = descriptor.symbol;
+    group.expiration = descriptor.expiration;
     group.counts.total += 1;
 
     if (operation.type === 'CALL') {

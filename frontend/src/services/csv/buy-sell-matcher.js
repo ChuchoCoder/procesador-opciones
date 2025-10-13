@@ -99,11 +99,11 @@ export const identifyBuySellPairs = (operations) => {
 };
 
 /**
- * Filters operations to get only non-option buy/sell operations
+ * Splits operations into buy/sell arrays, including both options and non-options.
  * @param {Array} operations - Array of operation objects
  * @returns {Object} Object with separate arrays for buys and sells
  */
-export const getNonOptionOperations = (operations) => {
+export const getBuySellOperations = (operations) => {
   if (!Array.isArray(operations) || operations.length === 0) {
     return { buys: [], sells: [] };
   }
@@ -112,11 +112,6 @@ export const getNonOptionOperations = (operations) => {
   const sells = [];
 
   operations.forEach((operation) => {
-    const isOption = operation.optionType === 'CALL' || operation.optionType === 'PUT';
-    if (isOption) {
-      return;
-    }
-
     const side = operation.side?.toUpperCase();
     if (side === 'BUY') {
       buys.push(operation);
