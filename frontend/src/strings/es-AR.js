@@ -10,7 +10,7 @@ const strings = {
   },
   processor: {
     filters: {
-      filterLabel: 'Filtrar por grupo',
+      filterLabel: 'Filtrar por instrumento',
       all: 'Todos',
     },
     operationTypeTabs: {

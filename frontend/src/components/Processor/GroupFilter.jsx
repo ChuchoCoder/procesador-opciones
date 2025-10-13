@@ -3,7 +3,7 @@ import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import Chip from '@mui/material/Chip';
 
-const DEFAULT_LABEL = 'Filter by group';
+const DEFAULT_LABEL = 'Filter by instrument';
 
 const GroupFilter = ({ options = [], selectedGroupId, onChange, strings = {} }) => {
   if (!options.length) {
