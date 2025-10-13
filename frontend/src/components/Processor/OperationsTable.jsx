@@ -9,6 +9,8 @@ import TableRow from '@mui/material/TableRow';
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
+import Switch from '@mui/material/Switch';
+import FormControlLabel from '@mui/material/FormControlLabel';
 
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
@@ -49,18 +51,28 @@ const formatDecimal = (value) => {
   return String(value);
 };
 
-const OperationsTable = ({ title, operations, strings, testId, onCopy, onDownload }) => {
+const OperationsTable = ({ 
+  title, 
+  operations, 
+  strings, 
+  testId, 
+  onCopy, 
+  onDownload,
+  averagingEnabled,
+  onToggleAveraging,
+}) => {
   const hasData = operations.length > 0;
 
   return (
     <Paper
-      elevation={2}
+      elevation={0}
       sx={{
         flex: 1,
         display: 'flex',
         flexDirection: 'column',
         minHeight: 0,
         overflow: 'hidden',
+        borderRadius: 0,
       }}
     >
       <TableContainer sx={{ flex: 1, overflow: 'auto' }}>
@@ -86,7 +98,30 @@ const OperationsTable = ({ title, operations, strings, testId, onCopy, onDownloa
                     {title}
                   </Typography>
                   {hasData && (
-                    <Stack direction="row" spacing={0.5}>
+                    <Stack direction="row" spacing={0.5} alignItems="center">
+                      {onToggleAveraging && (
+                        <Tooltip title={strings?.upload?.averagingSwitch ?? 'Promediar por strike'}>
+                          <FormControlLabel
+                            sx={{ 
+                              ml: 0, 
+                              mr: 0.5, 
+                              '& .MuiFormControlLabel-label': { display: 'none' } 
+                            }}
+                            control={(
+                              <Switch
+                                size="small"
+                                checked={averagingEnabled}
+                                onChange={(e) => onToggleAveraging?.(e.target.checked)}
+                                color="primary"
+                                data-testid={`${testId}-averaging-switch`}
+                                inputProps={{ 
+                                  'aria-label': 'Promediar por strike',
+                                }}
+                              />
+                            )}
+                          />
+                        </Tooltip>
+                      )}
                       <Tooltip title={strings.actions?.copy ?? 'Copiar'}>
                         <IconButton
                           onClick={onCopy}

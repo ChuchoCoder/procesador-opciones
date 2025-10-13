@@ -16,12 +16,11 @@ import { useConfig } from '../../state/index.js';
 import { useStrings } from '../../strings/index.js';
 import { ROUTES } from '../../app/routes.jsx';
 
-import SecondaryToolbar from './SecondaryToolbar.jsx';
-import FileMenu from './FileMenu.jsx';
 import OperationTypeTabs, { OPERATION_TYPES } from './OperationTypeTabs.jsx';
 import OpcionesView from './OpcionesView.jsx';
 import CompraVentaView from './CompraVentaView.jsx';
 import ArbitrajesView from './ArbitrajesView.jsx';
+import EmptyState from './EmptyState.jsx';
 
 const ALL_GROUP_ID = '__ALL__';
 
@@ -225,7 +224,6 @@ const ProcessorScreen = () => {
   const [actionFeedback, setActionFeedback] = useState(null);
   const [activePreview, setActivePreview] = useState(CLIPBOARD_SCOPES.CALLS);
   const [selectedGroupId, setSelectedGroupId] = useState(ALL_GROUP_ID);
-  const [filtersVisible, setFiltersVisible] = useState(true);
   const [activeOperationType, setActiveOperationType] = useState(OPERATION_TYPES.OPCIONES);
   const scopedDataCacheRef = useRef(new Map());
 
@@ -326,10 +324,6 @@ const ProcessorScreen = () => {
     } catch {
       setActionFeedback({ type: 'error', message: processorStrings.actions.downloadError });
     }
-  };
-
-  const handleToggleFilters = () => {
-    setFiltersVisible((prev) => !prev);
   };
 
   useEffect(() => {
@@ -506,7 +500,6 @@ const ProcessorScreen = () => {
     const commonProps = {
       groupOptions,
       selectedGroupId,
-      filtersVisible,
       strings: processorStrings,
       onGroupChange: handleGroupChange,
     };
@@ -520,6 +513,8 @@ const ProcessorScreen = () => {
             putsOperations={putsOperations}
             onCopy={handleCopy}
             onDownload={handleDownload}
+            averagingEnabled={useAveraging}
+            onToggleAveraging={handleToggleAveraging}
           />
         );
 
@@ -549,59 +544,45 @@ const ProcessorScreen = () => {
         display: 'flex',
         flexDirection: 'column',
         minHeight: '100vh',
-        p: 3,
-        gap: 2,
+        width: '100%',
         overflow: 'auto',
       }}
     >
       {isProcessing && <LinearProgress />}
 
-      {processingError && <Alert severity="error">{processingError}</Alert>}
+      {processingError && <Alert severity="error" sx={{ mx: 3, mt: 2 }}>{processingError}</Alert>}
 
       {warningMessages.map((message) => (
-          <Alert severity="warning" key={message}>
+          <Alert severity="warning" key={message} sx={{ mx: 3, mt: 2 }}>
             {message}
           </Alert>
         ))}
 
-        {/* Always show toolbar area */}
-        <Stack spacing={2} sx={{ flex: 1, minHeight: 0 }}>
-          {/* Toolbar for file selection, averaging toggle, and filters */}
-          <SecondaryToolbar
-            strings={processorStrings}
-            disabled={isProcessing}
-            filtersVisible={filtersVisible}
-            averagingEnabled={useAveraging}
-            onToggleFilters={handleToggleFilters}
-            onToggleAveraging={handleToggleAveraging}
-            fileMenuSlot={(
-              <FileMenu
-                strings={processorStrings}
-                selectedFileName={selectedFile?.name ?? ''}
-                isProcessing={isProcessing}
-                onSelectFile={handleFileSelected}
-                onClearFile={() => handleFileSelected(null)}
-              />
-            )}
-          />
-          
+        <Stack spacing={0} sx={{ flex: 1, minHeight: 0 }}>
           {actionFeedback && (
-            <Alert severity={actionFeedback.type}>{actionFeedback.message}</Alert>
+            <Alert severity={actionFeedback.type} sx={{ mx: 3, mt: 2 }}>{actionFeedback.message}</Alert>
           )}
 
-          {report && (
+          {!selectedFile ? (
+            <EmptyState 
+              strings={processorStrings}
+              onSelectFile={handleFileSelected}
+            />
+          ) : report ? (
             <>
               {/* Operation Type Tabs */}
               <OperationTypeTabs
                 strings={processorStrings}
                 activeTab={activeOperationType}
                 onTabChange={handleOperationTypeChange}
+                onClose={() => handleFileSelected(null)}
+                fileName={selectedFile?.name}
               />
 
               {/* Render the active view */}
               {renderActiveView()}
             </>
-          )}
+          ) : null}
         </Stack>
     </Box>
   );

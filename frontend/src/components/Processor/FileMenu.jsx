@@ -58,16 +58,15 @@ const FileMenu = ({
         </IconButton>
       </Tooltip>
       {selectedFileName && !isProcessing && (
-        <Tooltip title="Limpiar archivo">
-          <IconButton
-            size="small"
-            color="error"
-            onClick={handleClearFile}
-            data-testid="file-menu-clear-button"
-          >
-            <ClearIcon fontSize="small" />
-          </IconButton>
-        </Tooltip>
+        <IconButton
+          size="small"
+          color="error"
+          onClick={handleClearFile}
+          data-testid="file-menu-clear-button"
+          aria-label="Limpiar archivo"
+        >
+          <ClearIcon fontSize="small" />
+        </IconButton>
       )}
     </>
   );

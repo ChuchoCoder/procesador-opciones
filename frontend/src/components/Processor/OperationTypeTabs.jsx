@@ -1,6 +1,10 @@
 import Tabs from '@mui/material/Tabs';
 import Tab from '@mui/material/Tab';
 import Box from '@mui/material/Box';
+import IconButton from '@mui/material/IconButton';
+import Typography from '@mui/material/Typography';
+import CloseIcon from '@mui/icons-material/Close';
+import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile';
 
 export const OPERATION_TYPES = {
   OPCIONES: 'opciones',
@@ -8,7 +12,7 @@ export const OPERATION_TYPES = {
   ARBITRAJES: 'arbitrajes',
 };
 
-const OperationTypeTabs = ({ strings, activeTab, onTabChange }) => {
+const OperationTypeTabs = ({ strings, activeTab, onTabChange, onClose, fileName }) => {
   const opcionesLabel = strings?.operationTypeTabs?.opciones ?? 'Opciones';
   const compraVentaLabel = strings?.operationTypeTabs?.compraVenta ?? 'Compra y Venta';
   const arbitrajesLabel = strings?.operationTypeTabs?.arbitrajes ?? 'Arbitrajes de Plazo';
@@ -21,12 +25,22 @@ const OperationTypeTabs = ({ strings, activeTab, onTabChange }) => {
   };
 
   return (
-    <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+    <Box 
+      sx={{ 
+        borderBottom: 1, 
+        borderColor: 'divider',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        px: 2,
+      }}
+    >
       <Tabs
         value={activeTab}
         onChange={handleChange}
         aria-label={ariaLabel}
         variant="standard"
+        sx={{ flex: 1 }}
       >
         <Tab 
           label={opcionesLabel} 
@@ -44,6 +58,34 @@ const OperationTypeTabs = ({ strings, activeTab, onTabChange }) => {
           data-testid="tab-arbitrajes"
         />
       </Tabs>
+      {fileName && (
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, ml: 2 }}>
+          <InsertDriveFileIcon fontSize="small" color="action" />
+          <Typography 
+            variant="body2" 
+            color="text.secondary"
+            sx={{ 
+              maxWidth: 300,
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {fileName}
+          </Typography>
+        </Box>
+      )}
+      {onClose && (
+        <IconButton
+          size="small"
+          onClick={onClose}
+          aria-label="Cerrar y volver"
+          data-testid="operation-tabs-close-button"
+          sx={{ ml: 1 }}
+        >
+          <CloseIcon fontSize="small" />
+        </IconButton>
+      )}
     </Box>
   );
 };

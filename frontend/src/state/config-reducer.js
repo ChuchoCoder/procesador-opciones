@@ -34,7 +34,7 @@ export const reducer = (state, action) => {
       });
     }
     case 'REMOVE_EXPIRATION': {
-      const { [action.payload]: _, ...remaining } = state.expirations; // eslint-disable-line no-unused-vars
+      const { [action.payload]: _, ...remaining } = state.expirations;  
       return applyChanges(state, {
         expirations: remaining,
         activeExpiration: state.activeExpiration === action.payload ? undefined : state.activeExpiration,

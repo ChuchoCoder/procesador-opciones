@@ -8,6 +8,8 @@ const TableWithActions = ({
   testId,
   onCopy,
   onDownload,
+  averagingEnabled,
+  onToggleAveraging,
 }) => {
   return (
     <Box sx={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
@@ -18,6 +20,8 @@ const TableWithActions = ({
         testId={testId}
         onCopy={onCopy}
         onDownload={onDownload}
+        averagingEnabled={averagingEnabled}
+        onToggleAveraging={onToggleAveraging}
       />
     </Box>
   );

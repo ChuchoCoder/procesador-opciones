@@ -57,13 +57,14 @@ const BuySellTable = ({ title, operations, strings, testId, sideLabel }) => {
 
   return (
     <Paper
-      elevation={2}
+      elevation={0}
       sx={{
         flex: 1,
         display: 'flex',
         flexDirection: 'column',
         minHeight: 0,
         overflow: 'hidden',
+        borderRadius: 0,
       }}
     >
       <TableContainer sx={{ flex: 1, overflow: 'auto' }}>
@@ -122,7 +123,6 @@ const CompraVentaView = ({
   operations,
   groupOptions,
   selectedGroupId,
-  filtersVisible,
   strings,
   onGroupChange,
 }) => {
@@ -133,8 +133,8 @@ const CompraVentaView = ({
   }, [operations]);
 
   return (
-    <Stack spacing={2} sx={{ flex: 1, minHeight: 0 }}>
-      {filtersVisible && groupOptions.length > 0 && (
+    <Stack spacing={0} sx={{ flex: 1, minHeight: 0 }}>
+      {groupOptions.length > 0 && (
         <GroupFilter
           options={groupOptions}
           selectedGroupId={selectedGroupId}
@@ -149,7 +149,7 @@ const CompraVentaView = ({
           minHeight: 0,
           display: 'flex',
           flexDirection: { xs: 'column', lg: 'row' },
-          gap: 2,
+          gap: 0,
         }}
       >
         {/* BUY operations table */}

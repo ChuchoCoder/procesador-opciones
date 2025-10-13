@@ -64,6 +64,8 @@ const strings = {
       downloadCombined: 'Descargar combinados',
       downloadAll: 'Descargar todo',
       downloadError: 'No se pudo generar el archivo para descargar.',
+      copy: 'Copiar',
+      download: 'Descargar',
     },
     tables: {
       callsTitle: 'Operaciones CALLS',

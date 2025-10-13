@@ -19,7 +19,7 @@ const GroupFilter = ({ options = [], selectedGroupId, onChange, strings = {} }) 
   };
 
   return (
-    <Stack spacing={1} data-testid="group-filter">
+    <Stack spacing={1} data-testid="group-filter" sx={{ px: 2, pt: 2, pb: 1 }}>
       <Typography variant="subtitle2" color="text.secondary">
         {label}
       </Typography>
