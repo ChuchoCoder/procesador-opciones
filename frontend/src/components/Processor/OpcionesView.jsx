@@ -38,6 +38,10 @@ const OpcionesView = ({
           display: 'flex',
           flexDirection: { xs: 'column', lg: 'row' },
           gap: 0,
+          '& > :first-of-type': {
+            borderRight: { lg: 1, xs: 0 },
+            borderColor: 'divider',
+          },
         }}
       >
         {/* CALLS table */}

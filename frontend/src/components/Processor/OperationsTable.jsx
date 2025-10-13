@@ -188,14 +188,17 @@ const OperationsTable = ({
               </TableCell>
             </TableRow>
           ) : (
-            operations.map((operation) => {
+            operations.map((operation, index) => {
               const rowKey = `${operation.originalSymbol ?? 'op'}-${operation.strike}-${operation.totalQuantity}-${operation.averagePrice}`;
               const hasInferredSource = Boolean(
                 operation?.legs?.some((leg) => leg?.meta?.detectedFromToken),
               );
 
               return (
-                <TableRow key={rowKey}>
+                <TableRow
+                  key={rowKey}
+                  sx={index % 2 === 1 ? { backgroundColor: 'action.hover' } : undefined}
+                >
                   <TableCell>
                     <Stack direction="row" spacing={1} alignItems="center">
                       {hasInferredSource && (

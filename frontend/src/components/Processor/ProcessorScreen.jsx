@@ -579,13 +579,20 @@ const ProcessorScreen = () => {
       return mapped;
     };
 
-    const optionGroups = groups.filter(isOptionGroup);
+    const optionGroups = groups.filter((group) => {
+      if (!isOptionGroup(group)) {
+        return false;
+      }
+
+      const groupOperations = groupedOperations.get(group.id) ?? [];
+      return groupOperations.some((operation) => OPTION_OPERATION_TYPES.has(operation?.optionType));
+    });
 
     return {
       optionGroupOptions: buildOptions(optionGroups),
       allGroupOptions: buildOptions(groups),
     };
-  }, [groups, filterStrings.all]);
+  }, [groups, filterStrings.all, groupedOperations]);
 
   const scopedData = useMemo(
     () => computeScopedData({
