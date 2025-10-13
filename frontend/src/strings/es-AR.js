@@ -187,6 +187,11 @@ const strings = {
       errorDecimalsInvalid: 'Los decimales deben estar entre 0 y 4.',
       noSymbolsState: 'Agregá un símbolo para comenzar.',
       tabAriaLabel: 'Pestañas de símbolos',
+      symbolDefaultsTitle: 'Configuración General',
+      symbolDefaultsDescription: 'Ajustá el prefijo y los decimales predeterminados para este símbolo.',
+      prefixHelperText: 'Opcional. Prefijo que se agrega al símbolo (Ej. GFG para GGAL).',
+      decimalsHelperText: 'Cantidad de decimales (0-4) para formatear strikes.',
+      errorSaveFailed: 'Error al guardar la configuración.',
       expirationTabs: {
         title: 'Vencimientos',
         suffixLabel: 'Sufijos permitidos',

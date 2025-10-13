@@ -51,18 +51,19 @@ describe('settings-utils', () => {
     it('should accept valid prefix', () => {
       const result = validatePrefix('GFG');
       expect(result.valid).toBe(true);
-      expect(result.normalized).toBe('GFG');
+      expect(result.value).toBe('GFG');
     });
 
     it('should normalize to uppercase', () => {
       const result = validatePrefix('gfg');
       expect(result.valid).toBe(true);
-      expect(result.normalized).toBe('GFG');
+      expect(result.value).toBe('GFG');
     });
 
-    it('should reject empty prefix', () => {
+    it('should accept empty prefix (optional field)', () => {
       const result = validatePrefix('');
-      expect(result.valid).toBe(false);
+      expect(result.valid).toBe(true);
+      expect(result.value).toBe('');
     });
 
     it('should reject special characters', () => {
@@ -113,14 +114,14 @@ describe('settings-utils', () => {
       [0, 1, 2, 3, 4].forEach((dec) => {
         const result = validateDecimals(dec);
         expect(result.valid).toBe(true);
-        expect(result.normalized).toBe(dec);
+        expect(result.value).toBe(dec);
       });
     });
 
     it('should accept string numbers', () => {
       const result = validateDecimals('2');
       expect(result.valid).toBe(true);
-      expect(result.normalized).toBe(2);
+      expect(result.value).toBe(2);
     });
 
     it('should reject decimals out of range', () => {

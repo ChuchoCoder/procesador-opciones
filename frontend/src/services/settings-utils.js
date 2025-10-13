@@ -31,7 +31,7 @@ export function validateSymbol(symbol) {
 /**
  * Validate option prefix
  * @param {string} prefix - Prefix string
- * @returns {{valid: boolean, normalized?: string, error?: string}}
+ * @returns {{valid: boolean, value?: string, error?: string}}
  */
 export function validatePrefix(prefix) {
   if (prefix === null || prefix === undefined) {
@@ -39,8 +39,10 @@ export function validatePrefix(prefix) {
   }
 
   const trimmed = String(prefix).trim().toUpperCase();
+  
+  // Empty prefix is valid (optional field)
   if (trimmed.length === 0) {
-    return { valid: false, error: 'Prefix cannot be empty' };
+    return { valid: true, value: '' };
   }
 
   // Allow letters and numbers
@@ -48,7 +50,7 @@ export function validatePrefix(prefix) {
     return { valid: false, error: 'Prefix must contain only letters and numbers' };
   }
 
-  return { valid: true, normalized: trimmed };
+  return { valid: true, value: trimmed };
 }
 
 /**
@@ -78,7 +80,7 @@ export function validateSuffix(suffix) {
 /**
  * Validate decimals range
  * @param {number|string} decimals - Decimal precision
- * @returns {{valid: boolean, normalized?: number, error?: string}}
+ * @returns {{valid: boolean, value?: number, error?: string}}
  */
 export function validateDecimals(decimals) {
   const num = typeof decimals === 'string' ? parseInt(decimals, 10) : decimals;
@@ -91,7 +93,7 @@ export function validateDecimals(decimals) {
     return { valid: false, error: `Decimals must be between ${DECIMALS_MIN} and ${DECIMALS_MAX}` };
   }
 
-  return { valid: true, normalized: num };
+  return { valid: true, value: num };
 }
 
 /**
