@@ -1,7 +1,7 @@
+import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
-import ToggleButton from '@mui/material/ToggleButton';
-import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
+import Chip from '@mui/material/Chip';
 
 const DEFAULT_LABEL = 'Filter by group';
 
@@ -12,11 +12,10 @@ const GroupFilter = ({ options = [], selectedGroupId, onChange, strings = {} }) 
 
   const label = strings.filterLabel ?? DEFAULT_LABEL;
 
-  const handleChange = (_event, nextValue) => {
-    if (!nextValue || nextValue === selectedGroupId) {
-      return;
+  const handleClick = (optionId) => {
+    if (optionId !== selectedGroupId) {
+      onChange(optionId);
     }
-    onChange(nextValue);
   };
 
   return (
@@ -24,22 +23,41 @@ const GroupFilter = ({ options = [], selectedGroupId, onChange, strings = {} }) 
       <Typography variant="subtitle2" color="text.secondary">
         {label}
       </Typography>
-      <ToggleButtonGroup
-        exclusive
-        value={selectedGroupId}
-        onChange={handleChange}
-        aria-label={label}
+      <Box
+        sx={{
+          display: 'flex',
+          gap: 1,
+          overflowX: 'auto',
+          py: 1,
+          '&::-webkit-scrollbar': {
+            height: 8,
+          },
+          '&::-webkit-scrollbar-thumb': {
+            backgroundColor: 'rgba(0, 0, 0, 0.2)',
+            borderRadius: 4,
+          },
+        }}
       >
-        {options.map((option) => (
-          <ToggleButton
-            key={option.id}
-            value={option.id}
-            data-testid={`group-filter-option-${option.testId ?? option.id}`}
-          >
-            {option.label}
-          </ToggleButton>
-        ))}
-      </ToggleButtonGroup>
+        {options.map((option) => {
+          const selected = selectedGroupId === option.id;
+          const baseTestId = option.testId ?? option.id;
+          // Provide an alternate simpler test id based on label (sanitized) for robustness
+          const labelTestId = option.label.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase();
+          return (
+            <Chip
+              key={option.id}
+              label={option.label}
+              onClick={() => handleClick(option.id)}
+              color={selected ? 'primary' : 'default'}
+              variant={selected ? 'filled' : 'outlined'}
+              data-testid={`group-filter-option-${baseTestId}`}
+              aria-pressed={selected ? 'true' : undefined}
+              sx={{ cursor: 'pointer' }}
+              {...{ 'data-label-testid': `group-filter-option-${labelTestId}` }}
+            />
+          );
+        })}
+      </Box>
     </Stack>
   );
 };

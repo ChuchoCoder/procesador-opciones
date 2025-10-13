@@ -70,13 +70,10 @@ describe('Processor flow integration', () => {
       const user = userEvent.setup();
       renderProcessorApp();
 
-      const fileInput = await screen.findByTestId('processor-file-input');
-      const csvFile = new File([csvFixture], 'operaciones.csv', { type: 'text/csv' });
-      await user.upload(fileInput, csvFile);
-
-      const processButton = screen.getByTestId('processor-process-button');
-      expect(processButton).toBeEnabled();
-      await user.click(processButton);
+  // Select file directly (auto-processes)
+  const fileInput = await screen.findByTestId('file-menu-input');
+  const csvFile = new File([csvFixture], 'operaciones.csv', { type: 'text/csv' });
+  await user.upload(fileInput, csvFile);
 
       const callsMetric = await screen.findByTestId('summary-calls-count');
       expect(callsMetric).toHaveTextContent('2');
@@ -96,13 +93,12 @@ describe('Processor flow integration', () => {
   const putsRows = within(screen.getByTestId('processor-results-table')).getAllByRole('row');
   expect(putsRows.length).toBeGreaterThan(1);
 
-      const copyCallsButton = screen.getByTestId('copy-calls-button');
-      const downloadCombinedButton = screen.getByTestId('download-combined-button');
-
-      expect(copyCallsButton).toBeEnabled();
-      expect(downloadCombinedButton).toBeEnabled();
-
-      await user.click(copyCallsButton);
+  // Open copy menu and copy calls
+  const copyMenuTrigger = screen.getByTestId('toolbar-copy-menu-button');
+  await user.click(copyMenuTrigger);
+  const copyCallsItem = await screen.findByTestId('copy-calls-menu-item');
+  expect(copyCallsItem).toBeEnabled();
+  await user.click(copyCallsItem);
       await waitFor(() => {
         expect(copySpy).toHaveBeenCalledTimes(1);
       });

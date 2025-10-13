@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 
 import Alert from '@mui/material/Alert';
+import Box from '@mui/material/Box';
 import LinearProgress from '@mui/material/LinearProgress';
 import Stack from '@mui/material/Stack';
 
@@ -12,15 +12,17 @@ import {
   copyReportToClipboard,
 } from '../../services/csv/clipboard-service.js';
 import { exportReportToCsv, EXPORT_SCOPES } from '../../services/csv/export-service.js';
-import { useConfig } from '../../state/config-context.jsx';
+import { useConfig } from '../../state/index.js';
 import { useStrings } from '../../strings/index.js';
 import { ROUTES } from '../../app/routes.jsx';
-import FilePicker from './FilePicker.jsx';
-import OperationsTable from './OperationsTable.jsx';
-import ProcessorActions from './ProcessorActions.jsx';
-import SummaryPanel from './SummaryPanel.jsx';
-import ProcessorTabs from './ProcessorTabs.jsx';
+// FilePicker deprecated in new layout (replaced by FileMenu inside toolbar)
+// import FilePicker from './FilePicker.jsx';
+import TableWithActions from './TableWithActions.jsx';
+import SecondaryToolbar from './SecondaryToolbar.jsx';
+
+
 import GroupFilter from './GroupFilter.jsx';
+import FileMenu from './FileMenu.jsx';
 
 const ALL_GROUP_ID = '__ALL__';
 
@@ -216,7 +218,6 @@ const ProcessorScreen = () => {
     setAveraging,
   } = useConfig();
 
-  const navigate = useNavigate();
   const [selectedFile, setSelectedFile] = useState(null);
   const [report, setReport] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -225,6 +226,7 @@ const ProcessorScreen = () => {
   const [actionFeedback, setActionFeedback] = useState(null);
   const [activePreview, setActivePreview] = useState(CLIPBOARD_SCOPES.CALLS);
   const [selectedGroupId, setSelectedGroupId] = useState(ALL_GROUP_ID);
+  const [filtersVisible, setFiltersVisible] = useState(true);
   const scopedDataCacheRef = useRef(new Map());
 
   const buildConfiguration = useCallback(
@@ -293,12 +295,12 @@ const ProcessorScreen = () => {
     }
   };
 
-  const handleProcess = async () => {
-    if (!selectedFile) {
-      return;
+  // Auto-process when a file is selected
+  useEffect(() => {
+    if (selectedFile && !report && !isProcessing) {
+      runProcessing(selectedFile);
     }
-    await runProcessing(selectedFile);
-  };
+  }, [selectedFile, report, isProcessing, runProcessing]);
 
   const handleToggleAveraging = async (nextValue) => {
     setAveraging(nextValue);
@@ -306,13 +308,6 @@ const ProcessorScreen = () => {
     if (selectedFile && report && !report.views) {
       await runProcessing(selectedFile, { useAveraging: nextValue });
     }
-  };
-
-  const handleCopyActive = () => {
-    const scope = activePreview === CLIPBOARD_SCOPES.PUTS
-      ? CLIPBOARD_SCOPES.PUTS
-      : CLIPBOARD_SCOPES.CALLS;
-    handleCopy(scope);
   };
 
   const handleDownload = async (scope, { reportOverride } = {}) => {
@@ -333,28 +328,8 @@ const ProcessorScreen = () => {
     }
   };
 
-  const handleDownloadActive = () => {
-    const scope = activePreview === CLIPBOARD_SCOPES.PUTS
-      ? EXPORT_SCOPES.PUTS
-      : EXPORT_SCOPES.CALLS;
-    handleDownload(scope);
-  };
-
-  const handleDownloadAll = () => {
-    if (!report) {
-      return;
-    }
-    handleDownload(EXPORT_SCOPES.COMBINED, { reportOverride: report });
-  };
-
-  const handlePreviewChange = (_event, value) => {
-    if (value !== activePreview) {
-      setActivePreview(value);
-    }
-  };
-
-  const handleNavigateSettings = () => {
-    navigate(ROUTES.settings);
+  const handleToggleFilters = () => {
+    setFiltersVisible((prev) => !prev);
   };
 
   useEffect(() => {
@@ -475,19 +450,9 @@ const ProcessorScreen = () => {
     ?? scopedReport?.views?.[currentViewKey]
     ?? report?.views?.[currentViewKey]
     ?? null;
-  const summary =
-    scopedData.summary
-    ?? currentView?.summary
-    ?? scopedReport?.summary
-    ?? report?.summary
-    ?? null;
 
   const callsOperations = currentView?.calls?.operations ?? [];
   const putsOperations = currentView?.puts?.operations ?? [];
-  const hasCalls = callsOperations.length > 0;
-  const hasPuts = putsOperations.length > 0;
-  const hasData = hasCalls || hasPuts;
-  const hasAnyData = (report?.operations?.length ?? 0) > 0;
 
   const handleGroupChange = useCallback((nextValue) => {
     if (nextValue) {
@@ -529,93 +494,94 @@ const ProcessorScreen = () => {
     }
   }, [report, currentViewKey, activePreview, callsOperations.length, putsOperations.length]);
 
-  const displayedOperations = activePreview === CLIPBOARD_SCOPES.PUTS ? putsOperations : callsOperations;
-  const activeScope = activePreview === CLIPBOARD_SCOPES.PUTS
-    ? CLIPBOARD_SCOPES.PUTS
-    : CLIPBOARD_SCOPES.CALLS;
-  const tabStrings = processorStrings.viewControls ?? {};
-  const activeScopeLabel = activePreview === CLIPBOARD_SCOPES.PUTS
-    ? tabStrings.putsTab ?? processorStrings.tables.putsTitle
-    : tabStrings.callsTab ?? processorStrings.tables.callsTitle;
-  const activeHasData = displayedOperations.length > 0;
-
   return (
-    <Stack spacing={3}>
+    <Box
+      sx={{
+        display: 'flex',
+        flexDirection: 'column',
+        minHeight: '100vh',
+        p: 3,
+        gap: 2,
+        overflow: 'auto',
+      }}
+    >
       {isProcessing && <LinearProgress />}
 
       {processingError && <Alert severity="error">{processingError}</Alert>}
 
       {warningMessages.map((message) => (
-        <Alert severity="warning" key={message}>
-          {message}
-        </Alert>
-      ))}
+          <Alert severity="warning" key={message}>
+            {message}
+          </Alert>
+        ))}
 
-      <FilePicker
-        strings={processorStrings}
-        useAveraging={useAveraging}
-        onToggleAveraging={handleToggleAveraging}
-        isProcessing={isProcessing}
-        onProcess={handleProcess}
-        onFileSelected={handleFileSelected}
-        selectedFileName={selectedFile?.name ?? ''}
-        canProcess={Boolean(selectedFile)}
-      />
+        {/* Always show toolbar & tabs area; summary/filters only after report */}
+        <Stack spacing={2} sx={{ flex: 1, minHeight: 0 }}>
+          {report && filtersVisible && groupOptions.length > 0 && (
+            <GroupFilter
+              options={groupOptions}
+              selectedGroupId={selectedGroupId}
+              onChange={handleGroupChange}
+              strings={filterStrings}
+            />
+          )}
 
-      {report && (
-        <Stack spacing={3}>
-          <GroupFilter
-            options={groupOptions}
-            selectedGroupId={selectedGroupId}
-            onChange={handleGroupChange}
-            strings={filterStrings}
-          />
-
-          <SummaryPanel summary={summary} strings={processorStrings} />
-
-          <ProcessorTabs
-            strings={tabStrings}
-            activePreview={activePreview}
-            onPreviewChange={handlePreviewChange}
-            onNavigateSettings={handleNavigateSettings}
-          />
-
-          <ProcessorActions
+          {/* Toolbar for file selection, averaging toggle, and filters */}
+          <SecondaryToolbar
             strings={processorStrings}
             disabled={isProcessing}
-            hasCalls={hasCalls}
-            hasPuts={hasPuts}
-            hasData={hasData}
-            hasAnyData={hasAnyData}
-            activeScope={activeScope}
-            activeScopeLabel={activeScopeLabel}
-            activeHasData={activeHasData}
-            onCopyActive={handleCopyActive}
-            onDownloadActive={handleDownloadActive}
-            onCopyCalls={() => handleCopy(CLIPBOARD_SCOPES.CALLS)}
-            onCopyPuts={() => handleCopy(CLIPBOARD_SCOPES.PUTS)}
-            onCopyCombined={() => handleCopy(CLIPBOARD_SCOPES.COMBINED)}
-            onDownloadCalls={() => handleDownload(EXPORT_SCOPES.CALLS)}
-            onDownloadPuts={() => handleDownload(EXPORT_SCOPES.PUTS)}
-            onDownloadCombined={() => handleDownload(EXPORT_SCOPES.COMBINED)}
-            onDownloadAll={handleDownloadAll}
+            filtersVisible={filtersVisible}
+            averagingEnabled={useAveraging}
+            onToggleFilters={handleToggleFilters}
+            onToggleAveraging={handleToggleAveraging}
+            fileMenuSlot={(
+              <FileMenu
+                strings={processorStrings}
+                selectedFileName={selectedFile?.name ?? ''}
+                isProcessing={isProcessing}
+                onSelectFile={handleFileSelected}
+                onClearFile={() => handleFileSelected(null)}
+              />
+            )}
           />
-
+          
           {actionFeedback && (
             <Alert severity={actionFeedback.type}>{actionFeedback.message}</Alert>
           )}
 
-          <OperationsTable
-            title={activePreview === CLIPBOARD_SCOPES.PUTS
-              ? processorStrings.tables.putsTitle
-              : processorStrings.tables.callsTitle}
-            operations={displayedOperations}
-            strings={processorStrings}
-            testId="processor-results-table"
-          />
+          {report && (
+            <Box
+              sx={{
+                flex: 1,
+                minHeight: 0,
+                display: 'flex',
+                flexDirection: { xs: 'column', lg: 'row' },
+                gap: 2,
+              }}
+            >
+              {/* CALLS table on the left */}
+              <TableWithActions
+                title={processorStrings.tables.callsTitle}
+                operations={callsOperations}
+                strings={processorStrings}
+                testId="processor-calls-table"
+                onCopy={() => handleCopy(CLIPBOARD_SCOPES.CALLS)}
+                onDownload={() => handleDownload(EXPORT_SCOPES.CALLS)}
+              />
+              
+              {/* PUTS table on the right */}
+              <TableWithActions
+                title={processorStrings.tables.putsTitle}
+                operations={putsOperations}
+                strings={processorStrings}
+                testId="processor-puts-table"
+                onCopy={() => handleCopy(CLIPBOARD_SCOPES.PUTS)}
+                onDownload={() => handleDownload(EXPORT_SCOPES.PUTS)}
+              />
+            </Box>
+          )}
         </Stack>
-      )}
-    </Stack>
+    </Box>
   );
 };
 

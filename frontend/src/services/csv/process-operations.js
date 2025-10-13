@@ -52,7 +52,20 @@ export const parseToken = (token) => {
   }
 
   const [, symbol, typeCode, strikeGroup, remainder] = match;
-  const strikeValue = Number.parseFloat(strikeGroup);
+  
+  // Parse strike value: if no decimal point and more than 4 digits, treat last digit as decimal
+  let strikeValue;
+  if (strikeGroup.includes('.')) {
+    strikeValue = Number.parseFloat(strikeGroup);
+  } else if (strikeGroup.length > 4) {
+    // e.g., "47343" -> 4734.3
+    const whole = strikeGroup.slice(0, -1);
+    const decimal = strikeGroup.slice(-1);
+    strikeValue = Number.parseFloat(`${whole}.${decimal}`);
+  } else {
+    strikeValue = Number.parseFloat(strikeGroup);
+  }
+  
   if (!Number.isFinite(strikeValue)) {
     return null;
   }

@@ -62,13 +62,9 @@ describe('Processor flow integration - GGAL PUTs fixture', () => {
       const user = userEvent.setup();
       renderProcessorApp();
 
-      const fileInput = await screen.findByTestId('processor-file-input');
-      const csvFile = new File([ggalPutsCsv], 'GGAL-PUTS.csv', { type: 'text/csv' });
-      await user.upload(fileInput, csvFile);
-
-      const processButton = screen.getByTestId('processor-process-button');
-      expect(processButton).toBeEnabled();
-      await user.click(processButton);
+  const fileInput = await screen.findByTestId('file-menu-input');
+  const csvFile = new File([ggalPutsCsv], 'GGAL-PUTS.csv', { type: 'text/csv' });
+  await user.upload(fileInput, csvFile);
 
       const putsCount = await screen.findByTestId('summary-puts-count');
       expect(putsCount).toHaveTextContent('4');
@@ -94,18 +90,21 @@ describe('Processor flow integration - GGAL PUTs fixture', () => {
       expect(within(putsTable).getAllByText(/4734/).length).toBeGreaterThan(0);
 
       const groupFilter = await screen.findByTestId('group-filter');
+      // Actual grouping logic derives base symbol + expiration (token splits GFGV47343O -> GFG + O)
       expect(within(groupFilter).getByText('GFG O')).toBeInTheDocument();
       expect(within(groupFilter).getByText('TZXM6 24hs')).toBeInTheDocument();
 
-      const gfgButton = within(groupFilter).getByText('GFG O').closest('button');
-      expect(gfgButton).not.toBeNull();
+      // Scope to GFG O group to ensure download uses filtered data
+      const gfgButton = within(groupFilter).getByRole('button', { name: /GFG O/i });
       await user.click(gfgButton);
       await waitFor(() => {
         expect(gfgButton).toHaveAttribute('aria-pressed', 'true');
       });
 
-      const downloadPutsButton = await screen.findByTestId('download-puts-button');
-      await user.click(downloadPutsButton);
+  const downloadMenuTrigger = await screen.findByTestId('toolbar-download-menu-button');
+  await user.click(downloadMenuTrigger);
+  const downloadPutsItem = await screen.findByTestId('download-puts-menu-item');
+  await user.click(downloadPutsItem);
 
       await waitFor(() => {
         expect(exportSpy).toHaveBeenCalledTimes(1);
