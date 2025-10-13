@@ -15,14 +15,13 @@ import { exportReportToCsv, EXPORT_SCOPES } from '../../services/csv/export-serv
 import { useConfig } from '../../state/index.js';
 import { useStrings } from '../../strings/index.js';
 import { ROUTES } from '../../app/routes.jsx';
-// FilePicker deprecated in new layout (replaced by FileMenu inside toolbar)
-// import FilePicker from './FilePicker.jsx';
-import TableWithActions from './TableWithActions.jsx';
+
 import SecondaryToolbar from './SecondaryToolbar.jsx';
-
-
-import GroupFilter from './GroupFilter.jsx';
 import FileMenu from './FileMenu.jsx';
+import OperationTypeTabs, { OPERATION_TYPES } from './OperationTypeTabs.jsx';
+import OpcionesView from './OpcionesView.jsx';
+import CompraVentaView from './CompraVentaView.jsx';
+import ArbitrajesView from './ArbitrajesView.jsx';
 
 const ALL_GROUP_ID = '__ALL__';
 
@@ -227,6 +226,7 @@ const ProcessorScreen = () => {
   const [activePreview, setActivePreview] = useState(CLIPBOARD_SCOPES.CALLS);
   const [selectedGroupId, setSelectedGroupId] = useState(ALL_GROUP_ID);
   const [filtersVisible, setFiltersVisible] = useState(true);
+  const [activeOperationType, setActiveOperationType] = useState(OPERATION_TYPES.OPCIONES);
   const scopedDataCacheRef = useRef(new Map());
 
   const buildConfiguration = useCallback(
@@ -494,6 +494,55 @@ const ProcessorScreen = () => {
     }
   }, [report, currentViewKey, activePreview, callsOperations.length, putsOperations.length]);
 
+  const handleOperationTypeChange = (newType) => {
+    setActiveOperationType(newType);
+  };
+
+  const renderActiveView = () => {
+    if (!report) {
+      return null;
+    }
+
+    const commonProps = {
+      groupOptions,
+      selectedGroupId,
+      filtersVisible,
+      strings: processorStrings,
+      onGroupChange: handleGroupChange,
+    };
+
+    switch (activeOperationType) {
+      case OPERATION_TYPES.OPCIONES:
+        return (
+          <OpcionesView
+            {...commonProps}
+            callsOperations={callsOperations}
+            putsOperations={putsOperations}
+            onCopy={handleCopy}
+            onDownload={handleDownload}
+          />
+        );
+
+      case OPERATION_TYPES.COMPRA_VENTA:
+        return (
+          <CompraVentaView
+            {...commonProps}
+            operations={scopedData.filteredOperations}
+          />
+        );
+
+      case OPERATION_TYPES.ARBITRAJES:
+        return (
+          <ArbitrajesView
+            {...commonProps}
+          />
+        );
+
+      default:
+        return null;
+    }
+  };
+
   return (
     <Box
       sx={{
@@ -515,17 +564,8 @@ const ProcessorScreen = () => {
           </Alert>
         ))}
 
-        {/* Always show toolbar & tabs area; summary/filters only after report */}
+        {/* Always show toolbar area */}
         <Stack spacing={2} sx={{ flex: 1, minHeight: 0 }}>
-          {report && filtersVisible && groupOptions.length > 0 && (
-            <GroupFilter
-              options={groupOptions}
-              selectedGroupId={selectedGroupId}
-              onChange={handleGroupChange}
-              strings={filterStrings}
-            />
-          )}
-
           {/* Toolbar for file selection, averaging toggle, and filters */}
           <SecondaryToolbar
             strings={processorStrings}
@@ -550,35 +590,17 @@ const ProcessorScreen = () => {
           )}
 
           {report && (
-            <Box
-              sx={{
-                flex: 1,
-                minHeight: 0,
-                display: 'flex',
-                flexDirection: { xs: 'column', lg: 'row' },
-                gap: 2,
-              }}
-            >
-              {/* CALLS table on the left */}
-              <TableWithActions
-                title={processorStrings.tables.callsTitle}
-                operations={callsOperations}
+            <>
+              {/* Operation Type Tabs */}
+              <OperationTypeTabs
                 strings={processorStrings}
-                testId="processor-calls-table"
-                onCopy={() => handleCopy(CLIPBOARD_SCOPES.CALLS)}
-                onDownload={() => handleDownload(EXPORT_SCOPES.CALLS)}
+                activeTab={activeOperationType}
+                onTabChange={handleOperationTypeChange}
               />
-              
-              {/* PUTS table on the right */}
-              <TableWithActions
-                title={processorStrings.tables.putsTitle}
-                operations={putsOperations}
-                strings={processorStrings}
-                testId="processor-puts-table"
-                onCopy={() => handleCopy(CLIPBOARD_SCOPES.PUTS)}
-                onDownload={() => handleDownload(EXPORT_SCOPES.PUTS)}
-              />
-            </Box>
+
+              {/* Render the active view */}
+              {renderActiveView()}
+            </>
           )}
         </Stack>
     </Box>
