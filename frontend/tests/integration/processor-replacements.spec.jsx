@@ -23,14 +23,25 @@ describe('Processor flow integration - replacement order handling', () => {
   beforeEach(() => {
     window.localStorage.clear();
 
-    window.localStorage.setItem(storageKeys.symbols, JSON.stringify(['GFG']));
+    window.localStorage.setItem(
+      storageKeys.prefixRules,
+      JSON.stringify({
+        GFG: {
+          symbol: 'GGAL',
+          defaultDecimals: 0,
+          strikeOverrides: {},
+          expirationOverrides: {
+            O: { defaultDecimals: 1, strikeOverrides: {} },
+          },
+        },
+      }),
+    );
     window.localStorage.setItem(
       storageKeys.expirations,
       JSON.stringify({
         Octubre: { suffixes: ['O'] },
       }),
     );
-    window.localStorage.setItem(storageKeys.activeSymbol, JSON.stringify('GFG'));
     window.localStorage.setItem(storageKeys.activeExpiration, JSON.stringify('Octubre'));
     window.localStorage.setItem(storageKeys.useAveraging, JSON.stringify(true));
 
@@ -67,22 +78,17 @@ describe('Processor flow integration - replacement order handling', () => {
       const csvFile = new File([partialFilledCsv], 'Partial-Filled-GGAL-PUTS.csv', { type: 'text/csv' });
       await user.upload(fileInput, csvFile);
 
-      const groupFilter = await screen.findByTestId('group-filter');
+      await screen.findByTestId('group-filter');
+      const ggalOption = await screen.findByTestId('group-filter-option-ggal--o');
 
-      let gfgOption = screen.queryByTestId('group-filter-option-gfgv44558o--24hs');
-      if (!gfgOption) {
-        const chips = within(groupFilter).getAllByRole('button', { name: /gfg/i });
-        gfgOption = chips.find((chip) => /44558/i.test(chip.textContent ?? '')) ?? chips[0];
-      }
-
-      await user.click(gfgOption);
+      await user.click(ggalOption);
       await waitFor(() => {
-        expect(gfgOption).toHaveAttribute('aria-pressed', 'true');
+        expect(ggalOption).toHaveAttribute('aria-pressed', 'true');
       });
 
-  const putsTable = await screen.findByTestId('processor-puts-table');
-  const averagingSwitch = within(putsTable).getByRole('switch', { name: /promediar/i });
-  expect(averagingSwitch).toBeChecked();
+      const putsTable = await screen.findByTestId('processor-puts-table');
+      const averagingSwitch = within(putsTable).getByRole('switch', { name: /promediar/i });
+      expect(averagingSwitch).toBeChecked();
 
       await waitFor(() => {
         expect(within(putsTable).getByText('-22')).toBeInTheDocument();

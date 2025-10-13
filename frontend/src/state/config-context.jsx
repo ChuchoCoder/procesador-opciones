@@ -28,9 +28,10 @@ const ConfigProviderComponent = ({ children }) => {
 
   const actions = useMemo(
     () => ({
-      addSymbol: (symbol) => dispatch({ type: 'ADD_SYMBOL', payload: symbol }),
-      removeSymbol: (symbol) => dispatch({ type: 'REMOVE_SYMBOL', payload: symbol }),
-      setActiveSymbol: (symbol) => dispatch({ type: 'SET_ACTIVE_SYMBOL', payload: symbol }),
+      upsertPrefixRule: (prefix, rule) =>
+        dispatch({ type: 'UPSERT_PREFIX_RULE', payload: { prefix, rule } }),
+      removePrefixRule: (prefix) =>
+        dispatch({ type: 'REMOVE_PREFIX_RULE', payload: prefix }),
       setAveraging: (use) => dispatch({ type: 'SET_AVERAGING', payload: use }),
       addExpiration: ({ name, suffixes, setActive = false }) =>
         dispatch({ type: 'ADD_EXPIRATION', payload: { name, suffixes }, setActive }),

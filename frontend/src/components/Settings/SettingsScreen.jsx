@@ -4,11 +4,10 @@ import Button from '@mui/material/Button';
 import LinearProgress from '@mui/material/LinearProgress';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
+import { Outlet } from 'react-router-dom';
 
 import { useConfig } from '../../state/index.js';
 import { useStrings } from '../../strings/index.js';
-import SymbolManager from './SymbolManager.jsx';
-import ExpirationManager from './ExpirationManager.jsx';
 
 const SettingsScreen = () => {
   const settingsStrings = useStrings().settings;
@@ -30,20 +29,9 @@ const SettingsScreen = () => {
       )}
 
       {!hydrated && <LinearProgress />}
-
-      <Stack
-        direction={{ xs: 'column', lg: 'row' }}
-        spacing={3}
-        alignItems="stretch"
-        data-testid="settings-layout"
-      >
-        <Box flex={1}>
-          <SymbolManager />
-        </Box>
-        <Box flex={1}>
-          <ExpirationManager />
-        </Box>
-      </Stack>
+      <Box width="100%" data-testid="settings-content">
+        <Outlet />
+      </Box>
 
       <Box
         display="flex"

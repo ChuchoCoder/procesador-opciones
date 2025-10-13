@@ -1,6 +1,8 @@
 export const ROUTES = {
   processor: '/procesador',
   settings: '/configuracion',
+  settingsPrefixes: '/configuracion/prefijos',
+  settingsExpirations: '/configuracion/vencimientos',
 };
 
 export const APP_ROUTE_SEGMENTS = [

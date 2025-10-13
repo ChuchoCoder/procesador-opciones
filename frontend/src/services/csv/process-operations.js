@@ -53,18 +53,8 @@ export const parseToken = (token) => {
 
   const [, symbol, typeCode, strikeGroup, remainder] = match;
   
-  // Parse strike value: if no decimal point and more than 4 digits, treat last digit as decimal
-  let strikeValue;
-  if (strikeGroup.includes('.')) {
-    strikeValue = Number.parseFloat(strikeGroup);
-  } else if (strikeGroup.length > 4) {
-    // e.g., "47343" -> 4734.3
-    const whole = strikeGroup.slice(0, -1);
-    const decimal = strikeGroup.slice(-1);
-    strikeValue = Number.parseFloat(`${whole}.${decimal}`);
-  } else {
-    strikeValue = Number.parseFloat(strikeGroup);
-  }
+  // Strike decimals are resolved later via configuration overrides; parse the raw numeric value here.
+  const strikeValue = Number.parseFloat(strikeGroup);
   
   if (!Number.isFinite(strikeValue)) {
     return null;
@@ -84,6 +74,7 @@ export const parseToken = (token) => {
     symbol,
     type: typeCode === 'C' ? 'CALL' : 'PUT',
     strike: strikeValue,
+    strikeToken: strikeGroup,
     expiration: normalizedExpiration,
   };
 };
@@ -238,7 +229,125 @@ const deriveExpirationFallback = (row, tokenMatch) => {
   return DEFAULT_EXPIRATION;
 };
 
-export const enrichOperationRow = (row = {}) => {
+const clampDecimals = (value, fallback = 0) => {
+  if (value === undefined || value === null) {
+    return fallback;
+  }
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) {
+    return fallback;
+  }
+  if (parsed <= 0) {
+    return 0;
+  }
+  if (parsed > 6) {
+    return 6;
+  }
+  return Math.round(parsed);
+};
+
+const formatStrikeTokenValue = (strikeToken = '', decimals = 0) => {
+  if (!strikeToken) {
+    return null;
+  }
+
+  const normalizedDecimals = clampDecimals(decimals, 0);
+
+  const normalizedToken = String(strikeToken).trim();
+  if (!normalizedToken) {
+    return null;
+  }
+
+  const digitsOnly = normalizedToken.replace(/[^0-9]/g, '');
+  if (!digitsOnly) {
+    const numeric = Number.parseFloat(normalizedToken);
+    return Number.isFinite(numeric) ? numeric : null;
+  }
+
+  if (normalizedDecimals <= 0) {
+    const numeric = Number.parseFloat(digitsOnly);
+    return Number.isFinite(numeric) ? numeric : null;
+  }
+
+  const padded = digitsOnly.padStart(normalizedDecimals + 1, '0');
+  const whole = padded.slice(0, -normalizedDecimals) || '0';
+  const decimal = padded.slice(-normalizedDecimals);
+  const composed = `${whole}.${decimal}`;
+  const numeric = Number.parseFloat(composed);
+  return Number.isFinite(numeric) ? numeric : null;
+};
+
+const resolveExpirationCode = (tokenMatch, explicitExpiration) => {
+  if (tokenMatch?.expiration) {
+    return tokenMatch.expiration;
+  }
+  const normalized = toUpperCase(explicitExpiration);
+  if (!normalized) {
+    return '';
+  }
+  return normalized.replace(/[^0-9A-Z]/g, '');
+};
+
+const resolveStrikeDecimals = ({ rule, strikeToken, expirationCode }) => {
+  if (!rule) {
+    return 0;
+  }
+
+  let decimals = clampDecimals(rule.defaultDecimals, 0);
+
+  if (strikeToken && rule.strikeOverrides && rule.strikeOverrides[strikeToken] !== undefined) {
+    decimals = clampDecimals(rule.strikeOverrides[strikeToken], decimals);
+  }
+
+  if (expirationCode) {
+    const expirationConfig = rule.expirationOverrides?.[expirationCode];
+    if (expirationConfig) {
+      if (expirationConfig.defaultDecimals !== undefined) {
+        decimals = clampDecimals(expirationConfig.defaultDecimals, decimals);
+      }
+      if (
+        strikeToken
+        && expirationConfig.strikeOverrides
+        && expirationConfig.strikeOverrides[strikeToken] !== undefined
+      ) {
+        decimals = clampDecimals(expirationConfig.strikeOverrides[strikeToken], decimals);
+      }
+    }
+  }
+
+  return decimals;
+};
+
+const applyPrefixRule = ({ tokenMatch, rule, explicitExpiration }) => {
+  if (!rule) {
+    return {
+      symbol: null,
+      strike: tokenMatch?.strike,
+      decimalsApplied: null,
+    };
+  }
+
+  const strikeToken = tokenMatch?.strikeToken ?? '';
+  const expirationCode = resolveExpirationCode(tokenMatch, explicitExpiration);
+  const decimals = resolveStrikeDecimals({
+    rule,
+    strikeToken: strikeToken ? strikeToken.toUpperCase() : '',
+    expirationCode,
+  });
+
+  const formattedStrike = strikeToken
+    ? formatStrikeTokenValue(strikeToken, decimals)
+    : null;
+
+  return {
+    symbol: rule.symbol ? toUpperCase(rule.symbol) : null,
+    strike: formattedStrike ?? tokenMatch?.strike ?? null,
+    decimalsApplied: decimals,
+  };
+};
+
+export const enrichOperationRow = (row = {}, configuration = {}) => {
+  const prefixRules = configuration.prefixRules ?? {};
   const tokenMatch = findTokenMatch(row);
 
   const explicitSymbol = toUpperCase(row.symbol);
@@ -259,7 +368,9 @@ export const enrichOperationRow = (row = {}) => {
 
   const tokenFilledSymbol = !explicitSymbol && Boolean(tokenSymbol);
   const tokenFilledExpiration = !explicitExpiration && Boolean(tokenExpiration);
-  const tokenFilledStrike = (strike === null || strike === undefined) && tokenStrike !== undefined;
+  const tokenFilledStrike =
+    (explicitStrike === null || explicitStrike === undefined || explicitStrike === 0)
+    && tokenStrike !== undefined;
   const tokenFilledType = !type && Boolean(tokenType);
 
   if (!symbol && tokenSymbol) {
@@ -286,6 +397,28 @@ export const enrichOperationRow = (row = {}) => {
     type = tokenType;
   }
 
+  const activePrefixRule = tokenSymbol ? prefixRules[tokenSymbol] : undefined;
+  let appliedDecimals = null;
+
+  if (activePrefixRule) {
+    const { symbol: mappedSymbol, strike: mappedStrike, decimalsApplied } = applyPrefixRule({
+      tokenMatch,
+      rule: activePrefixRule,
+      explicitExpiration: expiration,
+    });
+
+    if (mappedSymbol) {
+      symbol = mappedSymbol;
+    }
+
+    const usingTokenStrike = tokenFilledStrike || (!Number.isFinite(strike) && mappedStrike !== null);
+    if (usingTokenStrike && Number.isFinite(mappedStrike)) {
+      strike = mappedStrike;
+    }
+
+    appliedDecimals = decimalsApplied;
+  }
+
   const normalizedSymbol = toUpperCase(symbol);
   const normalizedExpiration = expiration ? toUpperCase(expiration) : DEFAULT_EXPIRATION;
   const normalizedStrike = Number.isFinite(strike) ? strike : null;
@@ -300,6 +433,13 @@ export const enrichOperationRow = (row = {}) => {
 
   if (detectedFromToken && tokenMatch?.rawValue) {
     meta.sourceToken = tokenMatch.rawValue;
+  }
+
+  if (activePrefixRule) {
+    meta.prefixRule = tokenSymbol;
+    if (appliedDecimals !== null) {
+      meta.strikeDecimals = appliedDecimals;
+    }
   }
 
   return {
@@ -658,7 +798,7 @@ export const processOperations = async ({
   const validatedRows = validated.rows ?? [];
 
   const enrichedOperations = validatedRows.map((row, index) => {
-    const enrichment = enrichOperationRow(row);
+    const enrichment = enrichOperationRow(row, activeConfiguration);
 
     const optionType = enrichment.type === 'CALL' || enrichment.type === 'PUT' ? enrichment.type : 'UNKNOWN';
     const strike = enrichment.strike ?? row.strike ?? null;

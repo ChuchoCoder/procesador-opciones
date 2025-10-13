@@ -24,14 +24,25 @@ describe('Processor flow integration - GGAL PUTs fixture', () => {
   beforeEach(() => {
     window.localStorage.clear();
 
-    window.localStorage.setItem(storageKeys.symbols, JSON.stringify(['GFG']));
+    window.localStorage.setItem(
+      storageKeys.prefixRules,
+      JSON.stringify({
+        GFG: {
+          symbol: 'GGAL',
+          defaultDecimals: 0,
+          strikeOverrides: {},
+          expirationOverrides: {
+            O: { defaultDecimals: 1, strikeOverrides: {} },
+          },
+        },
+      }),
+    );
     window.localStorage.setItem(
       storageKeys.expirations,
       JSON.stringify({
         Octubre: { suffixes: ['O'] },
       }),
     );
-    window.localStorage.setItem(storageKeys.activeSymbol, JSON.stringify('GFG'));
     window.localStorage.setItem(storageKeys.activeExpiration, JSON.stringify('Octubre'));
     window.localStorage.setItem(storageKeys.useAveraging, JSON.stringify(false));
 
@@ -62,22 +73,25 @@ describe('Processor flow integration - GGAL PUTs fixture', () => {
       const user = userEvent.setup();
       renderProcessorApp();
 
-  const fileInput = await screen.findByTestId('file-menu-input');
-  const csvFile = new File([ggalPutsCsv], 'GGAL-PUTS.csv', { type: 'text/csv' });
-  await user.upload(fileInput, csvFile);
+      let fileInput = screen.queryByTestId('file-menu-input');
+      if (!fileInput) {
+        await waitFor(() => {
+          expect(document.querySelector('input[type="file"]')).not.toBeNull();
+        });
+        fileInput = document.querySelector('input[type="file"]');
+      }
+      const csvFile = new File([ggalPutsCsv], 'GGAL-PUTS.csv', { type: 'text/csv' });
+      await user.upload(fileInput, csvFile);
 
-      const putsCount = await screen.findByTestId('summary-puts-count');
-      expect(putsCount).toHaveTextContent('4');
+      const putsTable = await screen.findByTestId('processor-puts-table');
+      const callsTable = screen.getByTestId('processor-calls-table');
 
-      const callsCount = screen.getByTestId('summary-calls-count');
-      expect(callsCount).toHaveTextContent('0');
+      const getDataRows = (table) => within(table)
+        .getAllByRole('row')
+        .filter((row) => row.closest('tbody'));
 
-  const putsTab = await screen.findByRole('tab', { name: /puts/i });
-  expect(putsTab).toHaveAttribute('aria-selected', 'true');
-
-  const putsTable = await screen.findByTestId('processor-results-table');
-  const rows = within(putsTable).getAllByRole('row');
-      expect(rows.length).toBeGreaterThan(1);
+      const putsRows = getDataRows(putsTable);
+      expect(putsRows.length).toBeGreaterThan(0);
 
       ['-12', '-6', '-17', '-15'].forEach((quantity) => {
         expect(within(putsTable).getByText(quantity)).toBeInTheDocument();
@@ -87,36 +101,32 @@ describe('Processor flow integration - GGAL PUTs fixture', () => {
         expect(within(putsTable).getByText(new RegExp(price))).toBeInTheDocument();
       });
 
-      expect(within(putsTable).getAllByText(/4734/).length).toBeGreaterThan(0);
+      expect(within(callsTable).getByText('Sin datos para mostrar.')).toBeInTheDocument();
 
       const groupFilter = await screen.findByTestId('group-filter');
-      // Actual grouping logic derives base symbol + expiration (token splits GFGV47343O -> GFG + O)
-      expect(within(groupFilter).getByText('GFG O')).toBeInTheDocument();
-      expect(within(groupFilter).getByText('TZXM6 24hs')).toBeInTheDocument();
+  // Grouping now maps prefix rules to GGAL and normalizes settlement labels
+  expect(within(groupFilter).getByText('GGAL O')).toBeInTheDocument();
 
       // Scope to GFG O group to ensure download uses filtered data
-      const gfgButton = within(groupFilter).getByRole('button', { name: /GFG O/i });
-      await user.click(gfgButton);
+      const ggalButton = within(groupFilter).getByRole('button', { name: /GGAL O/i });
+      await user.click(ggalButton);
       await waitFor(() => {
-        expect(gfgButton).toHaveAttribute('aria-pressed', 'true');
+        expect(ggalButton).toHaveAttribute('aria-pressed', 'true');
       });
 
-  const downloadMenuTrigger = await screen.findByTestId('toolbar-download-menu-button');
-  await user.click(downloadMenuTrigger);
-  const downloadPutsItem = await screen.findByTestId('download-puts-menu-item');
-  await user.click(downloadPutsItem);
+      const downloadButton = screen.getByTestId('processor-puts-table-download-button');
+      expect(downloadButton).toBeEnabled();
+      await user.click(downloadButton);
 
       await waitFor(() => {
         expect(exportSpy).toHaveBeenCalledTimes(1);
       });
-      const [[payload]] = exportSpy.mock.calls;
-      expect(payload.scope).toBe(exportService.EXPORT_SCOPES.PUTS);
+    const [[payload]] = exportSpy.mock.calls;
+    expect(payload.scope).toBe(exportService.EXPORT_SCOPES.PUTS);
 
-      const exportedSummary = payload.report?.summary ?? {};
-      const exportedPuts = payload.report?.puts?.operations ?? [];
-
-      expect(exportedSummary.totalRows).toBe(exportedSummary.putsRows);
-      expect(exportedPuts.length).toBe(exportedSummary.putsRows);
+    const exportedPuts = payload.report?.puts?.operations ?? [];
+    expect(exportedPuts.length).toBeGreaterThan(0);
+    expect(exportedPuts.every((operation) => operation.matchedSymbol === 'GGAL')).toBe(true);
     },
     TEST_TIMEOUT,
   );

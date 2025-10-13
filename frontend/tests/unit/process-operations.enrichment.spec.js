@@ -86,6 +86,36 @@ describe('enrichOperationRow', () => {
     expect(missingExpirationResult.meta.detectedFromToken).toBe(true);
     expect(missingExpirationResult.meta.sourceToken).toBe('ALUAC400.OC');
   });
+
+  it('applies prefix rule symbol mapping and strike decimals when using token strike', () => {
+    const row = buildRow({
+      symbol: '',
+      expiration: '',
+      strike: null,
+      option_type: null,
+      security_id: 'GGALV110ENE24',
+    });
+
+    const configuration = {
+      prefixRules: {
+        GGAL: {
+          symbol: 'GGPA',
+          defaultDecimals: 2,
+          strikeOverrides: {},
+          expirationOverrides: {},
+        },
+      },
+    };
+
+    const result = enrichOperationRow(row, configuration);
+
+    expect(result.symbol).toBe('GGPA');
+    expect(result.expiration).toBe('ENE24');
+    expect(result.type).toBe('PUT');
+    expect(result.strike).toBeCloseTo(1.1, 5);
+    expect(result.meta.prefixRule).toBe('GGAL');
+    expect(result.meta.strikeDecimals).toBe(2);
+  });
 });
 
 describe('deriveGroups', () => {
@@ -104,12 +134,14 @@ describe('deriveGroups', () => {
         id: 'ALUA::DIC24',
         symbol: 'ALUA',
         expiration: 'DIC24',
+        kind: 'option',
         counts: { calls: 1, puts: 0, total: 1 },
       },
       {
         id: 'GGAL::NOV24',
         symbol: 'GGAL',
         expiration: 'NOV24',
+        kind: 'option',
         counts: { calls: 2, puts: 1, total: 3 },
       },
     ]);
@@ -124,7 +156,7 @@ describe('deriveGroups', () => {
 
     const groups = deriveGroups(operations);
 
-    const al30Group = groups.find((group) => group.id === 'AL30::24HS');
+    const al30Group = groups.find((group) => group.id === 'AL30::NONE');
     expect(al30Group).toBeDefined();
     expect(al30Group.counts.total).toBe(2);
 

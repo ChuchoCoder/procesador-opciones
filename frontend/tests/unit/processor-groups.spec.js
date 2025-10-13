@@ -19,11 +19,10 @@ describe('processor groups', () => {
       file,
       fileName: file.name,
       configuration: {
-        symbols: [],
         expirations: {},
-        activeSymbol: '',
         activeExpiration: '',
         useAveraging: false,
+        prefixRules: {},
       },
     });
 
@@ -36,39 +35,34 @@ describe('processor groups', () => {
     expect(groups).toMatchInlineSnapshot(`
       [
         {
+          "expiration": "NONE",
+          "id": "1D::NONE",
+          "symbol": "1D",
+        },
+        {
+          "expiration": "NONE",
+          "id": "AL30D::NONE",
+          "symbol": "AL30D",
+        },
+        {
+          "expiration": "NONE",
+          "id": "D31O5::NONE",
+          "symbol": "D31O5",
+        },
+        {
+          "expiration": "NONE",
+          "id": "GD30::NONE",
+          "symbol": "GD30",
+        },
+        {
           "expiration": "O",
           "id": "GFG::O",
           "symbol": "GFG",
         },
         {
-          "expiration": "CI",
-          "id": "MERV - XMEV - AL30D - CI::CI",
-          "symbol": "MERV - XMEV - AL30D - CI",
-        },
-        {
-          "expiration": "24HS",
-          "id": "MERV - XMEV - D31O5 - 24HS::24HS",
-          "symbol": "MERV - XMEV - D31O5 - 24HS",
-        },
-        {
-          "expiration": "CI",
-          "id": "MERV - XMEV - D31O5 - CI::CI",
-          "symbol": "MERV - XMEV - D31O5 - CI",
-        },
-        {
-          "expiration": "24HS",
-          "id": "MERV - XMEV - GD30 - 24HS::24HS",
-          "symbol": "MERV - XMEV - GD30 - 24HS",
-        },
-        {
-          "expiration": "1D",
-          "id": "MERV - XMEV - PESOS - 1D::1D",
-          "symbol": "MERV - XMEV - PESOS - 1D",
-        },
-        {
-          "expiration": "24HS",
-          "id": "MERV - XMEV - TZXM6 - 24HS::24HS",
-          "symbol": "MERV - XMEV - TZXM6 - 24HS",
+          "expiration": "NONE",
+          "id": "TZXM6::NONE",
+          "symbol": "TZXM6",
         },
       ]
     `);

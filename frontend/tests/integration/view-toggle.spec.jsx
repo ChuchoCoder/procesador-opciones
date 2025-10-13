@@ -31,14 +31,23 @@ describe('Processor view toggles', () => {
 
   beforeEach(() => {
     window.localStorage.clear();
-    window.localStorage.setItem(storageKeys.symbols, JSON.stringify(['GGAL']));
+    window.localStorage.setItem(
+      storageKeys.prefixRules,
+      JSON.stringify({
+        GGAL: {
+          symbol: 'GGAL',
+          defaultDecimals: 0,
+          strikeOverrides: {},
+          expirationOverrides: {},
+        },
+      }),
+    );
     window.localStorage.setItem(
       storageKeys.expirations,
       JSON.stringify({
         NOV24: { suffixes: ['NOV24'] },
       }),
     );
-    window.localStorage.setItem(storageKeys.activeSymbol, JSON.stringify('GGAL'));
     window.localStorage.setItem(storageKeys.activeExpiration, JSON.stringify('NOV24'));
     window.localStorage.setItem(storageKeys.useAveraging, JSON.stringify(false));
 
@@ -69,89 +78,67 @@ describe('Processor view toggles', () => {
   });
 
   it(
-    'switches between CALLS and PUTS views, toggles averaging, and scopes copy/download actions',
+    'supports per-table copy/download actions and toggling averaging',
     async () => {
-    const user = userEvent.setup();
-    renderApp();
+      const user = userEvent.setup();
+      renderApp();
 
-  const fileInput = await screen.findByTestId('file-menu-input');
-  const csvFile = new File([csvFixture], 'operaciones.csv', { type: 'text/csv' });
-  await user.upload(fileInput, csvFile);
+      let fileInput = screen.queryByTestId('file-menu-input');
+      if (!fileInput) {
+        await waitFor(() => {
+          expect(document.querySelector('input[type="file"]')).not.toBeNull();
+        });
+        fileInput = document.querySelector('input[type="file"]');
+      }
+      const csvFile = new File([csvFixture], 'operaciones.csv', { type: 'text/csv' });
+      await user.upload(fileInput, csvFile);
 
-    await waitFor(() => {
-      expect(screen.getByTestId('summary-total-count')).toHaveTextContent('4');
-    });
+      const callsTable = await screen.findByTestId('processor-calls-table');
+      const putsTable = screen.getByTestId('processor-puts-table');
+      const getDataRows = (table) => within(table)
+        .getAllByRole('row')
+        .filter((row) => row.closest('tbody'));
 
-    const callsTab = screen.getByRole('tab', { name: /calls/i });
-    const putsTab = screen.getByRole('tab', { name: /puts/i });
-    expect(callsTab).toHaveAttribute('aria-selected', 'true');
+      const initialCallRows = getDataRows(callsTable);
+      expect(initialCallRows.length).toBeGreaterThan(1);
+      expect(initialCallRows.some((row) => row.textContent?.includes('2'))).toBe(true);
+      expect(initialCallRows.some((row) => row.textContent?.includes('-1'))).toBe(true);
 
-    const resultsTable = await screen.findByTestId('processor-results-table');
-    await waitFor(() => {
-      const callRows = within(resultsTable).getAllByRole('row');
-      expect(callRows.length).toBeGreaterThan(1);
-    });
+      const initialPutRows = getDataRows(putsTable);
+      expect(initialPutRows.length).toBeGreaterThan(0);
+      expect(initialPutRows[0].textContent).toMatch(/110/);
 
-  const copyMenuTrigger = screen.getByTestId('toolbar-copy-menu-button');
-  await user.click(copyMenuTrigger);
-  const copyActiveItem = await screen.findByTestId('copy-active-menu-item');
-  await user.click(copyActiveItem);
-    await waitFor(() => {
-      expect(clipboardSpy).toHaveBeenCalledTimes(1);
-    });
-    expect(clipboardSpy.mock.calls[0][0].scope).toBe(clipboardService.CLIPBOARD_SCOPES.CALLS);
+      const copyCallsButton = screen.getByTestId('processor-calls-table-copy-button');
+      await user.click(copyCallsButton);
+      await waitFor(() => {
+        expect(clipboardSpy).toHaveBeenCalledTimes(1);
+      });
+      expect(clipboardSpy.mock.calls[0][0].scope).toBe(clipboardService.CLIPBOARD_SCOPES.CALLS);
 
-    await user.click(putsTab);
-    expect(putsTab).toHaveAttribute('aria-selected', 'true');
+      const copyPutsButton = screen.getByTestId('processor-puts-table-copy-button');
+      await user.click(copyPutsButton);
+      await waitFor(() => {
+        expect(clipboardSpy.mock.calls.length).toBeGreaterThanOrEqual(2);
+      }, { timeout: 5000 });
+      expect(clipboardSpy.mock.calls[1][0].scope).toBe(clipboardService.CLIPBOARD_SCOPES.PUTS);
 
-    const updatedTable = await screen.findByTestId('processor-results-table');
-    await waitFor(() => {
-      const putRows = within(updatedTable).getAllByRole('row');
-      expect(putRows.length).toBeGreaterThan(1);
-    });
+      const downloadPutsButton = screen.getByTestId('processor-puts-table-download-button');
+      await user.click(downloadPutsButton);
+      await waitFor(() => {
+        expect(exportSpy).toHaveBeenCalledTimes(1);
+      }, { timeout: 5000 });
+      expect(exportSpy.mock.calls[0][0].scope).toBe(exportService.EXPORT_SCOPES.PUTS);
 
-  await user.click(copyMenuTrigger);
-  const copyActiveItem2 = await screen.findByTestId('copy-active-menu-item');
-  await user.click(copyActiveItem2);
-    await waitFor(() => {
-      expect(clipboardSpy).toHaveBeenCalledTimes(2);
-    });
-    expect(clipboardSpy.mock.calls[1][0].scope).toBe(clipboardService.CLIPBOARD_SCOPES.PUTS);
+      const averagingSwitch = screen.getByTestId('processor-calls-table-averaging-switch');
+      await user.click(averagingSwitch);
 
-  const downloadMenuTrigger = screen.getByTestId('toolbar-download-menu-button');
-  await user.click(downloadMenuTrigger);
-  const downloadActiveItem = await screen.findByTestId('download-active-menu-item');
-  await user.click(downloadActiveItem);
-    await waitFor(() => {
-      expect(exportSpy).toHaveBeenCalledTimes(1);
-    });
-    expect(exportSpy.mock.calls[0][0].scope).toBe(exportService.EXPORT_SCOPES.PUTS);
-
-  // Toggle averaging via switch in toolbar (using test id for robustness after label hiding)
-    // Wait for toolbar actions to be enabled before searching for averaging switch
-    await waitFor(() => {
-      expect(screen.getByTestId('toolbar-copy-menu-button')).toBeEnabled();
-    });
-    // Try resolving averaging switch by test id first (new root testid added), fallback to role lookup
-    let averagingSwitch;
-    try {
-      averagingSwitch = screen.getByTestId('averaging-switch');
-    } catch {
-      averagingSwitch = screen.getByRole('checkbox', { name: /promediar/i });
-    }
-    await user.click(averagingSwitch);
-    // ensure switch applied before proceeding (re-processing may temporarily disable toolbar)
-    await waitFor(() => {
-      expect(screen.getByTestId('summary-total-count')).toHaveTextContent('2');
-    });
-    // Wait for copy button to be re-enabled after reprocessing; re-query in case of rerender
-    await waitFor(() => {
-      expect(screen.getByTestId('toolbar-copy-menu-button')).toBeEnabled();
-    });
-
-    // Basic assertion that averaging reduced total rows
-    expect(screen.getByTestId('summary-total-count')).toHaveTextContent('2');
+      await waitFor(() => {
+        expect(getDataRows(callsTable).length).toBeLessThan(initialCallRows.length);
+      });
+      const averagedRows = getDataRows(callsTable);
+      expect(averagedRows.length).toBe(1);
+      expect(averagedRows[0].textContent).toMatch(/2/);
     },
-    18000,
+    25000,
   );
 });

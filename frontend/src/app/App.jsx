@@ -4,7 +4,11 @@ import { ThemeProvider } from '@mui/material/styles';
 import { Navigate, Route, Routes } from 'react-router-dom';
 
 import { ProcessorScreen } from '../components/Processor/index.js';
-import { SettingsScreen } from '../components/Settings/index.js';
+import {
+  SettingsExpirationsPage,
+  SettingsPrefixesPage,
+  SettingsScreen,
+} from '../components/Settings/index.js';
 import Sidebar from '../components/Sidebar.jsx';
 import { useStrings } from '../strings/index.js';
 import { ROUTES } from './routes.jsx';
@@ -28,8 +32,12 @@ const App = () => {
         >
           <Routes>
             <Route path={ROUTES.processor} element={<ProcessorScreen />} />
-            <Route path={ROUTES.settings} element={<SettingsScreen />} />
-            <Route path="/settings" element={<SettingsScreen />} />
+            <Route path={`${ROUTES.settings}/*`} element={<SettingsScreen />}>
+              <Route index element={<Navigate to="prefijos" replace />} />
+              <Route path="prefijos" element={<SettingsPrefixesPage />} />
+              <Route path="vencimientos" element={<SettingsExpirationsPage />} />
+            </Route>
+            <Route path="/settings/*" element={<Navigate to={ROUTES.settingsPrefixes} replace />} />
             <Route path="/" element={<Navigate to={ROUTES.processor} replace />} />
             <Route path="*" element={<Navigate to={ROUTES.processor} replace />} />
           </Routes>

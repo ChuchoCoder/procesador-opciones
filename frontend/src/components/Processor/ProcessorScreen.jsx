@@ -354,9 +354,8 @@ const ProcessorScreen = () => {
   const strings = useStrings();
   const processorStrings = strings.processor;
   const {
-    symbols,
+    prefixRules,
     expirations,
-    activeSymbol,
     activeExpiration,
     useAveraging,
     setAveraging,
@@ -376,14 +375,13 @@ const ProcessorScreen = () => {
 
   const buildConfiguration = useCallback(
     (overrides = {}) => ({
-      symbols,
       expirations,
-      activeSymbol,
       activeExpiration,
       useAveraging,
+      prefixRules,
       ...overrides,
     }),
-    [symbols, expirations, activeSymbol, activeExpiration, useAveraging],
+    [prefixRules, expirations, activeExpiration, useAveraging],
   );
 
   const runProcessing = useCallback(

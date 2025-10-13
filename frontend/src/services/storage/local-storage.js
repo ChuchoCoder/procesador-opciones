@@ -26,9 +26,8 @@ const safeAccess = (operation) => {
 };
 
 export const storageKeys = {
-  symbols: 'po.symbols',
+  prefixRules: 'po.prefixRules',
   expirations: 'po.expirations',
-  activeSymbol: 'po.activeSymbol',
   activeExpiration: 'po.activeExpiration',
   useAveraging: 'po.useAveraging',
   lastReport: 'po.lastReport.v1',

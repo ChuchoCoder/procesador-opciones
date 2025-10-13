@@ -7,19 +7,28 @@ export const reducer = (state, action) => {
   switch (action.type) {
     case 'HYDRATE':
       return sanitizeConfiguration(action.payload);
-    case 'ADD_SYMBOL': {
-      const symbols = [...state.symbols, action.payload];
-      return applyChanges(state, { symbols });
+    case 'UPSERT_PREFIX_RULE': {
+      const { prefix, rule } = action.payload ?? {};
+      const normalizedPrefix = typeof prefix === 'string' ? prefix.trim().toUpperCase() : '';
+      if (!normalizedPrefix) {
+        return state;
+      }
+      const prefixRules = {
+        ...state.prefixRules,
+        [normalizedPrefix]: rule ?? {},
+      };
+      return applyChanges(state, { prefixRules });
     }
-    case 'REMOVE_SYMBOL': {
-      const symbols = state.symbols.filter((symbol) => symbol !== action.payload);
-      return applyChanges(state, {
-        symbols,
-        activeSymbol: state.activeSymbol === action.payload ? undefined : state.activeSymbol,
-      });
+    case 'REMOVE_PREFIX_RULE': {
+      const normalizedPrefix = typeof action.payload === 'string'
+        ? action.payload.trim().toUpperCase()
+        : '';
+      if (!normalizedPrefix || !state.prefixRules?.[normalizedPrefix]) {
+        return state;
+      }
+      const { [normalizedPrefix]: _removed, ...remaining } = state.prefixRules;
+      return applyChanges(state, { prefixRules: remaining });
     }
-    case 'SET_ACTIVE_SYMBOL':
-      return applyChanges(state, { activeSymbol: action.payload });
     case 'SET_AVERAGING':
       return applyChanges(state, { useAveraging: action.payload });
     case 'ADD_EXPIRATION': {
