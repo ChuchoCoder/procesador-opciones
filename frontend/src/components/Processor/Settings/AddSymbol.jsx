@@ -24,7 +24,7 @@ export default function AddSymbol({ onSymbolAdded }) {
     setError('');
   };
 
-  const handleAdd = () => {
+  const handleAdd = async () => {
     // Validate symbol
     const validation = validateSymbol(symbol);
     if (!validation.valid) {
@@ -35,14 +35,14 @@ export default function AddSymbol({ onSymbolAdded }) {
     const normalized = validation.normalized;
 
     // Check uniqueness
-    if (symbolExists(normalized)) {
+    if (await symbolExists(normalized)) {
       setError(s.errorSymbolDuplicate);
       return;
     }
 
     // Create and save default config
     const config = createDefaultSymbolConfig(normalized);
-    const saved = saveSymbolConfig(config);
+    const saved = await saveSymbolConfig(config);
 
     if (saved) {
       handleClose();

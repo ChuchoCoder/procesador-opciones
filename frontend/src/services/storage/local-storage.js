@@ -1,29 +1,9 @@
-const isLocalStorageAvailable = () => {
-  try {
-    const testKey = '__po_test__';
-    window.localStorage.setItem(testKey, testKey);
-    window.localStorage.removeItem(testKey);
-    return true;
-  } catch (error) {
-    console.warn('PO: localStorage unavailable', error);
-    return false;
-  }
-};
+/**
+ * Application data storage using the storage adapter
+ * Works with both localStorage (web) and chrome.storage.local (extension)
+ */
 
-const storageEnabled = typeof window !== 'undefined' && isLocalStorageAvailable();
-
-const safeAccess = (operation) => {
-  if (!storageEnabled) {
-    return null;
-  }
-
-  try {
-    return operation(window.localStorage);
-  } catch (error) {
-    console.warn('PO: localStorage operation failed', error);
-    return null;
-  }
-};
+import { storageAdapter } from './storage-adapter.js';
 
 export const storageKeys = {
   expirations: 'po.expirations',
@@ -32,9 +12,14 @@ export const storageKeys = {
   lastReport: 'po.lastReport.v1',
 };
 
-export const readItem = (key) =>
-  safeAccess((storage) => {
-    const value = storage.getItem(key);
+/**
+ * Read an item from storage
+ * @param {string} key - Storage key
+ * @returns {Promise<any|null>} Parsed value or null
+ */
+export const readItem = async (key) => {
+  try {
+    const value = await storageAdapter.getItem(key);
 
     if (value === null || value === undefined) {
       return null;
@@ -46,24 +31,61 @@ export const readItem = (key) =>
       console.warn('PO: Failed to parse stored value', { key, parseError });
       return null;
     }
-  });
+  } catch (error) {
+    console.warn('PO: Storage read operation failed', { key, error });
+    return null;
+  }
+};
 
-export const writeItem = (key, value) =>
-  safeAccess((storage) => {
-    storage.setItem(key, JSON.stringify(value));
+/**
+ * Write an item to storage
+ * @param {string} key - Storage key
+ * @param {any} value - Value to store
+ * @returns {Promise<boolean>} Success status
+ */
+export const writeItem = async (key, value) => {
+  try {
+    const success = await storageAdapter.setItem(key, JSON.stringify(value));
+    return success;
+  } catch (error) {
+    console.warn('PO: Storage write operation failed', { key, error });
+    return false;
+  }
+};
+
+/**
+ * Remove an item from storage
+ * @param {string} key - Storage key
+ * @returns {Promise<boolean>} Success status
+ */
+export const removeItem = async (key) => {
+  try {
+    const success = await storageAdapter.removeItem(key);
+    return success;
+  } catch (error) {
+    console.warn('PO: Storage remove operation failed', { key, error });
+    return false;
+  }
+};
+
+/**
+ * Clear all application storage keys
+ * @returns {Promise<boolean>} Success status
+ */
+export const clearAll = async () => {
+  try {
+    const promises = Object.values(storageKeys).map((key) => storageAdapter.removeItem(key));
+    await Promise.all(promises);
     return true;
-  });
+  } catch (error) {
+    console.warn('PO: Storage clearAll operation failed', error);
+    return false;
+  }
+};
 
-export const removeItem = (key) =>
-  safeAccess((storage) => {
-    storage.removeItem(key);
-    return true;
-  });
+/**
+ * Check if storage is available
+ * @returns {boolean}
+ */
+export const storageAvailable = () => storageAdapter.isAvailable();
 
-export const clearAll = () =>
-  safeAccess((storage) => {
-    Object.values(storageKeys).forEach((key) => storage.removeItem(key));
-    return true;
-  });
-
-export const storageAvailable = () => storageEnabled;

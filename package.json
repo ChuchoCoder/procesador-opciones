@@ -5,7 +5,12 @@
   "type": "module",
   "scripts": {
     "build:spa": "npm --prefix frontend run build",
-    "build:ext": "node scripts/build-extension.mjs"
+    "build:ext": "node scripts/build-extension.mjs",
+    "build:extension": "node scripts/build-extension.mjs",
+    "build": "node scripts/build-extension.mjs",
+    "dev": "npm --prefix frontend run dev",
+    "test": "npm --prefix frontend run test",
+    "lint": "npm --prefix frontend run lint"
   },
   "devDependencies": {
     "fs-extra": "^11.2.0"
