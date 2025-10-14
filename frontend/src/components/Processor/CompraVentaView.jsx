@@ -12,6 +12,10 @@ import Typography from '@mui/material/Typography';
 import Switch from '@mui/material/Switch';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import Tooltip from '@mui/material/Tooltip';
+import Chip from '@mui/material/Chip';
+import TrendingUpIcon from '@mui/icons-material/TrendingUp';
+import TrendingDownIcon from '@mui/icons-material/TrendingDown';
+import { useTheme } from '@mui/material/styles';
 
 import GroupFilter from './GroupFilter.jsx';
 import { getBuySellOperations } from '../../services/csv/buy-sell-matcher.js';
@@ -168,8 +172,25 @@ const BuySellTable = ({
   showAveragingControl,
 }) => {
   const hasData = operations.length > 0;
+  const theme = useTheme();
   const averagingLabel = strings?.tables?.averageByInstrument ?? 'Promediar';
   const averagingTooltip = strings?.tables?.averageTooltip ?? 'Promediar por instrumento y plazo';
+  
+  // Determine if this is Buy or Sell table
+  const isBuyTable = title?.toLowerCase().includes('compra');
+  const isSellTable = title?.toLowerCase().includes('venta');
+  
+  const getChipColor = () => {
+    if (isBuyTable) return theme.palette.buy.main;
+    if (isSellTable) return theme.palette.sell.main;
+    return theme.palette.info.main;
+  };
+  
+  const getIcon = () => {
+    if (isBuyTable) return <TrendingUpIcon sx={{ fontSize: 18 }} />;
+    if (isSellTable) return <TrendingDownIcon sx={{ fontSize: 18 }} />;
+    return null;
+  };
 
   return (
     <Paper
@@ -197,9 +218,20 @@ const BuySellTable = ({
                 }}
               >
                 <Stack direction="row" alignItems="center" justifyContent="space-between">
-                  <Typography variant="subtitle1" component="h3">
-                    {title}
-                  </Typography>
+                  <Chip
+                    icon={getIcon()}
+                    label={title}
+                    sx={{
+                      backgroundColor: getChipColor(),
+                      color: '#fff',
+                      fontWeight: 600,
+                      fontSize: '0.875rem',
+                      letterSpacing: '0.5px',
+                      '& .MuiChip-icon': {
+                        color: '#fff',
+                      },
+                    }}
+                  />
                   {showAveragingControl && hasData && (
                     <Tooltip title={averagingTooltip}>
                       <FormControlLabel
@@ -271,6 +303,7 @@ const CompraVentaView = ({
   onGroupChange,
 }) => {
   const filterStrings = strings?.filters ?? {};
+  const theme = useTheme();
 
   const [averagingEnabled, setAveragingEnabled] = useState(true);
 
