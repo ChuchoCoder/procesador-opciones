@@ -61,6 +61,7 @@ const normalizeGroupExpiration = (value = '') => {
 
 const SETTLEMENT_TOKENS = new Set([
   'CI', 'CONTADO', '24HS', '48HS', '72HS', '24H', '48H', '72H', 'T0', 'T1', 'T2', 'T+1', 'T+2',
+  '1D', '2D', '3D', '4D', '5D', '6D', '7D', '8D', '9D', '10D', '11D', '12D', '13D', '14D', '15D',
 ]);
 
 const MARKET_TOKENS = new Set([
