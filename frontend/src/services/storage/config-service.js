@@ -12,7 +12,6 @@ const rawDefaultConfiguration = {
   },
   activeExpiration: 'Enero',
   useAveraging: false,
-  prefixRules: {},
 };
 
 const cloneDefaults = () => ({
@@ -24,25 +23,6 @@ const cloneDefaults = () => ({
   ),
   activeExpiration: rawDefaultConfiguration.activeExpiration,
   useAveraging: rawDefaultConfiguration.useAveraging,
-  prefixRules: Object.fromEntries(
-    Object.entries(rawDefaultConfiguration.prefixRules).map(([prefix, rule]) => [
-      prefix,
-      {
-        symbol: rule.symbol,
-        defaultDecimals: rule.defaultDecimals ?? 0,
-        strikeOverrides: { ...(rule.strikeOverrides ?? {}) },
-        expirationOverrides: Object.fromEntries(
-          Object.entries(rule.expirationOverrides ?? {}).map(([exp, config]) => [
-            exp,
-            {
-              defaultDecimals: config.defaultDecimals ?? 0,
-              strikeOverrides: { ...(config.strikeOverrides ?? {}) },
-            },
-          ]),
-        ),
-      },
-    ]),
-  ),
 });
 
 export const DEFAULT_CONFIGURATION = Object.freeze(cloneDefaults());
@@ -57,95 +37,6 @@ const unique = (values) => {
     }
   });
   return result;
-};
-
-const sanitizeDecimalValue = (value, fallback = 0) => {
-  const parsed = Number(value);
-  if (!Number.isFinite(parsed)) {
-    return fallback;
-  }
-
-  const clamped = Math.max(0, Math.min(6, parsed));
-  return Math.round(clamped);
-};
-
-const sanitizeStrikeOverrides = (overrides) => {
-  if (!overrides || typeof overrides !== 'object') {
-    return {};
-  }
-
-  const entries = Object.entries(overrides)
-    .map(([strikeToken, decimals]) => {
-      const normalizedToken = typeof strikeToken === 'string'
-        ? strikeToken.trim().toUpperCase()
-        : String(strikeToken ?? '').trim().toUpperCase();
-
-      if (!normalizedToken) {
-        return null;
-      }
-
-      return [normalizedToken, sanitizeDecimalValue(decimals, 0)];
-    })
-    .filter(Boolean);
-
-  return Object.fromEntries(entries);
-};
-
-const sanitizeExpirationOverrides = (overrides) => {
-  if (!overrides || typeof overrides !== 'object') {
-    return {};
-  }
-
-  const entries = Object.entries(overrides)
-    .map(([expirationCode, config]) => {
-      const normalizedCode = typeof expirationCode === 'string'
-        ? expirationCode.trim().toUpperCase()
-        : '';
-
-      if (!normalizedCode) {
-        return null;
-      }
-
-      return [
-        normalizedCode,
-        {
-          defaultDecimals: sanitizeDecimalValue(config?.defaultDecimals, 0),
-          strikeOverrides: sanitizeStrikeOverrides(config?.strikeOverrides),
-        },
-      ];
-    })
-    .filter(Boolean);
-
-  return Object.fromEntries(entries);
-};
-
-const sanitizePrefixRules = (rules) => {
-  if (!rules || typeof rules !== 'object') {
-    return cloneDefaults().prefixRules;
-  }
-
-  const entries = Object.entries(rules)
-    .map(([prefix, rule]) => {
-      const normalizedPrefix = typeof prefix === 'string' ? prefix.trim().toUpperCase() : '';
-      if (!normalizedPrefix) {
-        return null;
-      }
-
-      const normalizedSymbol = typeof rule?.symbol === 'string' ? rule.symbol.trim().toUpperCase() : '';
-
-      return [
-        normalizedPrefix,
-        {
-          symbol: normalizedSymbol,
-          defaultDecimals: sanitizeDecimalValue(rule?.defaultDecimals, 0),
-          strikeOverrides: sanitizeStrikeOverrides(rule?.strikeOverrides),
-          expirationOverrides: sanitizeExpirationOverrides(rule?.expirationOverrides),
-        },
-      ];
-    })
-    .filter(Boolean);
-
-  return Object.fromEntries(entries);
 };
 
 const sanitizeSuffixes = (suffixes) => {
@@ -232,13 +123,10 @@ export const sanitizeConfiguration = (candidate = {}) => {
     defaults.useAveraging,
   );
 
-  const prefixRules = sanitizePrefixRules(candidate.prefixRules ?? defaults.prefixRules);
-
   return {
     expirations,
     activeExpiration: activeExpiration ?? defaults.activeExpiration,
     useAveraging,
-    prefixRules,
   };
 };
 
@@ -251,7 +139,6 @@ export const loadConfiguration = () => {
     expirations: readItem(storageKeys.expirations),
     activeExpiration: readItem(storageKeys.activeExpiration),
     useAveraging: readItem(storageKeys.useAveraging),
-    prefixRules: readItem(storageKeys.prefixRules),
   };
 
   return sanitizeConfiguration(candidate);
@@ -267,7 +154,6 @@ export const saveConfiguration = (configuration) => {
   writeItem(storageKeys.expirations, sanitized.expirations);
   writeItem(storageKeys.activeExpiration, sanitized.activeExpiration);
   writeItem(storageKeys.useAveraging, sanitized.useAveraging);
-  writeItem(storageKeys.prefixRules, sanitized.prefixRules);
 
   return sanitized;
 };
@@ -282,7 +168,6 @@ export const resetConfiguration = () => {
   writeItem(storageKeys.expirations, defaults.expirations);
   writeItem(storageKeys.activeExpiration, defaults.activeExpiration);
   writeItem(storageKeys.useAveraging, defaults.useAveraging);
-  writeItem(storageKeys.prefixRules, defaults.prefixRules);
 
   return defaults;
 };
