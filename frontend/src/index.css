@@ -13,10 +13,12 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Chrome Extension popup dimensions */
-html {
-  width: 800px;
-  min-height: 600px;
+/* Chrome Extension popup dimensions - only when in extension context */
+@media all and (max-width: 850px) {
+  html {
+    width: 800px;
+    min-height: 600px;
+  }
 }
 
 html, body {
@@ -34,9 +36,10 @@ a:hover {
 
 body {
   margin: 0;
-  min-width: 800px;
-  min-height: 600px;
-  overflow-x: hidden;
+  display: flex;
+  place-items: center;
+  min-width: 320px;
+  min-height: 100vh;
 }
 
 h1 {
