@@ -26,7 +26,6 @@ const safeAccess = (operation) => {
 };
 
 export const storageKeys = {
-  prefixRules: 'po.prefixRules',
   expirations: 'po.expirations',
   activeExpiration: 'po.activeExpiration',
   useAveraging: 'po.useAveraging',

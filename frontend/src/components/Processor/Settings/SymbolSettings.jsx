@@ -96,6 +96,7 @@ export default function SymbolSettings({ symbol, config, onConfigUpdate }) {
       };
 
       saveSymbolConfig(updatedConfig);
+      
       setSaveSuccess(true);
       
       // Call parent callback to refresh config

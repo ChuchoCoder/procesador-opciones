@@ -3,10 +3,41 @@ import { validateAndFilterRows } from './validators.js';
 import { buildConsolidatedViews } from './consolidator.js';
 import { createDevLogger } from '../logging/dev-logger.js';
 import { normalizeOperationRows } from './legacy-normalizer.js';
+import { getAllSymbols, loadSymbolConfig } from '../storage-settings.js';
 
 const OPTION_TOKEN_REGEX = /^([A-Z0-9]+?)([CV])(\d+(?:\.\d+)?)(.*)$/;
 const DEFAULT_EXPIRATION = 'NONE';
 const UNKNOWN_EXPIRATION = 'UNKNOWN';
+
+/**
+ * Load all symbol configurations and create a prefix map
+ * @returns {Object} Map of prefix → SymbolConfiguration
+ */
+const loadPrefixMap = () => {
+  const prefixMap = {};
+  const symbols = getAllSymbols();
+  
+  for (const symbol of symbols) {
+    const config = loadSymbolConfig(symbol);
+    if (config && config.prefixes && Array.isArray(config.prefixes)) {
+      for (const prefix of config.prefixes) {
+        const normalizedPrefix = prefix.toUpperCase().trim();
+        if (normalizedPrefix) {
+          prefixMap[normalizedPrefix] = config;
+        }
+      }
+    }
+    // Support legacy single prefix field
+    else if (config && config.prefix) {
+      const normalizedPrefix = config.prefix.toUpperCase().trim();
+      if (normalizedPrefix) {
+        prefixMap[normalizedPrefix] = config;
+      }
+    }
+  }
+  
+  return prefixMap;
+};
 
 const isString = (value) => typeof value === 'string';
 
@@ -277,40 +308,71 @@ const formatStrikeTokenValue = (strikeToken = '', decimals = 0) => {
   return Number.isFinite(numeric) ? numeric : null;
 };
 
-const resolveExpirationCode = (tokenMatch, explicitExpiration) => {
+/**
+ * Find the expiration code by checking which expiration has a suffix matching the token
+ * @param {string} tokenSuffix - The suffix from the token (e.g., 'O', 'OC', 'OCT')
+ * @param {Object} symbolConfig - The symbol configuration with expirations
+ * @returns {string} The matching expiration code (e.g., 'OCT') or the original suffix
+ */
+const findExpirationCodeBySuffix = (tokenSuffix, symbolConfig) => {
+  if (!tokenSuffix || !symbolConfig?.expirations) {
+    return tokenSuffix || '';
+  }
+
+  const upper = tokenSuffix.toUpperCase();
+  
+  // Check each expiration to see if any of its suffixes match
+  for (const [expirationCode, expirationSettings] of Object.entries(symbolConfig.expirations)) {
+    if (expirationSettings?.suffixes?.includes(upper)) {
+      return expirationCode;
+    }
+  }
+  
+  // No match found, return original suffix
+  return upper;
+};
+
+const resolveExpirationCode = (tokenMatch, explicitExpiration, symbolConfig) => {
   if (tokenMatch?.expiration) {
-    return tokenMatch.expiration;
+    return findExpirationCodeBySuffix(tokenMatch.expiration, symbolConfig);
   }
   const normalized = toUpperCase(explicitExpiration);
   if (!normalized) {
     return '';
   }
-  return normalized.replace(/[^0-9A-Z]/g, '');
+  const cleaned = normalized.replace(/[^0-9A-Z]/g, '');
+  return findExpirationCodeBySuffix(cleaned, symbolConfig);
 };
 
-const resolveStrikeDecimals = ({ rule, strikeToken, expirationCode }) => {
-  if (!rule) {
+const resolveStrikeDecimals = ({ symbolConfig, strikeToken, expirationCode }) => {
+  if (!symbolConfig) {
     return 0;
   }
 
-  let decimals = clampDecimals(rule.defaultDecimals, 0);
+  // Start with symbol-level default (previously defaultDecimals, now strikeDefaultDecimals)
+  let decimals = clampDecimals(symbolConfig.strikeDefaultDecimals ?? symbolConfig.defaultDecimals ?? 0, 0);
 
-  if (strikeToken && rule.strikeOverrides && rule.strikeOverrides[strikeToken] !== undefined) {
-    decimals = clampDecimals(rule.strikeOverrides[strikeToken], decimals);
-  }
-
-  if (expirationCode) {
-    const expirationConfig = rule.expirationOverrides?.[expirationCode];
+  // Check for expiration-level override
+  if (expirationCode && symbolConfig.expirations) {
+    const expirationConfig = symbolConfig.expirations[expirationCode];
     if (expirationConfig) {
-      if (expirationConfig.defaultDecimals !== undefined) {
-        decimals = clampDecimals(expirationConfig.defaultDecimals, decimals);
+      // Expiration-level default takes priority
+      if (expirationConfig.decimals !== undefined) {
+        decimals = clampDecimals(expirationConfig.decimals, decimals);
       }
-      if (
-        strikeToken
-        && expirationConfig.strikeOverrides
-        && expirationConfig.strikeOverrides[strikeToken] !== undefined
-      ) {
-        decimals = clampDecimals(expirationConfig.strikeOverrides[strikeToken], decimals);
+      
+      // Check for strike-specific override at expiration level
+      if (strikeToken && Array.isArray(expirationConfig.overrides)) {
+        const override = expirationConfig.overrides.find(o => o.raw === strikeToken);
+        if (override && override.formatted) {
+          // Calculate decimals from formatted string
+          const decimalIndex = override.formatted.indexOf('.');
+          if (decimalIndex >= 0) {
+            decimals = override.formatted.length - decimalIndex - 1;
+          } else {
+            decimals = 0;
+          }
+        }
       }
     }
   }
@@ -318,8 +380,8 @@ const resolveStrikeDecimals = ({ rule, strikeToken, expirationCode }) => {
   return decimals;
 };
 
-const applyPrefixRule = ({ tokenMatch, rule, explicitExpiration }) => {
-  if (!rule) {
+const applyPrefixRule = ({ tokenMatch, symbolConfig, explicitExpiration }) => {
+  if (!symbolConfig) {
     return {
       symbol: null,
       strike: tokenMatch?.strike,
@@ -328,9 +390,9 @@ const applyPrefixRule = ({ tokenMatch, rule, explicitExpiration }) => {
   }
 
   const strikeToken = tokenMatch?.strikeToken ?? '';
-  const expirationCode = resolveExpirationCode(tokenMatch, explicitExpiration);
+  const expirationCode = resolveExpirationCode(tokenMatch, explicitExpiration, symbolConfig);
   const decimals = resolveStrikeDecimals({
-    rule,
+    symbolConfig,
     strikeToken: strikeToken ? strikeToken.toUpperCase() : '',
     expirationCode,
   });
@@ -340,14 +402,14 @@ const applyPrefixRule = ({ tokenMatch, rule, explicitExpiration }) => {
     : null;
 
   return {
-    symbol: rule.symbol ? toUpperCase(rule.symbol) : null,
+    symbol: symbolConfig.symbol ? toUpperCase(symbolConfig.symbol) : null,
     strike: formattedStrike ?? tokenMatch?.strike ?? null,
     decimalsApplied: decimals,
   };
 };
 
 export const enrichOperationRow = (row = {}, configuration = {}) => {
-  const prefixRules = configuration.prefixRules ?? {};
+  const prefixMap = configuration.prefixMap ?? loadPrefixMap();
   const tokenMatch = findTokenMatch(row);
 
   const explicitSymbol = toUpperCase(row.symbol);
@@ -397,13 +459,13 @@ export const enrichOperationRow = (row = {}, configuration = {}) => {
     type = tokenType;
   }
 
-  const activePrefixRule = tokenSymbol ? prefixRules[tokenSymbol] : undefined;
+  const symbolConfig = tokenSymbol ? prefixMap[tokenSymbol] : undefined;
   let appliedDecimals = null;
 
-  if (activePrefixRule) {
+  if (symbolConfig) {
     const { symbol: mappedSymbol, strike: mappedStrike, decimalsApplied } = applyPrefixRule({
       tokenMatch,
-      rule: activePrefixRule,
+      symbolConfig,
       explicitExpiration: expiration,
     });
 
@@ -435,7 +497,7 @@ export const enrichOperationRow = (row = {}, configuration = {}) => {
     meta.sourceToken = tokenMatch.rawValue;
   }
 
-  if (activePrefixRule) {
+  if (symbolConfig) {
     meta.prefixRule = tokenSymbol;
     if (appliedDecimals !== null) {
       meta.strikeDecimals = appliedDecimals;
@@ -766,6 +828,12 @@ export const processOperations = async ({
   parserConfig,
 } = {}) => {
   const activeConfiguration = sanitizeConfiguration(configuration);
+  
+  // Load prefix map from new settings format if not already provided
+  if (!activeConfiguration.prefixMap) {
+    activeConfiguration.prefixMap = loadPrefixMap();
+  }
+  
   const logger = createDevLogger('Procesamiento');
   const timer = logger.time('processOperations');
   const startTime = getNow();
