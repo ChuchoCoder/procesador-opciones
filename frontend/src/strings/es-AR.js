@@ -88,7 +88,7 @@ const strings = {
       settlement: 'Plazo',
       side: 'Operación',
       empty: 'Sin datos para mostrar.',
-      inferredTooltip: 'Datos inferidos automáticamente a partir del token detectado.',
+      inferredTooltip: 'El strike se detecta automáticamente del texto de la opción. Si es incorrecto, configurá los prefijos en Configuración para determinar el strike correctamente.',
       comingSoon: 'Esta funcionalidad estará disponible próximamente.',
       averageByInstrument: 'Promediar',
       averageTooltip: 'Promediar por instrumento y plazo',

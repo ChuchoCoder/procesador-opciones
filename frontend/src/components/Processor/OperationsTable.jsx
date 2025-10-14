@@ -201,7 +201,15 @@ const OperationsTable = ({
                 zIndex: 1,
               }}
             >
-              {strings.tables.strike}
+              <Stack direction="row" spacing={0.5} alignItems="center" justifyContent="flex-end">
+                <span>{strings.tables.strike}</span>
+                <Tooltip title={strings.tables.inferredTooltip} disableInteractive>
+                  <InfoOutlinedIcon
+                    fontSize="inherit"
+                    sx={{ fontSize: '1rem', color: 'info.main' }}
+                  />
+                </Tooltip>
+              </Stack>
             </TableCell>
             <TableCell
               align="right"
@@ -226,9 +234,6 @@ const OperationsTable = ({
           ) : (
             operations.map((operation, index) => {
               const rowKey = `${operation.originalSymbol ?? 'op'}-${operation.strike}-${operation.totalQuantity}-${operation.averagePrice}`;
-              const hasInferredSource = Boolean(
-                operation?.legs?.some((leg) => leg?.meta?.detectedFromToken),
-              );
 
               return (
                 <TableRow
@@ -236,20 +241,7 @@ const OperationsTable = ({
                   sx={index % 2 === 1 ? { backgroundColor: 'action.hover' } : undefined}
                 >
                   <TableCell>
-                    <Stack direction="row" spacing={1} alignItems="center">
-                      {hasInferredSource && (
-                        <Tooltip title={strings.tables.inferredTooltip} disableInteractive>
-                          <InfoOutlinedIcon
-                            fontSize="inherit"
-                            sx={{ fontSize: '1rem' }}
-                            data-testid="operations-inferred-indicator"
-                            titleAccess={strings.tables.inferredTooltip}
-                            color="info"
-                          />
-                        </Tooltip>
-                      )}
-                      <span>{formatQuantity(operation.totalQuantity)}</span>
-                    </Stack>
+                    {formatQuantity(operation.totalQuantity)}
                   </TableCell>
                   <TableCell align="right">{formatDecimal(operation.strike)}</TableCell>
                   <TableCell align="right">{formatDecimal(operation.averagePrice)}</TableCell>
