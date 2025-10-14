@@ -11,10 +11,14 @@ import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
 import Switch from '@mui/material/Switch';
 import FormControlLabel from '@mui/material/FormControlLabel';
+import Chip from '@mui/material/Chip';
+import { useTheme } from '@mui/material/styles';
 
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import DownloadIcon from '@mui/icons-material/Download';
+import ArrowCircleUpIcon from '@mui/icons-material/ArrowCircleUp';
+import ArrowCircleDownIcon from '@mui/icons-material/ArrowCircleDown';
 
 const quantityFormatter = typeof Intl !== 'undefined'
   ? new Intl.NumberFormat('es-AR', {
@@ -62,6 +66,23 @@ const OperationsTable = ({
   onToggleAveraging,
 }) => {
   const hasData = operations.length > 0;
+  const theme = useTheme();
+  
+  // Determine if this is CALLS or PUTS based on title
+  const isCallsTable = title?.toLowerCase().includes('call');
+  const isPutsTable = title?.toLowerCase().includes('put');
+  
+  const getChipColor = () => {
+    if (isCallsTable) return theme.palette.calls.main;
+    if (isPutsTable) return theme.palette.puts.main;
+    return theme.palette.primary.main;
+  };
+  
+  const getIcon = () => {
+    if (isCallsTable) return <ArrowCircleUpIcon sx={{ fontSize: 18 }} />;
+    if (isPutsTable) return <ArrowCircleDownIcon sx={{ fontSize: 18 }} />;
+    return null;
+  };
 
   return (
     <Paper
@@ -94,9 +115,20 @@ const OperationsTable = ({
                   justifyContent="space-between"
                   sx={{ width: '100%' }}
                 >
-                  <Typography variant="subtitle1" component="h3">
-                    {title}
-                  </Typography>
+                  <Chip
+                    icon={getIcon()}
+                    label={title}
+                    sx={{
+                      backgroundColor: getChipColor(),
+                      color: '#fff',
+                      fontWeight: 600,
+                      fontSize: '0.875rem',
+                      letterSpacing: '0.5px',
+                      '& .MuiChip-icon': {
+                        color: '#fff',
+                      },
+                    }}
+                  />
                   <Stack direction="row" spacing={0.5} alignItems="center">
                     {hasData && onToggleAveraging && (
                       <Tooltip title={strings?.upload?.averagingSwitch ?? 'Promediar por strike'}>
