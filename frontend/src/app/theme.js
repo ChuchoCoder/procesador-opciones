@@ -167,6 +167,18 @@ const theme = createTheme({
           '&.Mui-selected': {
             fontWeight: 600,
           },
+          '&:focus-visible': {
+            outline: 'none',
+          },
+          '&:focus': {
+            outline: 'none',
+          },
+          '&::before': {
+            display: 'none',
+          },
+          '&::after': {
+            display: 'none',
+          },
         },
       },
     },
