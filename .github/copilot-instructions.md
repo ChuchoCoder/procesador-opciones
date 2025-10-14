@@ -16,6 +16,7 @@ tests/
 
 ## Commands
 npm test; npm run lint
+Use Powershell style (; instead of & or &&) when executing console commands on Windows.
 
 ## Code Style
 JavaScript (ES2020+) with React 18.x, JSX transform via bundler: Follow standard conventions
@@ -26,3 +27,6 @@ JavaScript (ES2020+) with React 18.x, JSX transform via bundler: Follow standard
 
 <!-- MANUAL ADDITIONS START -->
 <!-- MANUAL ADDITIONS END -->
+ 
+<!-- AUTO-ADDED: feature 003-redesign-the-current -->
+- 003-redesign-the-current: Created plan.md (technical context + constitution check), research.md, data-model.md, quickstart.md, and contracts/README.md. See `specs/003-redesign-the-current/` for artifacts. (2025-10-13)

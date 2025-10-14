@@ -24,19 +24,25 @@ describe('Processor flow integration - GGAL PUTs fixture', () => {
   beforeEach(() => {
     window.localStorage.clear();
 
+    // Use new settings format (po:settings:GGAL)
     window.localStorage.setItem(
-      storageKeys.prefixRules,
+      'po:settings:GGAL',
       JSON.stringify({
-        GFG: {
-          symbol: 'GGAL',
-          defaultDecimals: 0,
-          strikeOverrides: {},
-          expirationOverrides: {
-            O: { defaultDecimals: 1, strikeOverrides: {} },
+        symbol: 'GGAL',
+        prefix: 'GFG',
+        defaultDecimals: 0,
+        strikeDefaultDecimals: 0,
+        expirations: {
+          OCT: {
+            suffixes: ['O', 'OC'],
+            decimals: 1,
+            overrides: [],
           },
         },
+        updatedAt: Date.now(),
       }),
     );
+    
     window.localStorage.setItem(
       storageKeys.expirations,
       JSON.stringify({
@@ -104,10 +110,10 @@ describe('Processor flow integration - GGAL PUTs fixture', () => {
       expect(within(callsTable).getByText('Sin datos para mostrar.')).toBeInTheDocument();
 
       const groupFilter = await screen.findByTestId('group-filter');
-  // Grouping now maps prefix rules to GGAL and normalizes settlement labels
-  expect(within(groupFilter).getByText('GGAL O')).toBeInTheDocument();
+      // System displays symbol (GGAL) from configuration
+      expect(within(groupFilter).getByText('GGAL O')).toBeInTheDocument();
 
-      // Scope to GFG O group to ensure download uses filtered data
+      // Scope to GGAL O group to ensure download uses filtered data
       const ggalButton = within(groupFilter).getByRole('button', { name: /GGAL O/i });
       await user.click(ggalButton);
       await waitFor(() => {

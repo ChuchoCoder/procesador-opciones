@@ -3,6 +3,9 @@ import Tabs from '@mui/material/Tabs';
 import Tab from '@mui/material/Tab';
 import Typography from '@mui/material/Typography';
 import Button from '@mui/material/Button';
+import ArrowCircleUpIcon from '@mui/icons-material/ArrowCircleUp';
+import ArrowCircleDownIcon from '@mui/icons-material/ArrowCircleDown';
+import SettingsIcon from '@mui/icons-material/Settings';
 
 const ProcessorTabs = ({ strings, activePreview, onPreviewChange, onNavigateSettings }) => {
   const previewLabel = strings?.previewLabel ?? '';
@@ -29,12 +32,33 @@ const ProcessorTabs = ({ strings, activePreview, onPreviewChange, onNavigateSett
           onChange={onPreviewChange}
           aria-label={previewAriaLabel}
         >
-          <Tab label={callsLabel} value="CALLS" />
-          <Tab label={putsLabel} value="PUTS" />
+          <Tab 
+            label={callsLabel} 
+            value="CALLS"
+            icon={<ArrowCircleUpIcon />}
+            iconPosition="start"
+            sx={{
+              '&.Mui-selected': {
+                color: 'calls.main',
+              },
+            }}
+          />
+          <Tab 
+            label={putsLabel} 
+            value="PUTS"
+            icon={<ArrowCircleDownIcon />}
+            iconPosition="start"
+            sx={{
+              '&.Mui-selected': {
+                color: 'puts.main',
+              },
+            }}
+          />
         </Tabs>
       </Stack>
       <Button
-        variant="text"
+        variant="outlined"
+        startIcon={<SettingsIcon />}
         onClick={onNavigateSettings}
         data-testid="processor-settings-tab"
       >
