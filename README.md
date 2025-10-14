@@ -1,10 +1,6 @@
-<div align="center">
-
 # Procesador de Opciones
 
 Extensión / SPA para procesar operaciones de opciones desde archivos CSV con vistas separadas CALLS / PUTS y modo de promedios por strike.
-
-</div>
 
 ## ⚠️ Estado del Proyecto
 
