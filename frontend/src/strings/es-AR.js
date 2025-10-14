@@ -1,7 +1,7 @@
 const strings = {
   locale: 'es-AR',
   app: {
-    title: 'Procesador Opciones',
+    title: '@ChuchoTrader',
     construction: 'La aplicación está en construcción.',
   },
   navigation: {
