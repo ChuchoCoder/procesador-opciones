@@ -44,7 +44,7 @@ export function createDefaultSymbolConfig(symbol) {
   EXPIRATION_CODES.forEach((code) => {
     expirations[code] = {
       suffixes: [code.charAt(0), code.substring(0, 2)], // Default: 1-letter and 2-letter forms
-      decimals: 2,
+      decimals: 0,
       overrides: [],
     };
   });
@@ -52,8 +52,22 @@ export function createDefaultSymbolConfig(symbol) {
   return {
     symbol: symbol.toUpperCase(),
     prefix: '',
-    defaultDecimals: 2,
+    // Default to 0 decimals globally per product request; expirations may override
+    defaultDecimals: 0,
     expirations,
     updatedAt: Date.now(),
   };
+}
+
+// Helper: create defaults with symbol-specific adjustments
+export function createDefaultSymbolConfigWithOverrides(symbol) {
+  const cfg = createDefaultSymbolConfig(symbol);
+
+  // Special-case: GGAL should use 1 decimal for OCT and DIC by default
+  if (cfg.symbol === 'GGAL') {
+    if (cfg.expirations.OCT) cfg.expirations.OCT.decimals = 1;
+    if (cfg.expirations.DIC) cfg.expirations.DIC.decimals = 1;
+  }
+
+  return cfg;
 }

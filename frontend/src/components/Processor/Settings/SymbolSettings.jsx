@@ -6,7 +6,11 @@ import {
   Typography,
   Alert,
   Divider,
+  Tooltip,
+  IconButton,
+  InputAdornment,
 } from '@mui/material';
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import { validatePrefix, validateDecimals } from '../../../services/settings-utils';
 import { loadSymbolConfig, saveSymbolConfig } from '../../../services/storage-settings';
 import { DECIMALS_MIN, DECIMALS_MAX, EXPIRATION_CODES } from '../../../services/settings-types';
@@ -159,30 +163,46 @@ export default function SymbolSettings({ symbol, config, onConfigUpdate }) {
 
       <Box sx={{ display: 'flex', gap: 2, maxWidth: 600 }}>
         <TextField
-          label={strings.settings.symbolSettings.prefixLabel}
+          label={
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+              {strings.settings.symbolSettings.prefixLabel}
+              <Tooltip title={strings.settings.symbolSettings.prefixHelperText} arrow placement="top">
+                <InfoOutlinedIcon sx={{ fontSize: 18, color: 'info.main', cursor: 'help' }} />
+              </Tooltip>
+            </Box>
+          }
           value={prefix}
           onChange={handlePrefixChange}
           onBlur={handlePrefixBlur}
           error={!!prefixError}
-          helperText={prefixError || strings.settings.symbolSettings.prefixHelperText}
+          helperText={prefixError}
           sx={{ flex: 1 }}
           inputProps={{ maxLength: 10 }}
+          InputLabelProps={{ shrink: true }}
         />
 
         <TextField
-          label={strings.settings.symbolSettings.defaultDecimalsLabel}
+          label={
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+              {strings.settings.symbolSettings.defaultDecimalsLabel}
+              <Tooltip title={strings.settings.symbolSettings.decimalsHelperText} arrow placement="top">
+                <InfoOutlinedIcon sx={{ fontSize: 18, color: 'info.main', cursor: 'help' }} />
+              </Tooltip>
+            </Box>
+          }
           type="number"
           value={decimals}
           onChange={handleDecimalsChange}
           onBlur={handleDecimalsBlur}
           error={!!decimalsError}
-          helperText={decimalsError || strings.settings.symbolSettings.decimalsHelperText}
-          sx={{ width: 180 }}
+          helperText={decimalsError}
+          sx={{ width: 280 }}
           inputProps={{
             min: DECIMALS_MIN,
             max: DECIMALS_MAX,
             step: 1,
           }}
+          InputLabelProps={{ shrink: true }}
         />
       </Box>
 

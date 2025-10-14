@@ -8,8 +8,10 @@ import {
   Button,
   IconButton,
   Stack,
+  Tooltip,
 } from '@mui/material';
 import { Add as AddIcon, Close as CloseIcon } from '@mui/icons-material';
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import { validateSuffix, validateDecimals } from '../../../services/settings-utils';
 import { DECIMALS_MIN, DECIMALS_MAX } from '../../../services/settings-types';
 import OverrideRow from './OverrideRow.jsx';
@@ -140,7 +142,14 @@ export default function ExpirationDetail({ symbol, expirationCode, expiration, o
       {/* Decimals Section */}
       <Box sx={{ mb: 3 }}>
         <TextField
-          label={s.decimalsLabel}
+          label={
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+              {s.decimalsLabel}
+              <Tooltip title={s.decimalsHelper} arrow placement="top">
+                <InfoOutlinedIcon sx={{ fontSize: 18, color: 'info.main', cursor: 'help' }} />
+              </Tooltip>
+            </Box>
+          }
           type="number"
           size="small"
           value={decimals}
@@ -153,7 +162,8 @@ export default function ExpirationDetail({ symbol, expirationCode, expiration, o
             max: DECIMALS_MAX,
             step: 1,
           }}
-          sx={{ width: 200 }}
+          sx={{ width: 280 }}
+          InputLabelProps={{ shrink: true }}
         />
       </Box>
 

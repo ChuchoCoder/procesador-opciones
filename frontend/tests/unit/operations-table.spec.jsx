@@ -1,8 +1,10 @@
 import { describe, it, expect, afterEach } from 'vitest';
 import { render, screen, cleanup } from '@testing-library/react';
+import { ThemeProvider } from '@mui/material/styles';
 
 import OperationsTable from '../../src/components/Processor/OperationsTable.jsx';
 import strings from '../../src/strings/es-AR.js';
+import theme from '../../src/app/theme.js';
 
 describe('OperationsTable inferred indicator', () => {
   afterEach(() => {
@@ -15,8 +17,12 @@ describe('OperationsTable inferred indicator', () => {
     testId: 'operations-table',
   };
 
+  const renderWithTheme = (component) => {
+    return render(<ThemeProvider theme={theme}>{component}</ThemeProvider>);
+  };
+
   it('shows inferred indicator when any leg was detected from token', () => {
-    render(
+    renderWithTheme(
       <OperationsTable
         {...baseProps}
         operations={[
@@ -35,7 +41,7 @@ describe('OperationsTable inferred indicator', () => {
   });
 
   it('does not render indicator when no legs were detected from token', () => {
-    render(
+    renderWithTheme(
       <OperationsTable
         {...baseProps}
         operations={[

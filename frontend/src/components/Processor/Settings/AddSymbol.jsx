@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Box, Button, TextField, Dialog, DialogTitle, DialogContent, DialogActions, Alert } from '@mui/material';
 import { validateSymbol } from '../../../services/settings-utils.js';
-import { createDefaultSymbolConfig } from '../../../services/settings-types.js';
+import { createDefaultSymbolConfigWithOverrides } from '../../../services/settings-types.js';
 import { saveSymbolConfig, symbolExists } from '../../../services/storage-settings.js';
 import strings from '../../../strings/es-AR.js';
 
@@ -40,8 +40,8 @@ export default function AddSymbol({ onSymbolAdded }) {
       return;
     }
 
-    // Create and save default config
-    const config = createDefaultSymbolConfig(normalized);
+  // Create and save default config (apply any symbol-specific overrides)
+  const config = createDefaultSymbolConfigWithOverrides(normalized);
     const saved = await saveSymbolConfig(config);
 
     if (saved) {

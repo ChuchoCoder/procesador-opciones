@@ -54,7 +54,7 @@ describe('parseToken invalid cases', () => {
 });
 
 describe('enrichOperationRow', () => {
-  it('preserves explicit fields and only fills missing ones from token', () => {
+  it('preserves explicit fields and only fills missing ones from token', async () => {
     const explicitRow = buildRow({
       symbol: 'GGAL',
       expiration: 'NOV24',
@@ -63,7 +63,7 @@ describe('enrichOperationRow', () => {
       security_id: 'ALUAV300.DIC24',
     });
 
-    const explicitResult = enrichOperationRow(explicitRow);
+    const explicitResult = await enrichOperationRow(explicitRow);
     expect(explicitResult.symbol).toBe('GGAL');
     expect(explicitResult.expiration).toBe('NOV24');
     expect(explicitResult.type).toBe('CALL');
@@ -78,7 +78,7 @@ describe('enrichOperationRow', () => {
       security_id: 'ALUAC400.OC',
     });
 
-    const missingExpirationResult = enrichOperationRow(missingExpirationRow);
+    const missingExpirationResult = await enrichOperationRow(missingExpirationRow);
     expect(missingExpirationResult.symbol).toBe('ALUA');
     expect(missingExpirationResult.expiration).toBe('OC');
     expect(missingExpirationResult.type).toBe('CALL');
@@ -87,7 +87,7 @@ describe('enrichOperationRow', () => {
     expect(missingExpirationResult.meta.sourceToken).toBe('ALUAC400.OC');
   });
 
-  it('applies prefix rule symbol mapping and strike decimals when using token strike', () => {
+  it('applies prefix rule symbol mapping and strike decimals when using token strike', async () => {
     const row = buildRow({
       symbol: '',
       expiration: '',
@@ -116,7 +116,7 @@ describe('enrichOperationRow', () => {
       },
     };
 
-    const result = enrichOperationRow(row, configuration);
+    const result = await enrichOperationRow(row, configuration);
 
     expect(result.symbol).toBe('GGPA');
     expect(result.expiration).toBe('ENE24');
@@ -176,9 +176,9 @@ describe('deriveGroups', () => {
 });
 
 describe('operation classification', () => {
-  it('derives type precedence from explicit field, token, and defaults to UNKNOWN', () => {
+  it('derives type precedence from explicit field, token, and defaults to UNKNOWN', async () => {
     const explicitTypeRow = buildRow({ option_type: 'PUT', symbol: 'GGAL', strike: 110 });
-    const explicitResult = enrichOperationRow(explicitTypeRow);
+    const explicitResult = await enrichOperationRow(explicitTypeRow);
     expect(explicitResult.type).toBe('PUT');
     expect(explicitResult.meta.detectedFromToken).toBe(false);
 
@@ -188,14 +188,14 @@ describe('operation classification', () => {
       strike: null,
       security_id: 'GGALV110ENE24',
     });
-    const tokenTypeResult = enrichOperationRow(tokenTypeRow);
+    const tokenTypeResult = await enrichOperationRow(tokenTypeRow);
     expect(tokenTypeResult.type).toBe('PUT');
     expect(tokenTypeResult.symbol).toBe('GGAL');
     expect(tokenTypeResult.expiration).toBe('ENE24');
     expect(tokenTypeResult.meta.detectedFromToken).toBe(true);
 
     const unknownRow = buildRow({ option_type: null, symbol: '', security_id: 'OPER' });
-    const unknownResult = enrichOperationRow(unknownRow);
+    const unknownResult = await enrichOperationRow(unknownRow);
     expect(unknownResult.type).toBe('UNKNOWN');
     expect(unknownResult.symbol).toBe('OPER');
     expect(unknownResult.expiration).toBe('NONE');
