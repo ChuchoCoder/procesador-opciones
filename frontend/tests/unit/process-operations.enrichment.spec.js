@@ -96,13 +96,22 @@ describe('enrichOperationRow', () => {
       security_id: 'GGALV110ENE24',
     });
 
+    // Use new prefixMap format (symbol settings)
     const configuration = {
-      prefixRules: {
+      prefixMap: {
         GGAL: {
           symbol: 'GGPA',
+          prefix: 'GGAL',
           defaultDecimals: 2,
-          strikeOverrides: {},
-          expirationOverrides: {},
+          strikeDefaultDecimals: 2,
+          expirations: {
+            ENE24: {
+              suffixes: ['ENE24'],
+              decimals: 2,
+              overrides: [],
+            },
+          },
+          updatedAt: Date.now(),
         },
       },
     };
