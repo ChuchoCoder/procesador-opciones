@@ -110,7 +110,7 @@ Within a symbol, the analyst navigates vertical expiration tabs (DIC, FEB, ABR, 
 - **FR-008**: Analysts MUST be able to create, edit, and remove strike overrides that map a raw numeric token to a custom formatted strike value per expiration.
 - **FR-009**: The system MUST validate strike overrides so that each raw numeric token is unique within an expiration and the formatted value matches the allowed decimal constraints.
 - **FR-010**: All symbol, expiration, and override changes MUST be persisted automatically using a write-on-blur strategy: changes are written to the browser's `localStorage` when a field loses focus or when the user navigates away from the symbol view. For this feature iteration persistence will be to the browser's `localStorage` (per-user, client-side). Backend synchronization is out of scope for this iteration and must be planned separately if needed.
-- **FR-011**: The settings UI MUST provide a "Reset to saved" control that reloads the latest persisted configuration from `localStorage` for the active symbol. No multi-version history or per-change undo is required in this iteration.
+- **FR-011**: ~~The settings UI MUST provide a "Reset to saved" control that reloads the latest persisted configuration from `localStorage` for the active symbol.~~ **REMOVED** - Users can refresh the page to reload latest state. No multi-version history or per-change undo is required in this iteration.
 
 ### Key Entities *(include if feature involves data)*
 
@@ -122,8 +122,15 @@ Within a symbol, the analyst navigates vertical expiration tabs (DIC, FEB, ABR, 
 
 - Only authorized operations analysts access this settings area; role management is handled elsewhere.
 - The list of expirations (DIC, FEB, ABR, JUN, AGO, OCT) remains fixed for this feature cycle; future months can be added separately if needed.
-- Decimal precision inputs accept whole numbers within the range already supported by the processor (e.g., 0–4) and invalid entries are blocked by existing validation patterns.
+- Decimal precision inputs accept whole numbers within the range 0–4 (inclusive) and invalid entries are blocked by validation.
 - Existing storage mechanisms continue to persist configuration data; no new storage technology is introduced by this feature.
+
+## UI Design Notes
+
+- **Symbol defaults layout**: Prefix and decimal places controls are displayed side-by-side in a single row for compact presentation.
+- **Expiration detail layout**: Decimals control is positioned before the "Sufijos permitidos" section for logical flow (general settings before specific suffix configuration).
+- **Write-on-blur persistence**: All edits are automatically saved when the user moves focus away from a field (onBlur event). No explicit Save button is required.
+- **No Reset button**: The "Reset to saved" functionality has been removed. Users can refresh the page to reload the latest persisted state if needed.
 
 ## Success Criteria *(mandatory)*
 

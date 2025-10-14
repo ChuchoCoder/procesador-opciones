@@ -158,3 +158,31 @@ T027. [Polish] Documentation: Update README and `specs/003-redesign-the-current/
 - `specs/003-redesign-the-current/quickstart.md` (update)
 
 ---
+
+## Post-Implementation Refinements (2025-10-13)
+
+After user feedback during acceptance testing, the following UI refinements were implemented:
+
+**R001. Fixed 0 decimals bug**: Updated `SymbolSettings.jsx` line 39 and 129 to use `config.defaultDecimals !== undefined ? config.defaultDecimals : 2` instead of `config.defaultDecimals || 2`. The `||` operator treated 0 as falsy, causing it to revert to 2. **Status: COMPLETED**
+
+**R002. Removed Reset button**: Eliminated T024 task implementation (Reset to saved control). Removed:
+- `hasUnsavedChanges` state variable
+- `setHasUnsavedChanges()` calls in handlers
+- `handleReset()` function (lines 120-140)
+- Reset button JSX and disabled logic
+- FR-011 from spec.md (marked as removed)
+
+Rationale: Write-on-blur persistence means changes save immediately, making reset button redundant. Users can refresh page if needed. **Status: COMPLETED**
+
+**R003. Condensed symbol defaults layout**: Changed `SymbolSettings.jsx` fields container from `flexDirection: 'column'` to horizontal flex layout. Prefix field uses `flex: 1`, Decimals field has fixed `width: 180`. Removed individual `fullWidth` props. Provides more compact presentation. **Status: COMPLETED**
+
+**R004. Reordered expiration controls**: Moved Decimals section in `ExpirationDetail.jsx` from after Suffixes to before Suffixes section. Logical flow now: Expiration heading → Decimals (general setting) → Suffixes (allowed forms) → Strike Overrides (specific mappings). **Status: COMPLETED**
+
+**Tests**: All 48 settings-related unit tests passed after refinements (symbol-settings-logic.spec.js: 16 tests, settings-utils.spec.js: 32 tests). No test changes required as underlying validation logic unchanged.
+
+**Updated files**:
+- `frontend/src/components/Processor/Settings/SymbolSettings.jsx` (R001, R002, R003)
+- `frontend/src/components/Processor/Settings/ExpirationDetail.jsx` (R004)
+- `specs/003-redesign-the-current/spec.md` (Edge Cases, FR-011, Assumptions)
+- `specs/003-redesign-the-current/plan.md` (Post-Implementation Refinements section)
+

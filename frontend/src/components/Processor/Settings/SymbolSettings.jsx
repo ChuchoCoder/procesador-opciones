@@ -5,10 +5,13 @@ import {
   Button,
   Typography,
   Alert,
+  Divider,
 } from '@mui/material';
 import { validatePrefix, validateDecimals } from '../../../services/settings-utils';
 import { loadSymbolConfig, saveSymbolConfig } from '../../../services/storage-settings';
-import { DECIMALS_MIN, DECIMALS_MAX } from '../../../services/settings-types';
+import { DECIMALS_MIN, DECIMALS_MAX, EXPIRATION_CODES } from '../../../services/settings-types';
+import ExpirationTabs from './ExpirationTabs.jsx';
+import ExpirationDetail from './ExpirationDetail.jsx';
 import strings from '../../../strings';
 
 /**
@@ -25,31 +28,33 @@ export default function SymbolSettings({ symbol, config, onConfigUpdate }) {
   const [decimals, setDecimals] = useState(2);
   const [prefixError, setPrefixError] = useState('');
   const [decimalsError, setDecimalsError] = useState('');
-  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [activeExpiration, setActiveExpiration] = useState(null);
 
   // Initialize local state from config
   useEffect(() => {
     if (config) {
       setPrefix(config.prefix || '');
-      setDecimals(config.defaultDecimals || 2);
-      setHasUnsavedChanges(false);
+      setDecimals(config.defaultDecimals !== undefined ? config.defaultDecimals : 2);
       setPrefixError('');
       setDecimalsError('');
       setSaveSuccess(false);
+      
+      // Set first expiration as active if none selected
+      if (!activeExpiration && EXPIRATION_CODES.length > 0) {
+        setActiveExpiration(EXPIRATION_CODES[0]);
+      }
     }
   }, [config]);
 
   const handlePrefixChange = (e) => {
     setPrefix(e.target.value);
-    setHasUnsavedChanges(true);
     setSaveSuccess(false);
     setPrefixError('');
   };
 
   const handleDecimalsChange = (e) => {
     setDecimals(e.target.value);
-    setHasUnsavedChanges(true);
     setSaveSuccess(false);
     setDecimalsError('');
   };
@@ -91,7 +96,6 @@ export default function SymbolSettings({ symbol, config, onConfigUpdate }) {
       };
 
       saveSymbolConfig(updatedConfig);
-      setHasUnsavedChanges(false);
       setSaveSuccess(true);
       
       // Call parent callback to refresh config
@@ -111,25 +115,24 @@ export default function SymbolSettings({ symbol, config, onConfigUpdate }) {
     }
   };
 
-  const handleReset = () => {
+  const handleExpirationUpdate = (expirationCode, updatedExpiration) => {
     try {
-      // Reload config from storage
-      const savedConfig = loadSymbolConfig(symbol);
-      if (savedConfig) {
-        setPrefix(savedConfig.prefix || '');
-        setDecimals(savedConfig.defaultDecimals || 2);
-        setHasUnsavedChanges(false);
-        setPrefixError('');
-        setDecimalsError('');
-        setSaveSuccess(false);
-        
-        // Notify parent
-        if (onConfigUpdate) {
-          onConfigUpdate(savedConfig);
-        }
+      const updatedConfig = {
+        ...config,
+        expirations: {
+          ...config.expirations,
+          [expirationCode]: updatedExpiration,
+        },
+      };
+
+      saveSymbolConfig(updatedConfig);
+      
+      // Notify parent
+      if (onConfigUpdate) {
+        onConfigUpdate(updatedConfig);
       }
     } catch (error) {
-      console.error('PO: Error reloading symbol config:', error);
+      console.error('PO: Error saving expiration update:', error);
     }
   };
 
@@ -153,7 +156,7 @@ export default function SymbolSettings({ symbol, config, onConfigUpdate }) {
         </Alert>
       )}
 
-      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, maxWidth: 400 }}>
+      <Box sx={{ display: 'flex', gap: 2, maxWidth: 600 }}>
         <TextField
           label={strings.settings.symbolSettings.prefixLabel}
           value={prefix}
@@ -161,7 +164,7 @@ export default function SymbolSettings({ symbol, config, onConfigUpdate }) {
           onBlur={handlePrefixBlur}
           error={!!prefixError}
           helperText={prefixError || strings.settings.symbolSettings.prefixHelperText}
-          fullWidth
+          sx={{ flex: 1 }}
           inputProps={{ maxLength: 10 }}
         />
 
@@ -173,22 +176,36 @@ export default function SymbolSettings({ symbol, config, onConfigUpdate }) {
           onBlur={handleDecimalsBlur}
           error={!!decimalsError}
           helperText={decimalsError || strings.settings.symbolSettings.decimalsHelperText}
-          fullWidth
+          sx={{ width: 180 }}
           inputProps={{
             min: DECIMALS_MIN,
             max: DECIMALS_MAX,
             step: 1,
           }}
         />
+      </Box>
 
-        <Box sx={{ display: 'flex', gap: 2, mt: 1 }}>
-          <Button
-            variant="outlined"
-            onClick={handleReset}
-            disabled={!hasUnsavedChanges}
-          >
-            {strings.settings.symbolSettings.resetButton}
-          </Button>
+      {/* Expiration Management Section */}
+      <Divider sx={{ my: 4 }} />
+
+      <Typography variant="h6" gutterBottom>
+        {strings.settings.symbolSettings.expirationTabs.title}
+      </Typography>
+
+      <Box sx={{ display: 'flex', gap: 3, mt: 2 }}>
+        <ExpirationTabs
+          expirationCodes={EXPIRATION_CODES}
+          activeExpiration={activeExpiration}
+          onExpirationChange={setActiveExpiration}
+        />
+        
+        <Box sx={{ flex: 1 }}>
+          <ExpirationDetail
+            symbol={symbol}
+            expirationCode={activeExpiration}
+            expiration={config?.expirations?.[activeExpiration]}
+            onExpirationUpdate={handleExpirationUpdate}
+          />
         </Box>
       </Box>
     </Box>
