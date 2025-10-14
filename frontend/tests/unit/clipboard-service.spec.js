@@ -45,7 +45,7 @@ const createReport = ({
 
 describe('clipboard-service', () => {
   describe('buildClipboardPayload', () => {
-    it('formats CALLS scope into tab-delimited rows with header', () => {
+    it('formats CALLS scope into tab-delimited rows without header', () => {
       const report = createReport({
         calls: [
           createOperation({ strike: 120, totalQuantity: 3, averagePrice: 10.5 }),
@@ -59,13 +59,12 @@ describe('clipboard-service', () => {
       });
 
       expect(payload).toBe([
-        'Cantidad\tStrike\tPrecio',
         '3\t120\t10.5',
         '-2\t125.5\t9.75',
       ].join('\n'));
     });
 
-    it('formats COMBINED scope including section titles and blank separator', () => {
+    it('formats COMBINED scope including section titles and blank separator without headers', () => {
       const report = createReport({
         calls: [createOperation({ strike: 110, totalQuantity: -2, averagePrice: 9.75 })],
         puts: [createOperation({ strike: 95.5, totalQuantity: 5, averagePrice: 1.2345, optionType: 'PUT' })],
@@ -76,11 +75,9 @@ describe('clipboard-service', () => {
 
       expect(payload).toBe([
         'OPERACIONES CALLS (CON PROMEDIOS)',
-        'Cantidad\tStrike\tPrecio',
         '-2\t110\t9.75',
         '',
         'OPERACIONES PUTS (CON PROMEDIOS)',
-        'Cantidad\tStrike\tPrecio',
         '5\t95.5\t1.2345',
       ].join('\n'));
     });
@@ -111,7 +108,6 @@ describe('clipboard-service', () => {
       ).resolves.toBeUndefined();
 
       expect(writeText).toHaveBeenCalledWith([
-        'Cantidad\tStrike\tPrecio',
         '1\t100\t12.3456',
       ].join('\n'));
     });

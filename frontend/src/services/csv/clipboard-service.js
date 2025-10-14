@@ -109,7 +109,7 @@ const buildSectionRows = (label, operations) => {
     return [];
   }
 
-  const rows = [label, HEADERS.join(TAB)];
+  const rows = [label];
   operations.forEach((operation) => {
     rows.push(formatOperationRow(operation));
   });
@@ -162,9 +162,8 @@ export const buildClipboardPayload = ({ report, scope, view }) => {
     return combinedRows.join('\n');
   }
 
-  const header = HEADERS.join(TAB);
   const rows = operations.map((operation) => formatOperationRow(operation));
-  return [header, ...rows].join('\n');
+  return rows.join('\n');
 };
 
 const resolveClipboard = (clipboard) => {
