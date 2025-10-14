@@ -11,6 +11,7 @@ import Typography from '@mui/material/Typography';
 import Divider from '@mui/material/Divider';
 import IconButton from '@mui/material/IconButton';
 import Tooltip from '@mui/material/Tooltip';
+import Avatar from '@mui/material/Avatar';
 import PlayCircleOutlineIcon from '@mui/icons-material/PlayCircleOutline';
 import SettingsIcon from '@mui/icons-material/Settings';
 import MenuIcon from '@mui/icons-material/Menu';
@@ -67,46 +68,39 @@ const Sidebar = ({ strings, routes }) => {
           background: 'linear-gradient(135deg, #0d47a1 0%, #1976d2 100%)',
           color: 'white',
           display: 'flex',
-          justifyContent: 'space-between',
+          justifyContent: 'center',
           alignItems: 'center',
+          position: 'relative',
         }}
       >
-        {open ? (
-          <Typography
-            variant="h6"
-            noWrap
+        <Tooltip title={strings.app.title} placement="right">
+          <IconButton
             component="a"
             href="https://x.com/ChuchoTrader"
             target="_blank"
             rel="noopener noreferrer"
-            sx={{
-              fontWeight: 600,
-              color: 'inherit',
-              textDecoration: 'none',
-              '&:hover': {
-                textDecoration: 'underline',
-              },
+            sx={{ p: 0 }}
+          >
+            <Avatar
+              src="https://pbs.twimg.com/profile_images/837675800707096577/k2ZKpg8p_400x400.jpg"
+              alt={strings.app.title}
+              sx={{ 
+                width: 40, 
+                height: 40,
+                border: '2px solid white',
+              }}
+            />
+          </IconButton>
+        </Tooltip>
+        {open && (
+          <IconButton 
+            onClick={handleToggle} 
+            sx={{ 
+              color: 'white',
+              position: 'absolute',
+              right: 8,
             }}
           >
-            {strings.app.title}
-          </Typography>
-        ) : (
-          <Box sx={{ width: '100%', display: 'flex', justifyContent: 'center' }}>
-            <Tooltip title={strings.app.title} placement="right">
-              <IconButton
-                component="a"
-                href="https://x.com/ChuchoTrader"
-                target="_blank"
-                rel="noopener noreferrer"
-                sx={{ color: 'white' }}
-              >
-                <MenuIcon />
-              </IconButton>
-            </Tooltip>
-          </Box>
-        )}
-        {open && (
-          <IconButton onClick={handleToggle} sx={{ color: 'white' }}>
             <ChevronLeftIcon />
           </IconButton>
         )}
