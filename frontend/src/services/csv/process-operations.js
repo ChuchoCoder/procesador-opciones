@@ -11,14 +11,14 @@ const UNKNOWN_EXPIRATION = 'UNKNOWN';
 
 /**
  * Load all symbol configurations and create a prefix map
- * @returns {Object} Map of prefix → SymbolConfiguration
+ * @returns {Promise<Object>} Map of prefix → SymbolConfiguration
  */
-const loadPrefixMap = () => {
+const loadPrefixMap = async () => {
   const prefixMap = {};
-  const symbols = getAllSymbols();
+  const symbols = await getAllSymbols();
   
   for (const symbol of symbols) {
-    const config = loadSymbolConfig(symbol);
+    const config = await loadSymbolConfig(symbol);
     if (config && config.prefixes && Array.isArray(config.prefixes)) {
       for (const prefix of config.prefixes) {
         const normalizedPrefix = prefix.toUpperCase().trim();
@@ -408,8 +408,8 @@ const applyPrefixRule = ({ tokenMatch, symbolConfig, explicitExpiration }) => {
   };
 };
 
-export const enrichOperationRow = (row = {}, configuration = {}) => {
-  const prefixMap = configuration.prefixMap ?? loadPrefixMap();
+export const enrichOperationRow = async (row = {}, configuration = {}) => {
+  const prefixMap = configuration.prefixMap ?? await loadPrefixMap();
   const tokenMatch = findTokenMatch(row);
 
   const explicitSymbol = toUpperCase(row.symbol);
@@ -833,7 +833,7 @@ export const processOperations = async ({
   
   // Load prefix map from new settings format if not already provided
   if (!activeConfiguration.prefixMap) {
-    activeConfiguration.prefixMap = loadPrefixMap();
+    activeConfiguration.prefixMap = await loadPrefixMap();
   }
   
   const logger = createDevLogger('Procesamiento');
@@ -867,8 +867,8 @@ export const processOperations = async ({
 
   const validatedRows = validated.rows ?? [];
 
-  const enrichedOperations = validatedRows.map((row, index) => {
-    const enrichment = enrichOperationRow(row, activeConfiguration);
+  const enrichedOperations = await Promise.all(validatedRows.map(async (row, index) => {
+    const enrichment = await enrichOperationRow(row, activeConfiguration);
 
     const optionType = enrichment.type === 'CALL' || enrichment.type === 'PUT' ? enrichment.type : 'UNKNOWN';
     const strike = enrichment.strike ?? row.strike ?? null;
@@ -891,7 +891,7 @@ export const processOperations = async ({
       },
       raw: row.raw ?? row,
     };
-  });
+  }));
 
   const optionOperationsForConsolidation = enrichedOperations.filter(
     (operation) => operation.optionType === 'CALL' || operation.optionType === 'PUT',

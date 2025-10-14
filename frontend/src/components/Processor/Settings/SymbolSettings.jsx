@@ -88,14 +88,14 @@ export default function SymbolSettings({ symbol, config, onConfigUpdate }) {
     saveField('defaultDecimals', validation.value);
   };
 
-  const saveField = (fieldName, value) => {
+  const saveField = async (fieldName, value) => {
     try {
       const updatedConfig = {
         ...config,
         [fieldName]: value,
       };
 
-      saveSymbolConfig(updatedConfig);
+      await saveSymbolConfig(updatedConfig);
       
       setSaveSuccess(true);
       
@@ -116,7 +116,7 @@ export default function SymbolSettings({ symbol, config, onConfigUpdate }) {
     }
   };
 
-  const handleExpirationUpdate = (expirationCode, updatedExpiration) => {
+  const handleExpirationUpdate = async (expirationCode, updatedExpiration) => {
     try {
       const updatedConfig = {
         ...config,
@@ -126,7 +126,7 @@ export default function SymbolSettings({ symbol, config, onConfigUpdate }) {
         },
       };
 
-      saveSymbolConfig(updatedConfig);
+      await saveSymbolConfig(updatedConfig);
       
       // Notify parent
       if (onConfigUpdate) {

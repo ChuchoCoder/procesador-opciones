@@ -21,15 +21,14 @@ export default function SettingsScreen() {
   // Load config when active symbol changes
   useEffect(() => {
     if (activeSymbol) {
-      const loaded = loadSymbolConfig(activeSymbol);
-      setConfig(loaded);
+      loadSymbolConfig(activeSymbol).then(loaded => setConfig(loaded));
     } else {
       setConfig(null);
     }
   }, [activeSymbol]);
 
-  const refreshSymbols = () => {
-    const allSymbols = getAllSymbols();
+  const refreshSymbols = async () => {
+    const allSymbols = await getAllSymbols();
     setSymbols(allSymbols);
     if (allSymbols.length > 0 && !activeSymbol) {
       setActiveSymbol(allSymbols[0]);

@@ -1,35 +1,38 @@
 /**
- * localStorage abstraction for settings persistence
+ * Storage abstraction for settings persistence
+ * Works with both localStorage (web) and chrome.storage.local (extension)
  * Namespace: po:settings:<symbol>
  * Per spec: write-on-blur strategy, last-write-wins concurrency
  */
 
+import { storageAdapter } from './storage/storage-adapter.js';
+
 const STORAGE_PREFIX = 'po:settings:';
 
 /**
- * Get all symbol keys from localStorage
- * @returns {string[]} Array of symbol identifiers
+ * Get all symbol keys from storage
+ * @returns {Promise<string[]>} Array of symbol identifiers
  */
-export function getAllSymbols() {
-  const symbols = [];
-  for (let i = 0; i < localStorage.length; i++) {
-    const key = localStorage.key(i);
-    if (key && key.startsWith(STORAGE_PREFIX)) {
-      symbols.push(key.substring(STORAGE_PREFIX.length));
-    }
+export async function getAllSymbols() {
+  try {
+    const keys = await storageAdapter.getAllKeys(STORAGE_PREFIX);
+    const symbols = keys.map(key => key.substring(STORAGE_PREFIX.length));
+    return symbols.sort();
+  } catch (error) {
+    console.error('PO: Failed to get all symbols:', error);
+    return [];
   }
-  return symbols.sort();
 }
 
 /**
- * Load a symbol configuration from localStorage
+ * Load a symbol configuration from storage
  * @param {string} symbol - Symbol identifier
- * @returns {Object|null} SymbolConfiguration or null if not found
+ * @returns {Promise<Object|null>} SymbolConfiguration or null if not found
  */
-export function loadSymbolConfig(symbol) {
+export async function loadSymbolConfig(symbol) {
   const key = STORAGE_PREFIX + symbol.toUpperCase();
   try {
-    const json = localStorage.getItem(key);
+    const json = await storageAdapter.getItem(key);
     if (!json) return null;
     return JSON.parse(json);
   } catch (error) {
@@ -39,11 +42,11 @@ export function loadSymbolConfig(symbol) {
 }
 
 /**
- * Save a symbol configuration to localStorage
+ * Save a symbol configuration to storage
  * @param {Object} config - SymbolConfiguration object
- * @returns {boolean} Success status
+ * @returns {Promise<boolean>} Success status
  */
-export function saveSymbolConfig(config) {
+export async function saveSymbolConfig(config) {
   if (!config || !config.symbol) {
     console.error('PO: Cannot save config without symbol identifier');
     return false;
@@ -53,8 +56,8 @@ export function saveSymbolConfig(config) {
   try {
     // Update timestamp for last-write-wins
     config.updatedAt = Date.now();
-    localStorage.setItem(key, JSON.stringify(config));
-    return true;
+    const success = await storageAdapter.setItem(key, JSON.stringify(config));
+    return success;
   } catch (error) {
     console.error(`PO: Failed to save symbol config for ${config.symbol}:`, error);
     return false;
@@ -62,15 +65,15 @@ export function saveSymbolConfig(config) {
 }
 
 /**
- * Delete a symbol configuration from localStorage
+ * Delete a symbol configuration from storage
  * @param {string} symbol - Symbol identifier
- * @returns {boolean} Success status
+ * @returns {Promise<boolean>} Success status
  */
-export function deleteSymbolConfig(symbol) {
+export async function deleteSymbolConfig(symbol) {
   const key = STORAGE_PREFIX + symbol.toUpperCase();
   try {
-    localStorage.removeItem(key);
-    return true;
+    const success = await storageAdapter.removeItem(key);
+    return success;
   } catch (error) {
     console.error(`PO: Failed to delete symbol config for ${symbol}:`, error);
     return false;
@@ -80,9 +83,10 @@ export function deleteSymbolConfig(symbol) {
 /**
  * Check if a symbol exists in storage
  * @param {string} symbol - Symbol identifier
- * @returns {boolean}
+ * @returns {Promise<boolean>}
  */
-export function symbolExists(symbol) {
+export async function symbolExists(symbol) {
   const key = STORAGE_PREFIX + symbol.toUpperCase();
-  return localStorage.getItem(key) !== null;
+  const value = await storageAdapter.getItem(key);
+  return value !== null;
 }

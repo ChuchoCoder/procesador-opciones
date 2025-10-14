@@ -85,9 +85,13 @@ Luego:
 
 1. Abrí `chrome://extensions`.
 2. Activá Modo desarrollador.
-3. Clic en “Cargar descomprimida” y seleccioná `extension-dist/`.
+3. Clic en "Cargar descomprimida" y seleccioná `extension-dist/`.
+
+📖 **Para más información sobre la extensión Chrome y el sistema de almacenamiento dual, consultá [CHROME-EXTENSION.md](./CHROME-EXTENSION.md)**
 
 > Si necesitás mantener el popup legacy por transición, podés conservarlo separado; este flujo lo reemplaza por la SPA.
+
+**Nota sobre almacenamiento:** La aplicación ahora usa un sistema dual que detecta automáticamente si está ejecutándose como extensión (`chrome.storage.local`) o como web app (`localStorage`). Todas las operaciones de almacenamiento son ahora asíncronas.
 
 ## 🧪 Pruebas
 
