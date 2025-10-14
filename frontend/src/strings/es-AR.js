@@ -5,7 +5,7 @@ const strings = {
     construction: 'La aplicación está en construcción.',
   },
   navigation: {
-    processor: 'Procesador',
+    processor: 'Operaciones',
     settings: 'Configuración',
   },
   processor: {
@@ -34,6 +34,13 @@ const strings = {
       processButton: 'Procesar',
       processing: 'Procesando...',
       averagingSwitch: 'Promediar por strike',
+      instructions: {
+        title: 'Instrucciones:',
+        step1: '✓ Descargá el archivo CSV desde Matriz (ej: https://matriz.cocos.xoms.com.ar/)',
+        step2: '✓ Usá el ícono de descarga a la derecha de "Reporte de operaciones" ("Descargar reporte de operaciones")',
+        step3: '✓ Seleccioná el archivo CSV descargado',
+        step4: '✓ Una vez procesado, podrás filtrar, copiar y descargar los resultados',
+      },
     },
     summary: {
       title: 'Resumen',
@@ -98,7 +105,7 @@ const strings = {
   settings: {
     title: 'Configuración',
     description:
-      'Personalizá los prefijos, vencimientos y preferencias que usa el procesador para filtrar tus operaciones.',
+      'Personalizá los prefijos, vencimientos y preferencias que usa la aplicación para filtrar tus operaciones.',
     navigation: {
       prefixes: 'Prefijos de Opciones',
       expirations: 'Vencimientos',

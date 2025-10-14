@@ -113,17 +113,20 @@ const EmptyState = ({ strings, onSelectFile }) => {
               <Stack direction="row" spacing={1} alignItems="center">
                 <InfoOutlinedIcon fontSize="small" color="info" />
                 <Typography variant="subtitle2" color="text.primary" sx={{ fontWeight: 600 }}>
-                  Instrucciones:
+                  {strings?.upload?.instructions?.title ?? 'Instrucciones:'}
                 </Typography>
               </Stack>
               <Typography variant="body2" color="text.secondary" textAlign="left">
-                ✓ Seleccioná un archivo CSV exportado desde tu broker
+                {strings?.upload?.instructions?.step1 ?? '✓ Descargá el archivo CSV desde Matriz (ej: https://matriz.cocos.xoms.com.ar/)'}
               </Typography>
               <Typography variant="body2" color="text.secondary" textAlign="left">
-                ✓ El archivo debe contener las columnas de operaciones
+                {strings?.upload?.instructions?.step2 ?? '✓ Usá el ícono de descarga a la derecha de "Reporte de operaciones" ("Descargar reporte de operaciones")'}
               </Typography>
               <Typography variant="body2" color="text.secondary" textAlign="left">
-                ✓ Una vez procesado, podrás filtrar, copiar y descargar los resultados
+                {strings?.upload?.instructions?.step3 ?? '✓ Seleccioná el archivo CSV descargado'}
+              </Typography>
+              <Typography variant="body2" color="text.secondary" textAlign="left">
+                {strings?.upload?.instructions?.step4 ?? '✓ Una vez procesado, podrás filtrar, copiar y descargar los resultados'}
               </Typography>
             </Stack>
           </Paper>
