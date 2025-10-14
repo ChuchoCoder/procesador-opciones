@@ -167,3 +167,16 @@ Run `/speckit.tasks` to convert the planned Phase 1 tasks into actionable `tasks
 
 All template gates pass given the feature constraints and the attached constitution (v2.0.0). Recommended next command: `/speckit.tasks` to generate `tasks.md` and break work into PR-sized tasks.
 
+## Post-Implementation Refinements (2025-10-13)
+
+After initial implementation and user feedback, the following UI refinements were made:
+
+1. **Fixed 0 decimals handling**: Updated `SymbolSettings.jsx` to use `!== undefined` check instead of `||` operator to properly handle 0 as a valid decimal value. Previously, 0 was treated as falsy and reverted to 2.
+
+2. **Removed Reset button**: Eliminated the "RESTABLECER A GUARDADO" button and associated `hasUnsavedChanges` state management per user request. Write-on-blur persistence means changes are immediately saved, making a reset button unnecessary. Users can refresh the page if needed.
+
+3. **Condensed symbol defaults layout**: Changed Prefix and Decimals fields from vertical stack to horizontal side-by-side layout for more compact presentation. Prefix uses `flex: 1`, Decimals has fixed 180px width.
+
+4. **Reordered expiration controls**: Moved the decimals control before the "Sufijos permitidos" section in `ExpirationDetail.jsx` for better logical flow (general settings before specific configurations).
+
+**Tests**: All 48 settings-related unit tests continue to pass after these changes. No test modifications were required as the underlying logic remained unchanged.
