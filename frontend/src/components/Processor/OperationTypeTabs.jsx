@@ -5,6 +5,9 @@ import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
 import CloseIcon from '@mui/icons-material/Close';
 import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile';
+import ShowChartIcon from '@mui/icons-material/ShowChart';
+import SwapHorizIcon from '@mui/icons-material/SwapHoriz';
+import TimelineIcon from '@mui/icons-material/Timeline';
 
 export const OPERATION_TYPES = {
   OPCIONES: 'opciones',
@@ -45,16 +48,22 @@ const OperationTypeTabs = ({ strings, activeTab, onTabChange, onClose, fileName 
         <Tab 
           label={opcionesLabel} 
           value={OPERATION_TYPES.OPCIONES} 
+          icon={<ShowChartIcon />}
+          iconPosition="start"
           data-testid="tab-opciones"
         />
         <Tab 
           label={compraVentaLabel} 
           value={OPERATION_TYPES.COMPRA_VENTA}
+          icon={<SwapHorizIcon />}
+          iconPosition="start"
           data-testid="tab-compra-venta"
         />
         <Tab 
           label={arbitrajesLabel} 
           value={OPERATION_TYPES.ARBITRAJES}
+          icon={<TimelineIcon />}
+          iconPosition="start"
           data-testid="tab-arbitrajes"
         />
       </Tabs>
