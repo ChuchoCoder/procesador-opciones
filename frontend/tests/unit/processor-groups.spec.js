@@ -36,11 +36,6 @@ describe('processor groups', () => {
       [
         {
           "expiration": "NONE",
-          "id": "1D::NONE",
-          "symbol": "1D",
-        },
-        {
-          "expiration": "NONE",
           "id": "AL30D::NONE",
           "symbol": "AL30D",
         },
@@ -58,6 +53,11 @@ describe('processor groups', () => {
           "expiration": "O",
           "id": "GFG::O",
           "symbol": "GFG",
+        },
+        {
+          "expiration": "NONE",
+          "id": "PESOS::NONE",
+          "symbol": "PESOS",
         },
         {
           "expiration": "NONE",

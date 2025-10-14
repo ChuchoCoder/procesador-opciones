@@ -518,6 +518,8 @@ const OPTION_GROUP_TYPES = new Set(['CALL', 'PUT']);
 
 const SETTLEMENT_TOKENS = new Set([
   'CI', 'CONTADO', '24HS', '48HS', '72HS', '24H', '48H', '72H', 'T0', 'T1', 'T2', 'T+1', 'T+2',
+  '1D', '2D', '3D', '4D', '5D', '6D', '7D', '8D', '9D', '10D', '11D', '12D', '13D', '14D', '15D',
+  '16D', '17D', '18D', '19D', '20D', '21D', '22D', '23D', '24D', '25D', '26D', '27D', '28D', '29D', '30D',
 ]);
 
 const MARKET_TOKENS = new Set([
