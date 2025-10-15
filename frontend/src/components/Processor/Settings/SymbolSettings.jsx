@@ -33,7 +33,7 @@ export default function SymbolSettings({ symbol, config, onConfigUpdate }) {
   const [prefixError, setPrefixError] = useState('');
   const [decimalsError, setDecimalsError] = useState('');
   const [saveSuccess, setSaveSuccess] = useState(false);
-  const [activeExpiration, setActiveExpiration] = useState(null);
+  const [activeExpiration, setActiveExpiration] = useState(EXPIRATION_CODES[0] || null);
 
   // Initialize local state from config
   useEffect(() => {

@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="ChuchoTools icon (Simplified Argentina variant)">
+  <title>ChuchoTools – Simplified Argentina Icon</title>
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#7FD0FF"/>
+      <stop offset="100%" stop-color="#3AAAF5"/>
+    </linearGradient>
+    <filter id="sunGlow" x="-50%" y="-50%" width="200%" height="200%" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="12" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  <!-- Light blue circular background -->
+  <circle cx="256" cy="256" r="248" fill="url(#bg)"/>
+  <!-- White central horizontal stripe -->
+  <rect x="0" y="180" width="512" height="152" fill="#FFFFFF"/>
+  <!-- Darker blue stylized C (single element) -->
+  <path d="M368 160c-28-26-63-40-104-40-94 0-156 67-156 144s62 144 156 144c41 0 76-14 104-40" fill="none" stroke="#045C99" stroke-width="52" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Central sun -->
+  <g filter="url(#sunGlow)">
+    <circle cx="256" cy="256" r="54" fill="#FDB913"/>
+  </g>
+</svg>
