@@ -1,4 +1,4 @@
-﻿# procesador-opciones Development Guidelines
+# procesador-opciones Development Guidelines
 
 Auto-generated from all feature plans. Last updated: 2025-10-10
 
@@ -6,6 +6,8 @@ Auto-generated from all feature plans. Last updated: 2025-10-10
 - JavaScript (ES2020+) with React 18.x, JSX transform via bundler + React 18.x, Material UI (MUI) v5.x, papaparse (CSV parsing), bundler (NEEDS CLARIFICATION: webpack vs vite vs esbuild) (001-feature-migrate-popup)
 - JavaScript (ES2020+) with React 18 + React 18, Material UI v5, papaparse, Vite 5.x (001-feature-migrate-popup)
 - `localStorage` (browser) for persisted configuration (001-feature-migrate-popup)
+- JavaScript (ES2020+) + React 18.x + React 18, Vite 5.x, Material UI v5, papaparse (CSV parsing) (004-show-per-operation)
+- localStorage for persisted fee config & settings (existing settings system); in-memory instrument CfiCode mapping loaded at startup; no external DB (004-show-per-operation)
 
 ## Project Structure
 ```
@@ -22,6 +24,7 @@ Use Powershell style (; instead of & or &&) when executing console commands on W
 JavaScript (ES2020+) with React 18.x, JSX transform via bundler: Follow standard conventions
 
 ## Recent Changes
+- 004-show-per-operation: Added JavaScript (ES2020+) + React 18.x + React 18, Vite 5.x, Material UI v5, papaparse (CSV parsing)
 - 001-feature-migrate-popup: Added JavaScript (ES2020+) with React 18 + React 18, Material UI v5, papaparse, Vite 5.x
 - 001-feature-migrate-popup: Added JavaScript (ES2020+) with React 18.x, JSX transform via bundler + React 18.x, Material UI (MUI) v5.x, papaparse (CSV parsing), bundler (NEEDS CLARIFICATION: webpack vs vite vs esbuild)
 
@@ -29,4 +32,3 @@ JavaScript (ES2020+) with React 18.x, JSX transform via bundler: Follow standard
 <!-- MANUAL ADDITIONS END -->
  
 <!-- AUTO-ADDED: feature 003-redesign-the-current -->
-- 003-redesign-the-current: Created plan.md (technical context + constitution check), research.md, data-model.md, quickstart.md, and contracts/README.md. See `specs/003-redesign-the-current/` for artifacts. (2025-10-13)

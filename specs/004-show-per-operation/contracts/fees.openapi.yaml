@@ -1,0 +1,130 @@
+openapi: 3.1.0
+info:
+  title: Per-Operation Fees Extension
+  version: 0.1.0
+  description: |
+    Logical extension documenting fee calculation data structures introduced by feature 004-show-per-operation.
+    These structures are computed client-side (offline) and may later be exposed via export endpoints.
+servers:
+  - url: app://local
+    description: In-memory SPA service scope
+paths:
+  /operations/fees/preview:
+    post:
+      summary: Preview fee calculations for uploaded CSV
+      description: |
+        Accepts a subset of operations (raw parsed rows) and returns fee-enriched operation objects.
+        Intended for future modularization; currently pure in-app call without network.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FeePreviewRequest'
+      responses:
+        '200':
+          description: Fee-enriched operations returned successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeePreviewResponse'
+        '400':
+          description: Validation error (invalid percentages or malformed operations).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+components:
+  schemas:
+    FeePreviewRequest:
+      type: object
+      required: [operations, feeConfig]
+      properties:
+        operations:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/RawOperation'
+        feeConfig:
+          $ref: '#/components/schemas/FeeConfig'
+    RawOperation:
+      type: object
+      required: [id, symbol, side, quantity, price, cfiCode]
+      properties:
+        id: { type: string }
+        symbol: { type: string }
+        side: { type: string, enum: [BUY, SELL] }
+        quantity: { type: integer }
+        price: { type: number, format: float }
+        cfiCode: { type: string }
+    FeeConfig:
+      type: object
+      required: [byma, broker]
+      properties:
+        byma:
+          type: object
+          required: [derechosMercadoPct, vatPct]
+          properties:
+            derechosMercadoPct: { type: number, minimum: 0 }
+            caucionesPct: { type: number, minimum: 0 }
+            vatPct: { type: number, minimum: 0, maximum: 1 }
+        broker:
+          type: object
+          required: [commissionAccionCedearPct, commissionBondPct, commissionOptionPct]
+          properties:
+            commissionAccionCedearPct: { type: number, minimum: 0 }
+            commissionLetraPct: { type: number, minimum: 0 }
+            commissionBondPct: { type: number, minimum: 0 }
+            commissionOptionPct: { type: number, minimum: 0 }
+            commissionCaucionPct: { type: number, minimum: 0 }
+    FeePreviewResponse:
+      type: object
+      required: [operations, warnings]
+      properties:
+        operations:
+          type: array
+          items:
+            $ref: '#/components/schemas/FeeEnrichedOperation'
+        warnings:
+          type: array
+          items:
+            $ref: '#/components/schemas/FeeWarning'
+    FeeEnrichedOperation:
+      type: object
+      required: [id, symbol, side, quantity, price, grossNotional, category, feeRate, feeAmount, feeBreakdown]
+      properties:
+        id: { type: string }
+        symbol: { type: string }
+        side: { type: string, enum: [BUY, SELL] }
+        quantity: { type: integer }
+        price: { type: number }
+        grossNotional: { type: number }
+        cfiCode: { type: string }
+        category: { type: string, enum: [accionCedear, letra, bonds, option, caucion] }
+        feeRate: { type: number }
+        feeAmount: { type: number }
+        feeBreakdown:
+          type: object
+          required: [commissionPct, rightsPct, vatPct, commissionAmount, rightsAmount, vatAmount, category, source]
+          properties:
+            commissionPct: { type: number, minimum: 0 }
+            rightsPct: { type: number, minimum: 0 }
+            vatPct: { type: number, minimum: 0, maximum: 1 }
+            commissionAmount: { type: number, minimum: 0 }
+            rightsAmount: { type: number, minimum: 0 }
+            vatAmount: { type: number, minimum: 0 }
+            category: { type: string }
+            source: { type: string, enum: [config, default] }
+    FeeWarning:
+      type: object
+      required: [code, message]
+      properties:
+        code:
+          type: string
+          enum: [unknown-cfi, missing-option-commission, mixed-fee-category-aggregate]
+        message: { type: string }
+    ErrorResponse:
+      type: object
+      required: [message]
+      properties:
+        message: { type: string }
