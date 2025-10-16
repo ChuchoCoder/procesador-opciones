@@ -7,6 +7,7 @@ const strings = {
   navigation: {
     processor: 'Operaciones',
     settings: 'Configuración',
+    settingsGeneral: 'Instrumentos',
   },
   processor: {
     filters: {
