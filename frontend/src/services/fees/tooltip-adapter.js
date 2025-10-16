@@ -47,9 +47,11 @@ function getCategoryLabel(category) {
  * Adapts fee breakdown for tooltip display.
  * @param {object} feeBreakdown - from fee-calculator
  * @param {number} grossNotional - operation gross
+ * @param {number} netTotal - calculated net total (gross ± fees)
+ * @param {number} totalQuantity - quantity (positive for BUY, negative for SELL)
  * @returns {object} display-ready tooltip data
  */
-export function adaptFeeBreakdownForTooltip(feeBreakdown, grossNotional) {
+export function adaptFeeBreakdownForTooltip(feeBreakdown, grossNotional, netTotal, totalQuantity) {
   if (!feeBreakdown) {
     return null;
   }
@@ -77,6 +79,7 @@ export function adaptFeeBreakdownForTooltip(feeBreakdown, grossNotional) {
     derechosARS: formatARS(rightsAmount),
     ivaARS: formatARS(vatAmount),
     totalARS: formatARS(totalFee),
+    netoARS: formatARS(netTotal),
     fuente: source === 'placeholder' ? 'Próximamente' : 'Configuración',
   };
 }

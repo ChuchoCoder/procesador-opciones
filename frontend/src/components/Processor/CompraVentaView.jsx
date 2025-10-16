@@ -69,6 +69,29 @@ const formatFee = (value) => {
   }).format(value);
 };
 
+/**
+ * Calculate net total based on operation side.
+ * BUY operations: add fees to gross total (you pay more)
+ * SELL operations: subtract fees from gross total (you receive less)
+ * 
+ * @param {number} grossNotional - The gross notional value
+ * @param {number} feeAmount - The total fee amount
+ * @param {string} side - The operation side: 'BUY' or 'SELL'
+ * @returns {number} The net total
+ */
+const calculateNetTotal = (grossNotional, feeAmount, side) => {
+  const gross = grossNotional ?? 0;
+  const fee = feeAmount ?? 0;
+  
+  // BUY operations: gross + fees (you pay the gross amount plus fees)
+  if (side === 'BUY') {
+    return gross + fee;
+  }
+  
+  // SELL operations: gross - fees (you receive the gross amount minus fees)
+  return gross - fee;
+};
+
 const DEFAULT_SETTLEMENT = 'CI';
 const OPTION_OPERATION_TYPES = new Set(['CALL', 'PUT']);
 
@@ -172,6 +195,7 @@ const aggregateRows = (rows) => {
         grossNotional: 0,
         feeBreakdown: row.feeBreakdown,
         category: row.category,
+        side: row.side, // Preserve side from first row in group
       });
     }
 
@@ -206,6 +230,7 @@ const aggregateRows = (rows) => {
         grossNotional: entry.grossNotional,
         feeBreakdown,
         category: entry.category,
+        side: entry.side, // Preserve side in aggregated output
       };
     })
     .sort((a, b) => {
@@ -240,6 +265,7 @@ const buildRows = (operations = [], side = 'BUY', { expirationLabels } = {}) => 
       grossNotional: operation.grossNotional || 0,
       feeBreakdown: operation.feeBreakdown,
       category: operation.category || 'bonds',
+      side, // Add side to the row
     };
   });
 };
@@ -342,7 +368,7 @@ const BuySellTable = ({
               <TableCell>{strings?.tables?.settlement ?? 'Plazo'}</TableCell>
               <TableCell align="right">{strings?.tables?.quantity ?? 'Cantidad'}</TableCell>
               <TableCell align="right">{strings?.tables?.price ?? 'Precio'}</TableCell>
-              <TableCell align="right">{strings?.tables?.fee ?? 'Gastos'}</TableCell>
+              <TableCell align="right">{strings?.tables?.netTotal ?? 'Neto'}</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -355,33 +381,39 @@ const BuySellTable = ({
                 </TableCell>
               </TableRow>
             )}
-            {operations.map((row, index) => (
-              <TableRow
-                key={row.key}
-                sx={index % 2 === 1 ? { backgroundColor: 'action.hover' } : undefined}
-              >
-                <TableCell>{row.symbol}</TableCell>
-                <TableCell>{row.settlement}</TableCell>
-                <TableCell
-                  align="right"
-                  sx={{ color: row.quantity < 0 ? 'error.main' : undefined }}
+            {operations.map((row, index) => {
+              const netTotal = calculateNetTotal(row.grossNotional, row.feeAmount, row.side);
+              
+              return (
+                <TableRow
+                  key={row.key}
+                  sx={index % 2 === 1 ? { backgroundColor: 'action.hover' } : undefined}
                 >
-                  {formatQuantity(row.quantity)}
-                </TableCell>
-                <TableCell align="right">{formatDecimal(row.price)}</TableCell>
-                <TableCell align="right">
-                  <FeeTooltip
-                    feeBreakdown={row.feeBreakdown}
-                    grossNotional={row.grossNotional}
-                    strings={strings}
+                  <TableCell>{row.symbol}</TableCell>
+                  <TableCell>{row.settlement}</TableCell>
+                  <TableCell
+                    align="right"
+                    sx={{ color: row.quantity < 0 ? 'error.main' : undefined }}
                   >
-                    <Typography variant="body2" component="span">
-                      {formatFee(row.feeAmount)}
-                    </Typography>
-                  </FeeTooltip>
-                </TableCell>
-              </TableRow>
-            ))}
+                    {formatQuantity(row.quantity)}
+                  </TableCell>
+                  <TableCell align="right">{formatDecimal(row.price)}</TableCell>
+                  <TableCell align="right">
+                    <FeeTooltip
+                      feeBreakdown={row.feeBreakdown}
+                      grossNotional={row.grossNotional}
+                      netTotal={netTotal}
+                      totalQuantity={row.quantity}
+                      strings={strings}
+                    >
+                      <Typography variant="body2" component="span">
+                        {formatFee(netTotal)}
+                      </Typography>
+                    </FeeTooltip>
+                  </TableCell>
+                </TableRow>
+              );
+            })}
           </TableBody>
         </Table>
       </TableContainer>
