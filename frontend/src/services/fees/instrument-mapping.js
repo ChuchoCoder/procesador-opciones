@@ -69,10 +69,15 @@ function buildCfiCodeMap(instrumentsData) {
     
     // Store instrument details by symbol
     if (symbol) {
+      // For options, use RoundLot (typically 100) as the multiplier if ContractMultiplier is 1
+      const contractMult = instr?.ContractMultiplier ?? 1;
+      const roundLot = instr?.RoundLot ?? 1;
+      const effectiveMultiplier = contractMult === 1 && roundLot > 1 ? roundLot : contractMult;
+      
       detailsMap.set(symbol, {
         cfiCode: cfi || null,
         priceConversionFactor: instr?.PriceConvertionFactor ?? 1,
-        contractMultiplier: instr?.ContractMultiplier ?? 1,
+        contractMultiplier: effectiveMultiplier,
       });
     }
   }
@@ -125,6 +130,7 @@ export function resolveCfiCategory(cfiCode) {
 
 /**
  * Gets instrument details (PriceConversionFactor, ContractMultiplier, CfiCode) by symbol.
+ * Tries exact match first, then partial match for tokenized symbols (e.g., GFGC50131O -> MERV - XMEV - GFGC50131O - 24hs)
  * @param {string} symbol - instrument symbol
  * @returns {object|null} - { cfiCode, priceConversionFactor, contractMultiplier } or null if not found
  */
@@ -135,7 +141,26 @@ export function getInstrumentDetails(symbol) {
     return null;
   }
   
-  return _instrumentDetailsMap.get(symbol) || null;
+  // Try exact match first
+  const exactMatch = _instrumentDetailsMap.get(symbol);
+  if (exactMatch) {
+    return exactMatch;
+  }
+  
+  // Try partial match for tokenized symbols (e.g., GFGC50131O matches MERV - XMEV - GFGC50131O - 24hs)
+  // This handles cases where CSV has simplified symbol but JSON has full qualified symbol
+  if (symbol && symbol.length > 0) {
+    for (const [fullSymbol, details] of _instrumentDetailsMap.entries()) {
+      // Check if the full symbol contains the input symbol as a component
+      // Split by spaces and dashes to get components
+      const components = fullSymbol.split(/[\s-]+/).map(c => c.trim()).filter(c => c.length > 0);
+      if (components.includes(symbol)) {
+        return details;
+      }
+    }
+  }
+  
+  return null;
 }
 
 /**

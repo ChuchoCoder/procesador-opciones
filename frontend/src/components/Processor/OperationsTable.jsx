@@ -74,6 +74,24 @@ const formatFee = (value) => {
   return value.toFixed(2);
 };
 
+/**
+ * Calculate net total based on operation type.
+ * BUY operations (positive quantity): add fees to gross total
+ * SELL operations (negative quantity): subtract fees from gross total
+ */
+const calculateNetTotal = (grossNotional, feeAmount, totalQuantity) => {
+  const gross = grossNotional ?? 0;
+  const fee = feeAmount ?? 0;
+  
+  // BUY operations have positive quantity: gross + fees
+  if (totalQuantity > 0) {
+    return gross + fee;
+  }
+  
+  // SELL operations have negative quantity: gross - fees
+  return gross - fee;
+};
+
 const OperationsTable = ({ 
   title, 
   operations, 
@@ -255,7 +273,7 @@ const OperationsTable = ({
                 pt: 2,
               }}
             >
-              {strings.tables.fee || 'Gastos'}
+              {strings.tables.netTotal || 'Neto'}
             </TableCell>
           </TableRow>
         </TableHead>
@@ -273,6 +291,7 @@ const OperationsTable = ({
               const feeBreakdown = operation.feeBreakdown;
               const grossNotional = operation.grossNotional ?? 0;
               const quantityValue = operation.totalQuantity;
+              const netTotal = calculateNetTotal(grossNotional, feeAmount, quantityValue);
 
               return (
                 <TableRow
@@ -288,10 +307,12 @@ const OperationsTable = ({
                     <FeeTooltip
                       feeBreakdown={feeBreakdown}
                       grossNotional={grossNotional}
+                      netTotal={netTotal}
+                      totalQuantity={quantityValue}
                       strings={strings}
                     >
                       <Typography variant="body2" component="span">
-                        {formatFee(feeAmount)}
+                        {formatFee(netTotal)}
                       </Typography>
                     </FeeTooltip>
                   </TableCell>
