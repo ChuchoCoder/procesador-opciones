@@ -69,6 +69,33 @@ const formatFee = (value) => {
 };
 
 const DEFAULT_SETTLEMENT = 'CI';
+const OPTION_OPERATION_TYPES = new Set(['CALL', 'PUT']);
+
+const extractOptionToken = (operation = {}) => {
+  const candidates = [
+    operation?.meta?.sourceToken,
+    operation?.meta?.instrumentToken,
+    operation?.originalSymbol,
+    operation?.raw?.symbol,
+    operation?.symbol,
+  ];
+
+  for (let index = 0; index < candidates.length; index += 1) {
+    const candidate = candidates[index];
+    if (typeof candidate !== 'string') {
+      continue;
+    }
+
+    const trimmed = candidate.trim();
+    if (!trimmed) {
+      continue;
+    }
+
+    return trimmed.toUpperCase();
+  }
+
+  return '';
+};
 
 const normalizeSymbol = (symbol = '') => {
   const trimmed = symbol.trim();
@@ -176,7 +203,10 @@ const buildRows = (operations = [], side = 'BUY') => {
   const sign = side === 'SELL' ? -1 : 1;
 
   return operations.map((operation, index) => {
-    const symbol = normalizeSymbol(operation.symbol ?? '');
+    const isOption = OPTION_OPERATION_TYPES.has(operation.optionType);
+    const normalizedFallback = normalizeSymbol(operation.symbol ?? '');
+    const rawSymbol = isOption ? extractOptionToken(operation) : (operation.symbol ?? '');
+    const symbol = isOption ? rawSymbol || normalizedFallback : normalizeSymbol(rawSymbol);
     const settlement = normalizeSettlement(operation.expiration ?? operation.settlement);
     const rawQuantity = Number(operation.quantity ?? 0);
     const quantity = Number.isFinite(rawQuantity) ? rawQuantity * sign : 0;

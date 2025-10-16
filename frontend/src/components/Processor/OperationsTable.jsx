@@ -272,14 +272,15 @@ const OperationsTable = ({
               const feeAmount = operation.feeAmount ?? 0;
               const feeBreakdown = operation.feeBreakdown;
               const grossNotional = operation.grossNotional ?? 0;
+              const quantityValue = operation.totalQuantity;
 
               return (
                 <TableRow
                   key={rowKey}
                   sx={index % 2 === 1 ? { backgroundColor: 'action.hover' } : undefined}
                 >
-                  <TableCell>
-                    {formatQuantity(operation.totalQuantity)}
+                  <TableCell sx={quantityValue < 0 ? { color: 'error.main', fontWeight: 600 } : undefined}>
+                    {formatQuantity(quantityValue)}
                   </TableCell>
                   <TableCell align="right">{formatDecimal(operation.strike)}</TableCell>
                   <TableCell align="right">{formatDecimal(operation.averagePrice)}</TableCell>

@@ -1,5 +1,6 @@
 import { symbolExists, saveSymbolConfig } from './storage-settings.js';
 import { createDefaultSymbolConfigWithOverrides } from './settings-types.js';
+import { DEFAULT_SYMBOL_CONFIGS } from './prefix-defaults.js';
 // Fee config loader with validation (Phase 2 integration)
 import feeConfigJson from './fees/fees-config.json';
 import { validateFeeConfig, computeEffectiveRates } from './fees/config-validation.js';
@@ -59,31 +60,6 @@ export function initializeInstrumentMapping() {
     console.error('PO: instrument-mapping-init-failed', e);
   }
 }
-
-// Default symbol configurations with prefixes
-// Based on MCP/BCBA ticker patterns (company-root style prefixes)
-const DEFAULT_SYMBOL_CONFIGS = [
-  { symbol: 'AL30', prefix: 'A30' },
-  { symbol: 'ALUA', prefix: 'ALU' },
-  { symbol: 'BBAR', prefix: 'BBA' },
-  { symbol: 'BHIP', prefix: 'BHI' },
-  { symbol: 'BMA', prefix: 'BMA' },
-  { symbol: 'BYMA', prefix: 'BYM' },
-  { symbol: 'CEPU', prefix: 'CEP' },
-  { symbol: 'COME', prefix: 'COM' },
-  { symbol: 'EDN', prefix: 'EDN' },
-  { symbol: 'GGAL', prefix: 'GFG' },  // Grupo Financiero Galicia
-  { symbol: 'METR', prefix: 'MET' },
-  { symbol: 'MIRG', prefix: 'MIR' },
-  { symbol: 'PAMP', prefix: 'PAM' },
-  { symbol: 'SUPV', prefix: 'SUP' },
-  { symbol: 'TECO2', prefix: 'TEC' },
-  { symbol: 'TGNO4', prefix: 'TGN' },
-  { symbol: 'TGSU2', prefix: 'TGS' },
-  { symbol: 'TRAN', prefix: 'TRA' },
-  { symbol: 'TXAR', prefix: 'TXA' },
-  { symbol: 'YPFD', prefix: 'YPF' },
-];
 
 /**
  * Seed storage with default symbol configs if missing.

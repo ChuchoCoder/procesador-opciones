@@ -21,6 +21,7 @@ import {
   removeItem,
   storageKeys,
 } from '../../services/storage/local-storage.js';
+import { DEFAULT_PREFIX_SYMBOL_MAP } from '../../services/prefix-defaults.js';
 
 import OperationTypeTabs, { OPERATION_TYPES } from './OperationTypeTabs.jsx';
 import OpcionesView from './OpcionesView.jsx';
@@ -36,6 +37,26 @@ const createInitialGroupSelections = () => ({
   [OPERATION_TYPES.COMPRA_VENTA]: ALL_GROUP_ID,
   [OPERATION_TYPES.ARBITRAJES]: ALL_GROUP_ID,
 });
+
+const OPTION_INSTRUMENT_KEY_PREFIX = 'optionInstrument::';
+const OPTION_TOKEN_PREFIX_REGEX = /^([A-Z0-9]+?)[CV]\d+/i;
+
+const FALLBACK_EXPIRATION_NAMES = new Map([
+  ['ENE', 'Enero'],
+  ['FEB', 'Febrero'],
+  ['MAR', 'Marzo'],
+  ['ABR', 'Abril'],
+  ['MAY', 'Mayo'],
+  ['JUN', 'Junio'],
+  ['JUL', 'Julio'],
+  ['AGO', 'Agosto'],
+  ['SEP', 'Septiembre'],
+  ['OCT', 'Octubre'],
+  ['OC', 'Octubre'],
+  ['O', 'Octubre'],
+  ['NOV', 'Noviembre'],
+  ['DIC', 'Diciembre'],
+]);
 
 const sanitizeForTestId = (value = '') => value.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase();
 
@@ -151,6 +172,32 @@ const splitInstrumentSymbol = (symbol = '') => {
   return segments[segments.length - 1];
 };
 
+const extractOptionPrefixToken = (value = '') => {
+  if (typeof value !== 'string') {
+    return null;
+  }
+  const trimmed = value.trim().toUpperCase();
+  if (!trimmed) {
+    return null;
+  }
+
+  const tokenMatch = trimmed.match(OPTION_TOKEN_PREFIX_REGEX);
+  if (tokenMatch) {
+    return tokenMatch[1];
+  }
+
+  const [firstSegment] = trimmed.split(/\s+/);
+  if (firstSegment && /^[A-Z0-9]{2,6}$/.test(firstSegment)) {
+    return firstSegment;
+  }
+
+  if (/^[A-Z0-9]{2,6}$/.test(trimmed)) {
+    return trimmed;
+  }
+
+  return null;
+};
+
 const getOperationGroupId = (operation = {}) => {
   const normalizedSymbol = normalizeGroupSymbol(operation.symbol);
   if (OPTION_OPERATION_TYPES.has(operation.optionType)) {
@@ -161,6 +208,31 @@ const getOperationGroupId = (operation = {}) => {
 
   const baseSymbol = splitInstrumentSymbol(normalizedSymbol);
   return buildGroupKey(baseSymbol, DEFAULT_EXPIRATION);
+};
+
+const getOptionInstrumentToken = (operation = {}) => {
+  if (!operation || !OPTION_OPERATION_TYPES.has(operation.optionType)) {
+    return null;
+  }
+
+  const candidates = [
+    operation?.meta?.sourceToken,
+    operation?.originalSymbol,
+    operation?.raw?.symbol,
+    operation?.symbol,
+  ];
+
+  for (let index = 0; index < candidates.length; index += 1) {
+    const candidate = candidates[index];
+    if (typeof candidate === 'string') {
+      const trimmed = candidate.trim();
+      if (trimmed) {
+        return trimmed.toUpperCase();
+      }
+    }
+  }
+
+  return null;
 };
 
 const isOptionGroup = (group) => {
@@ -206,24 +278,38 @@ const extractBaseSymbol = (symbol = '') => {
   return parts[0] ?? trimmed;
 };
 
-const formatExpirationLabel = (expiration = '') => {
-  const normalized = expiration.trim();
-  if (!normalized || normalized === DEFAULT_EXPIRATION) {
+const formatExpirationLabel = (expiration = '', { expirationLabels } = {}) => {
+  if (typeof expiration !== 'string') {
     return '';
   }
 
-  if (/^\d+HS$/i.test(normalized)) {
-    return `${normalized.slice(0, -2)}hs`;
+  const trimmed = expiration.trim();
+  if (!trimmed || trimmed.toUpperCase() === DEFAULT_EXPIRATION) {
+    return '';
   }
 
-  if (normalized === UNKNOWN_EXPIRATION) {
+  if (/^\d+HS$/i.test(trimmed)) {
+    return `${trimmed.slice(0, -2)}hs`;
+  }
+
+  if (trimmed.toUpperCase() === UNKNOWN_EXPIRATION) {
     return '??';
   }
 
-  return normalized;
+  const normalized = trimmed.toUpperCase();
+
+  if (expirationLabels?.has(normalized)) {
+    return expirationLabels.get(normalized);
+  }
+
+  if (FALLBACK_EXPIRATION_NAMES.has(normalized)) {
+    return FALLBACK_EXPIRATION_NAMES.get(normalized);
+  }
+
+  return trimmed;
 };
 
-const formatGroupLabel = (group) => {
+const formatGroupLabel = (group, { prefixLabels, expirationLabels } = {}) => {
   if (!group) {
     return '';
   }
@@ -233,16 +319,41 @@ const formatGroupLabel = (group) => {
     if (baseIdSymbol) {
       return baseIdSymbol;
     }
+    const baseSymbol = extractBaseSymbol(group.symbol ?? '');
+    return baseSymbol || group.symbol || '';
   }
 
-  const baseSymbol = extractBaseSymbol(group.symbol ?? '');
-  const expirationLabel = formatExpirationLabel(group.expiration ?? '');
+  const baseSymbol = extractBaseSymbol(group.symbol ?? '') || group.symbol || '';
+  const symbolCandidates = [group.symbol, baseSymbol, (group.id ?? '').split('::')[0]];
+
+  let displaySymbol = baseSymbol;
+
+  for (let index = 0; index < symbolCandidates.length; index += 1) {
+    const candidate = symbolCandidates[index];
+    const prefix = extractOptionPrefixToken(candidate ?? '');
+    if (!prefix) {
+      continue;
+    }
+    const normalizedPrefix = prefix.toUpperCase();
+    if (prefixLabels?.has(normalizedPrefix)) {
+      displaySymbol = prefixLabels.get(normalizedPrefix);
+      break;
+    }
+    displaySymbol = normalizedPrefix;
+    break;
+  }
+
+  if (!displaySymbol) {
+    displaySymbol = baseSymbol || group.symbol || '';
+  }
+
+  const expirationLabel = formatExpirationLabel(group.expiration ?? '', { expirationLabels });
 
   if (expirationLabel) {
-    return `${baseSymbol} ${expirationLabel}`.trim();
+    return `${displaySymbol} ${expirationLabel}`.trim();
   }
 
-  return baseSymbol || group.symbol || '';
+  return displaySymbol;
 };
 
 const computeScopedData = ({
@@ -523,24 +634,7 @@ const ProcessorScreen = () => {
     const reportGroups = Array.isArray(report?.groups) ? report.groups : [];
     if (reportGroups.length === 0) {
       resetGroupSelections();
-      return;
     }
-
-    const validIds = new Set(reportGroups.map((group) => group.id));
-    validIds.add(ALL_GROUP_ID);
-
-    setSelectedGroupIds((prev) => {
-      let next = prev;
-      Object.entries(prev).forEach(([type, value]) => {
-        if (!validIds.has(value)) {
-          if (next === prev) {
-            next = { ...prev };
-          }
-          next[type] = ALL_GROUP_ID;
-        }
-      });
-      return next;
-    });
   }, [report, resetGroupSelections]);
 
   const warningMessages = useMemo(() => {
@@ -567,78 +661,243 @@ const ProcessorScreen = () => {
   const groups = useMemo(() => report?.groups ?? [], [report]);
   const filterStrings = processorStrings.filters ?? {};
 
-  const groupedOperations = useMemo(() => {
+  const expirationLabelMap = useMemo(() => {
+    const map = new Map();
+    if (!expirations || typeof expirations !== 'object') {
+      return map;
+    }
+
+    Object.entries(expirations).forEach(([name, config]) => {
+      const normalizedName = typeof name === 'string' ? name.trim() : '';
+      if (!normalizedName) {
+        return;
+      }
+
+      const suffixes = Array.isArray(config?.suffixes) ? config.suffixes : [];
+      suffixes.forEach((suffix) => {
+        const normalizedSuffix = typeof suffix === 'string' ? suffix.trim().toUpperCase() : '';
+        if (normalizedSuffix && !map.has(normalizedSuffix)) {
+          map.set(normalizedSuffix, normalizedName);
+        }
+      });
+    });
+
+    return map;
+  }, [expirations]);
+
+  const prefixDisplayMap = useMemo(() => {
+    const map = new Map();
+
+    if (prefixRules && typeof prefixRules === 'object') {
+      Object.entries(prefixRules).forEach(([prefix, rule]) => {
+        const normalizedPrefix = typeof prefix === 'string' ? prefix.trim().toUpperCase() : '';
+        const ruleSymbol = rule && typeof rule.symbol === 'string' ? rule.symbol.trim().toUpperCase() : '';
+        if (normalizedPrefix && ruleSymbol) {
+          map.set(normalizedPrefix, ruleSymbol);
+        }
+      });
+    }
+
+    const operations = Array.isArray(report?.operations) ? report.operations : [];
+    operations.forEach((operation) => {
+      const prefix = typeof operation?.meta?.prefixRule === 'string'
+        ? operation.meta.prefixRule.trim().toUpperCase()
+        : '';
+      const symbol = typeof operation?.symbol === 'string'
+        ? operation.symbol.trim().toUpperCase()
+        : '';
+
+      if (prefix && symbol && prefix !== symbol && !map.has(prefix)) {
+        map.set(prefix, symbol);
+      }
+    });
+
+    Object.entries(DEFAULT_PREFIX_SYMBOL_MAP).forEach(([prefix, symbol]) => {
+      const normalizedPrefix = prefix.trim().toUpperCase();
+      const normalizedSymbol = typeof symbol === 'string' ? symbol.trim().toUpperCase() : '';
+      if (normalizedPrefix && normalizedSymbol && !map.has(normalizedPrefix)) {
+        map.set(normalizedPrefix, normalizedSymbol);
+      }
+    });
+
+    return map;
+  }, [prefixRules, report]);
+
+  const groupedData = useMemo(() => {
     const map = new Map();
     const operations = Array.isArray(report?.operations) ? report.operations : [];
 
     map.set(ALL_GROUP_ID, operations);
 
     if (!groups.length || operations.length === 0) {
-      return map;
+      return {
+        groupedOperationsMap: map,
+        optionInstrumentGroups: [],
+      };
     }
 
-    const operationsByKey = operations.reduce((acc, operation) => {
+    const operationsByKey = new Map();
+    const optionInstrumentMap = new Map();
+    const optionInstrumentGroups = [];
+
+    operations.forEach((operation) => {
       if (!operation) {
-        return acc;
+        return;
       }
-      const key = getOperationGroupId(operation);
-      if (!acc.has(key)) {
-        acc.set(key, []);
+
+      const groupKey = getOperationGroupId(operation);
+      if (!operationsByKey.has(groupKey)) {
+        operationsByKey.set(groupKey, []);
       }
-      acc.get(key).push(operation);
-      return acc;
-    }, new Map());
+      operationsByKey.get(groupKey).push(operation);
+
+      const instrumentToken = getOptionInstrumentToken(operation);
+      if (instrumentToken) {
+        const instrumentKey = `${OPTION_INSTRUMENT_KEY_PREFIX}${instrumentToken}`;
+        let entry = optionInstrumentMap.get(instrumentKey);
+        if (!entry) {
+          entry = { id: instrumentKey, token: instrumentToken, operations: [] };
+          optionInstrumentMap.set(instrumentKey, entry);
+          optionInstrumentGroups.push(entry);
+        }
+        entry.operations.push(operation);
+      }
+    });
 
     groups.forEach((group) => {
       map.set(group.id, operationsByKey.get(group.id) ?? []);
     });
 
-    return map;
+    optionInstrumentGroups.forEach((entry) => {
+      map.set(entry.id, entry.operations);
+    });
+
+    return {
+      groupedOperationsMap: map,
+      optionInstrumentGroups,
+    };
   }, [report, groups]);
+
+  const groupedOperations = groupedData.groupedOperationsMap;
+  const optionInstrumentGroups = groupedData.optionInstrumentGroups;
 
   useEffect(() => {
     scopedDataCacheRef.current = new Map();
   }, [report, groups, groupedOperations]);
 
-  const { optionGroupOptions, allGroupOptions } = useMemo(() => {
+  const { optionGroupOptions, compraVentaGroupOptions, allGroupOptions } = useMemo(() => {
     if (!groups.length) {
-      return { optionGroupOptions: [], allGroupOptions: [] };
+      return {
+        optionGroupOptions: [],
+        compraVentaGroupOptions: [],
+        allGroupOptions: [],
+      };
     }
 
-    const buildOptions = (sourceGroups) => {
-      if (!sourceGroups.length) {
-        return [];
-      }
-
-      const mapped = sourceGroups.map((group) => ({
-        id: group.id,
-        label: formatGroupLabel(group),
-        testId: sanitizeForTestId(group.id),
-      }));
-
-      mapped.unshift({
-        id: ALL_GROUP_ID,
-        label: filterStrings.all ?? 'All',
-        testId: 'all',
-      });
-
-      return mapped;
+    const allEntry = {
+      id: ALL_GROUP_ID,
+      label: filterStrings.all ?? 'All',
+      testId: 'all',
     };
+
+    const buildOptionEntry = (group) => ({
+      id: group.id,
+      label: formatGroupLabel(group, { prefixLabels: prefixDisplayMap, expirationLabels: expirationLabelMap }),
+      testId: sanitizeForTestId(group.id),
+    });
 
     const optionGroups = groups.filter((group) => {
       if (!isOptionGroup(group)) {
         return false;
       }
-
       const groupOperations = groupedOperations.get(group.id) ?? [];
       return groupOperations.some((operation) => OPTION_OPERATION_TYPES.has(operation?.optionType));
     });
 
+    const optionGroupEntries = optionGroups
+      .map(buildOptionEntry)
+      .sort((a, b) => a.label.localeCompare(b.label));
+
+    if (optionGroupEntries.length > 0) {
+      optionGroupEntries.unshift(allEntry);
+    }
+
+    const allGroupEntries = groups
+      .map(buildOptionEntry)
+      .sort((a, b) => a.label.localeCompare(b.label));
+
+    if (allGroupEntries.length > 0) {
+      allGroupEntries.unshift(allEntry);
+    }
+
+    const optionInstrumentEntries = optionInstrumentGroups
+      .map((entry) => ({
+        id: entry.id,
+        label: entry.token,
+        testId: sanitizeForTestId(entry.token),
+      }))
+      .sort((a, b) => a.label.localeCompare(b.label));
+
+    const nonOptionGroupEntries = groups
+      .filter((group) => !isOptionGroup(group))
+      .map(buildOptionEntry)
+      .sort((a, b) => a.label.localeCompare(b.label));
+
+    const compraVentaEntries = [allEntry];
+
+    if (optionInstrumentEntries.length > 0) {
+      compraVentaEntries.push(...optionInstrumentEntries);
+    } else if (optionGroupEntries.length > 0) {
+      compraVentaEntries.push(...optionGroupEntries.slice(1));
+    }
+
+    compraVentaEntries.push(...nonOptionGroupEntries);
+
     return {
-      optionGroupOptions: buildOptions(optionGroups),
-      allGroupOptions: buildOptions(groups),
+      optionGroupOptions: optionGroupEntries,
+      compraVentaGroupOptions: compraVentaEntries,
+      allGroupOptions: allGroupEntries,
     };
-  }, [groups, filterStrings.all, groupedOperations]);
+  }, [
+    groups,
+    filterStrings.all,
+    groupedOperations,
+    optionInstrumentGroups,
+    prefixDisplayMap,
+    expirationLabelMap,
+  ]);
+
+  useEffect(() => {
+    const allowedByType = {
+      [OPERATION_TYPES.OPCIONES]: new Set(optionGroupOptions.map((option) => option.id)),
+      [OPERATION_TYPES.COMPRA_VENTA]: new Set(compraVentaGroupOptions.map((option) => option.id)),
+      [OPERATION_TYPES.ARBITRAJES]: new Set(allGroupOptions.map((option) => option.id)),
+    };
+
+    setSelectedGroupIds((prev) => {
+      let next = prev;
+      Object.entries(prev).forEach(([type, value]) => {
+        const allowed = allowedByType[type];
+        if (!allowed || allowed.size === 0) {
+          if (value !== ALL_GROUP_ID) {
+            if (next === prev) {
+              next = { ...prev };
+            }
+            next[type] = ALL_GROUP_ID;
+          }
+          return;
+        }
+
+        if (!allowed.has(value)) {
+          if (next === prev) {
+            next = { ...prev };
+          }
+          next[type] = ALL_GROUP_ID;
+        }
+      });
+      return next;
+    });
+  }, [optionGroupOptions, compraVentaGroupOptions, allGroupOptions]);
 
   const scopedData = useMemo(
     () => computeScopedData({
@@ -873,7 +1132,7 @@ const ProcessorScreen = () => {
         return (
           <CompraVentaView
             {...commonProps}
-            groupOptions={allGroupOptions}
+            groupOptions={compraVentaGroupOptions}
             operations={scopedData.filteredOperations}
           />
         );
