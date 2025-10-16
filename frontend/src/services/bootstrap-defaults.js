@@ -1,5 +1,64 @@
-import { symbolExists, saveSymbolConfig, loadSymbolConfig } from './storage-settings.js';
+import { symbolExists, saveSymbolConfig } from './storage-settings.js';
 import { createDefaultSymbolConfigWithOverrides } from './settings-types.js';
+// Fee config loader with validation (Phase 2 integration)
+import feeConfigJson from './fees/fees-config.json';
+import { validateFeeConfig, computeEffectiveRates } from './fees/config-validation.js';
+import { loadInstrumentMapping } from './fees/instrument-mapping.js';
+// Instrument data for mapping
+import instrumentsData from '../../InstrumentsWithDetails.json';
+
+let _validatedFeeConfig = null;
+let _effectiveRates = null;
+
+/**
+ * Loads, validates, and caches the fee configuration.
+ * Call once during app bootstrap.
+ * @returns {object} validated config structure
+ */
+export function loadFeeConfig() {
+  if (_validatedFeeConfig) return _validatedFeeConfig;
+  
+  try {
+    _validatedFeeConfig = validateFeeConfig(feeConfigJson);
+    _effectiveRates = computeEffectiveRates(_validatedFeeConfig);
+    // eslint-disable-next-line no-console
+    console.info('PO: fee-config-validated', Object.keys(_effectiveRates));
+  } catch (e) {
+    // eslint-disable-next-line no-console
+    console.error('PO: fee-config-validation-failed', e);
+    _validatedFeeConfig = { byma: {}, broker: {} };
+    _effectiveRates = {};
+  }
+  
+  return _validatedFeeConfig;
+}
+
+/**
+ * Returns precomputed effective fee rates by category.
+ * Must call loadFeeConfig() first.
+ * @returns {object} rates map
+ */
+export function getEffectiveRates() {
+  if (!_effectiveRates) {
+    loadFeeConfig(); // lazy init
+  }
+  return _effectiveRates;
+}
+
+/**
+ * Initializes instrument CfiCode mapping.
+ * Call once during app bootstrap after instruments data available.
+ */
+export function initializeInstrumentMapping() {
+  try {
+    loadInstrumentMapping(instrumentsData);
+    // eslint-disable-next-line no-console
+    console.info('PO: instrument-mapping-initialized');
+  } catch (e) {
+    // eslint-disable-next-line no-console
+    console.error('PO: instrument-mapping-init-failed', e);
+  }
+}
 
 // Default symbol configurations with prefixes
 // Based on MCP/BCBA ticker patterns (company-root style prefixes)
@@ -56,4 +115,13 @@ export async function seedDefaultSymbols() {
   }
 
   return created;
+}
+
+/**
+ * Initializes all bootstrap services: fee config, instrument mapping.
+ * Call once during app startup.
+ */
+export function bootstrapFeeServices() {
+  loadFeeConfig();
+  initializeInstrumentMapping();
 }

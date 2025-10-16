@@ -19,6 +19,7 @@ import { useTheme } from '@mui/material/styles';
 
 import GroupFilter from './GroupFilter.jsx';
 import { getBuySellOperations } from '../../services/csv/buy-sell-matcher.js';
+import FeeTooltip from './FeeTooltip.jsx';
 
 const quantityFormatter = typeof Intl !== 'undefined'
   ? new Intl.NumberFormat('es-AR', {
@@ -55,6 +56,16 @@ const formatDecimal = (value) => {
     return decimalFormatter.format(safeValue);
   }
   return String(safeValue);
+};
+
+const formatFee = (value) => {
+  if (!Number.isFinite(value)) {
+    return '';
+  }
+  return new Intl.NumberFormat('es-AR', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(value);
 };
 
 const DEFAULT_SETTLEMENT = 'CI';
@@ -113,11 +124,17 @@ const aggregateRows = (rows) => {
         quantity: 0,
         weightedPriceSum: 0,
         totalWeight: 0,
+        feeAmount: 0,
+        grossNotional: 0,
+        feeBreakdown: row.feeBreakdown,
+        category: row.category,
       });
     }
 
     const entry = groups.get(key);
     entry.quantity += row.quantity;
+    entry.feeAmount += (row.feeAmount || 0);
+    entry.grossNotional += (row.grossNotional || 0);
     const weight = Number.isFinite(row.weight) && row.weight > 0
       ? row.weight
       : Math.abs(row.quantity);
@@ -126,13 +143,27 @@ const aggregateRows = (rows) => {
   });
 
   return Array.from(groups.values())
-    .map((entry) => ({
-      key: entry.key,
-      symbol: entry.symbol,
-      settlement: entry.settlement,
-      quantity: entry.quantity,
-      price: entry.totalWeight ? entry.weightedPriceSum / entry.totalWeight : 0,
-    }))
+    .map((entry) => {
+      // Recalculate fee breakdown for aggregated gross notional
+      const feeBreakdown = entry.feeBreakdown && entry.grossNotional > 0 ? {
+        ...entry.feeBreakdown,
+        commissionAmount: entry.grossNotional * entry.feeBreakdown.commissionPct,
+        rightsAmount: entry.grossNotional * entry.feeBreakdown.rightsPct,
+        vatAmount: entry.grossNotional * (entry.feeBreakdown.commissionPct + entry.feeBreakdown.rightsPct) * entry.feeBreakdown.vatPct,
+      } : entry.feeBreakdown;
+
+      return {
+        key: entry.key,
+        symbol: entry.symbol,
+        settlement: entry.settlement,
+        quantity: entry.quantity,
+        price: entry.totalWeight ? entry.weightedPriceSum / entry.totalWeight : 0,
+        feeAmount: entry.feeAmount,
+        grossNotional: entry.grossNotional,
+        feeBreakdown,
+        category: entry.category,
+      };
+    })
     .sort((a, b) => {
       if (a.symbol === b.symbol) {
         return a.settlement.localeCompare(b.settlement);
@@ -158,6 +189,10 @@ const buildRows = (operations = [], side = 'BUY') => {
       quantity,
       price,
       weight: Math.abs(rawQuantity),
+      feeAmount: operation.feeAmount || 0,
+      grossNotional: operation.grossNotional || 0,
+      feeBreakdown: operation.feeBreakdown,
+      category: operation.category || 'bonds',
     };
   });
 };
@@ -209,7 +244,7 @@ const BuySellTable = ({
           <TableHead>
             <TableRow>
               <TableCell
-                colSpan={4}
+                colSpan={5}
                 sx={{
                   position: 'sticky',
                   top: 0,
@@ -260,12 +295,13 @@ const BuySellTable = ({
               <TableCell>{strings?.tables?.settlement ?? 'Plazo'}</TableCell>
               <TableCell align="right">{strings?.tables?.quantity ?? 'Cantidad'}</TableCell>
               <TableCell align="right">{strings?.tables?.price ?? 'Precio'}</TableCell>
+              <TableCell align="right">{strings?.tables?.fee ?? 'Gastos'}</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
             {!hasData && (
               <TableRow>
-                <TableCell colSpan={4} align="center">
+                <TableCell colSpan={5} align="center">
                   <Typography variant="body2" color="text.secondary">
                     {strings?.tables?.empty ?? 'Sin datos para mostrar.'}
                   </Typography>
@@ -286,6 +322,17 @@ const BuySellTable = ({
                   {formatQuantity(row.quantity)}
                 </TableCell>
                 <TableCell align="right">{formatDecimal(row.price)}</TableCell>
+                <TableCell align="right">
+                  <FeeTooltip
+                    feeBreakdown={row.feeBreakdown}
+                    grossNotional={row.grossNotional}
+                    strings={strings}
+                  >
+                    <Typography variant="body2" component="span">
+                      {formatFee(row.feeAmount)}
+                    </Typography>
+                  </FeeTooltip>
+                </TableCell>
               </TableRow>
             ))}
           </TableBody>
@@ -303,7 +350,6 @@ const CompraVentaView = ({
   onGroupChange,
 }) => {
   const filterStrings = strings?.filters ?? {};
-  const theme = useTheme();
 
   const [averagingEnabled, setAveragingEnabled] = useState(true);
 

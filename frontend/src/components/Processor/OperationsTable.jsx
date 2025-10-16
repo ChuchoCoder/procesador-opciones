@@ -20,6 +20,8 @@ import DownloadIcon from '@mui/icons-material/Download';
 import ArrowCircleUpIcon from '@mui/icons-material/ArrowCircleUp';
 import ArrowCircleDownIcon from '@mui/icons-material/ArrowCircleDown';
 
+import FeeTooltip from './FeeTooltip.jsx';
+
 const quantityFormatter = typeof Intl !== 'undefined'
   ? new Intl.NumberFormat('es-AR', {
       useGrouping: true,
@@ -53,6 +55,23 @@ const formatDecimal = (value) => {
     return decimalFormatter.format(value);
   }
   return String(value);
+};
+
+const feeFormatter = typeof Intl !== 'undefined'
+  ? new Intl.NumberFormat('es-AR', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })
+  : null;
+
+const formatFee = (value) => {
+  if (!Number.isFinite(value)) {
+    return '—';
+  }
+  if (feeFormatter) {
+    return feeFormatter.format(value);
+  }
+  return value.toFixed(2);
 };
 
 const OperationsTable = ({ 
@@ -101,7 +120,7 @@ const OperationsTable = ({
           <TableHead>
             <TableRow>
               <TableCell
-                colSpan={3}
+                colSpan={4}
                 sx={{
                   position: 'sticky',
                   top: 0,
@@ -135,8 +154,8 @@ const OperationsTable = ({
                         <FormControlLabel
                           sx={{ 
                             ml: 0, 
-                            mr: 0.5, 
-                            '& .MuiFormControlLabel-label': { display: 'none' } 
+                            mr: 0.5,
+                            '& .MuiFormControlLabel-label': { fontSize: '0.75rem' },
                           }}
                           control={(
                             <Switch
@@ -150,6 +169,7 @@ const OperationsTable = ({
                               }}
                             />
                           )}
+                          label="PROMEDIAR"
                         />
                       </Tooltip>
                     )}
@@ -188,6 +208,7 @@ const OperationsTable = ({
                 top: 48,
                 backgroundColor: '#fafafa',
                 zIndex: 1,
+                pt: 2,
               }}
             >
               {strings.tables.quantity}
@@ -199,6 +220,7 @@ const OperationsTable = ({
                 top: 48,
                 backgroundColor: '#fafafa',
                 zIndex: 1,
+                pt: 2,
               }}
             >
               <Stack direction="row" spacing={0.5} alignItems="center" justifyContent="flex-end">
@@ -218,22 +240,38 @@ const OperationsTable = ({
                 top: 48,
                 backgroundColor: '#fafafa',
                 zIndex: 1,
+                pt: 2,
               }}
             >
               {strings.tables.price}
+            </TableCell>
+            <TableCell
+              align="right"
+              sx={{
+                position: 'sticky',
+                top: 48,
+                backgroundColor: '#fafafa',
+                zIndex: 1,
+                pt: 2,
+              }}
+            >
+              {strings.tables.fee || 'Gastos'}
             </TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
           {operations.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={3} align="center">
+              <TableCell colSpan={4} align="center">
                 {strings.tables.empty}
               </TableCell>
             </TableRow>
           ) : (
             operations.map((operation, index) => {
               const rowKey = `${operation.originalSymbol ?? 'op'}-${operation.strike}-${operation.totalQuantity}-${operation.averagePrice}`;
+              const feeAmount = operation.feeAmount ?? 0;
+              const feeBreakdown = operation.feeBreakdown;
+              const grossNotional = operation.grossNotional ?? 0;
 
               return (
                 <TableRow
@@ -245,6 +283,17 @@ const OperationsTable = ({
                   </TableCell>
                   <TableCell align="right">{formatDecimal(operation.strike)}</TableCell>
                   <TableCell align="right">{formatDecimal(operation.averagePrice)}</TableCell>
+                  <TableCell align="right">
+                    <FeeTooltip
+                      feeBreakdown={feeBreakdown}
+                      grossNotional={grossNotional}
+                      strings={strings}
+                    >
+                      <Typography variant="body2" component="span">
+                        {formatFee(feeAmount)}
+                      </Typography>
+                    </FeeTooltip>
+                  </TableCell>
                 </TableRow>
               );
             })

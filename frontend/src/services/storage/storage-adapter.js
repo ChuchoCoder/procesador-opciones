@@ -3,6 +3,8 @@
  * Provides a consistent async API for both storage backends
  */
 
+/* global chrome */
+
 /**
  * Detect if running as Chrome Extension
  * @returns {boolean}
