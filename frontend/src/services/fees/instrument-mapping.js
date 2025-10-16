@@ -15,8 +15,8 @@ let _unknownCfiCodes = null;
  * Adjust as needed per market specifications.
  */
 const CFI_PATTERNS = {
-  // Opciones: OPxxxx (call/put options)
-  option: /^OP/,
+  // Opciones: OPxxxx / OCxxxx (puts/calls)
+  option: /^O[CP]/,
   // Acciones/CEDEARs: Exxxxx (all equities - shares, rights, entitlements, CEDEARs, etc.)
   accionCedear: /^E/,
   // Letras: DTxxxx legacy codes + DYxxxx (money-market short term instruments) + DBxxxx

@@ -19,6 +19,7 @@ import { useTheme } from '@mui/material/styles';
 
 import GroupFilter from './GroupFilter.jsx';
 import { getBuySellOperations } from '../../services/csv/buy-sell-matcher.js';
+import { resolveExpirationLabel } from '../../services/csv/expiration-labels.js';
 import FeeTooltip from './FeeTooltip.jsx';
 
 const quantityFormatter = typeof Intl !== 'undefined'
@@ -134,6 +135,22 @@ const normalizeSettlement = (value = '') => {
   return settlement.toUpperCase();
 };
 
+const resolveSettlementLabel = (operation = {}, { expirationLabels } = {}) => {
+  const fallbackValue = operation?.settlement ?? operation?.expiration;
+
+  if (OPTION_OPERATION_TYPES.has(operation?.optionType)) {
+    const optionLabel = resolveExpirationLabel(operation?.expiration ?? fallbackValue ?? '', {
+      expirationLabels,
+    });
+    if (optionLabel) {
+      return optionLabel;
+    }
+    return normalizeSettlement(operation?.expiration ?? fallbackValue ?? '');
+  }
+
+  return normalizeSettlement(fallbackValue ?? '');
+};
+
 const aggregateRows = (rows) => {
   if (!rows.length) {
     return rows;
@@ -199,7 +216,7 @@ const aggregateRows = (rows) => {
     });
 };
 
-const buildRows = (operations = [], side = 'BUY') => {
+const buildRows = (operations = [], side = 'BUY', { expirationLabels } = {}) => {
   const sign = side === 'SELL' ? -1 : 1;
 
   return operations.map((operation, index) => {
@@ -207,7 +224,7 @@ const buildRows = (operations = [], side = 'BUY') => {
     const normalizedFallback = normalizeSymbol(operation.symbol ?? '');
     const rawSymbol = isOption ? extractOptionToken(operation) : (operation.symbol ?? '');
     const symbol = isOption ? rawSymbol || normalizedFallback : normalizeSymbol(rawSymbol);
-    const settlement = normalizeSettlement(operation.expiration ?? operation.settlement);
+    const settlement = resolveSettlementLabel(operation, { expirationLabels });
     const rawQuantity = Number(operation.quantity ?? 0);
     const quantity = Number.isFinite(rawQuantity) ? rawQuantity * sign : 0;
     const price = Number(operation.price ?? 0);
@@ -377,6 +394,7 @@ const CompraVentaView = ({
   groupOptions,
   selectedGroupId,
   strings,
+  expirationLabels,
   onGroupChange,
 }) => {
   const filterStrings = strings?.filters ?? {};
@@ -387,8 +405,14 @@ const CompraVentaView = ({
     return getBuySellOperations(operations);
   }, [operations]);
 
-  const buyRows = useMemo(() => buildRows(buys, 'BUY'), [buys]);
-  const sellRows = useMemo(() => buildRows(sells, 'SELL'), [sells]);
+  const buyRows = useMemo(
+    () => buildRows(buys, 'BUY', { expirationLabels }),
+    [buys, expirationLabels],
+  );
+  const sellRows = useMemo(
+    () => buildRows(sells, 'SELL', { expirationLabels }),
+    [sells, expirationLabels],
+  );
 
   const processedBuys = useMemo(
     () => (averagingEnabled ? aggregateRows(buyRows) : buyRows),

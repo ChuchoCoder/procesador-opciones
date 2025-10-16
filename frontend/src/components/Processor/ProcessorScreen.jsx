@@ -22,6 +22,11 @@ import {
   storageKeys,
 } from '../../services/storage/local-storage.js';
 import { DEFAULT_PREFIX_SYMBOL_MAP } from '../../services/prefix-defaults.js';
+import {
+  resolveExpirationLabel,
+  normalizeExpirationToken,
+  DEFAULT_EXPIRATION_TOKEN,
+} from '../../services/csv/expiration-labels.js';
 
 import OperationTypeTabs, { OPERATION_TYPES } from './OperationTypeTabs.jsx';
 import OpcionesView from './OpcionesView.jsx';
@@ -41,29 +46,9 @@ const createInitialGroupSelections = () => ({
 const OPTION_INSTRUMENT_KEY_PREFIX = 'optionInstrument::';
 const OPTION_TOKEN_PREFIX_REGEX = /^([A-Z0-9]+?)[CV]\d+/i;
 
-const FALLBACK_EXPIRATION_NAMES = new Map([
-  ['ENE', 'Enero'],
-  ['FEB', 'Febrero'],
-  ['MAR', 'Marzo'],
-  ['ABR', 'Abril'],
-  ['MAY', 'Mayo'],
-  ['JUN', 'Junio'],
-  ['JUL', 'Julio'],
-  ['AGO', 'Agosto'],
-  ['SEP', 'Septiembre'],
-  ['OCT', 'Octubre'],
-  ['OC', 'Octubre'],
-  ['O', 'Octubre'],
-  ['NOV', 'Noviembre'],
-  ['DIC', 'Diciembre'],
-]);
-
 const sanitizeForTestId = (value = '') => value.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase();
 
-const buildGroupKey = (symbol = '', expiration = 'NONE') => `${symbol}::${expiration}`;
-
-const DEFAULT_EXPIRATION = 'NONE';
-const UNKNOWN_EXPIRATION = 'UNKNOWN';
+const buildGroupKey = (symbol = '', expiration = DEFAULT_EXPIRATION_TOKEN) => `${symbol}::${expiration}`;
 
 const OPTION_OPERATION_TYPES = new Set(['CALL', 'PUT']);
 
@@ -75,16 +60,7 @@ const normalizeGroupSymbol = (value = '') => {
   return trimmed ? trimmed.toUpperCase() : 'UNKNOWN';
 };
 
-const normalizeGroupExpiration = (value = '') => {
-  if (typeof value !== 'string') {
-    return DEFAULT_EXPIRATION;
-  }
-  const trimmed = value.trim();
-  if (!trimmed) {
-    return DEFAULT_EXPIRATION;
-  }
-  return trimmed.toUpperCase();
-};
+const normalizeGroupExpiration = (value = '') => normalizeExpirationToken(value);
 
 const SETTLEMENT_TOKENS = new Set([
   'CI', 'CONTADO', '24HS', '48HS', '72HS', '24H', '48H', '72H', 'T0', 'T1', 'T2', 'T+1', 'T+2',
@@ -202,12 +178,12 @@ const getOperationGroupId = (operation = {}) => {
   const normalizedSymbol = normalizeGroupSymbol(operation.symbol);
   if (OPTION_OPERATION_TYPES.has(operation.optionType)) {
     const normalizedExpiration = normalizeGroupExpiration(operation.expiration);
-    const expiration = normalizedExpiration || DEFAULT_EXPIRATION;
+    const expiration = normalizedExpiration || DEFAULT_EXPIRATION_TOKEN;
     return buildGroupKey(normalizedSymbol, expiration);
   }
 
   const baseSymbol = splitInstrumentSymbol(normalizedSymbol);
-  return buildGroupKey(baseSymbol, DEFAULT_EXPIRATION);
+  return buildGroupKey(baseSymbol, DEFAULT_EXPIRATION_TOKEN);
 };
 
 const getOptionInstrumentToken = (operation = {}) => {
@@ -278,36 +254,8 @@ const extractBaseSymbol = (symbol = '') => {
   return parts[0] ?? trimmed;
 };
 
-const formatExpirationLabel = (expiration = '', { expirationLabels } = {}) => {
-  if (typeof expiration !== 'string') {
-    return '';
-  }
-
-  const trimmed = expiration.trim();
-  if (!trimmed || trimmed.toUpperCase() === DEFAULT_EXPIRATION) {
-    return '';
-  }
-
-  if (/^\d+HS$/i.test(trimmed)) {
-    return `${trimmed.slice(0, -2)}hs`;
-  }
-
-  if (trimmed.toUpperCase() === UNKNOWN_EXPIRATION) {
-    return '??';
-  }
-
-  const normalized = trimmed.toUpperCase();
-
-  if (expirationLabels?.has(normalized)) {
-    return expirationLabels.get(normalized);
-  }
-
-  if (FALLBACK_EXPIRATION_NAMES.has(normalized)) {
-    return FALLBACK_EXPIRATION_NAMES.get(normalized);
-  }
-
-  return trimmed;
-};
+const formatExpirationLabel = (expiration = '', { expirationLabels } = {}) =>
+  resolveExpirationLabel(expiration, { expirationLabels });
 
 const formatGroupLabel = (group, { prefixLabels, expirationLabels } = {}) => {
   if (!group) {
@@ -1134,6 +1082,7 @@ const ProcessorScreen = () => {
             {...commonProps}
             groupOptions={compraVentaGroupOptions}
             operations={scopedData.filteredOperations}
+            expirationLabels={expirationLabelMap}
           />
         );
 

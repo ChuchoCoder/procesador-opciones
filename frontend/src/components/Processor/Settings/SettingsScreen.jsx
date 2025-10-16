@@ -19,6 +19,14 @@ export default function SettingsScreen() {
   const [restoreDialogOpen, setRestoreDialogOpen] = useState(false);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
 
+  const refreshSymbols = useCallback(async () => {
+    const allSymbols = await getAllSymbols();
+    setSymbols(allSymbols);
+    if (allSymbols.length > 0 && !activeSymbol) {
+      setActiveSymbol(allSymbols[0]);
+    }
+  }, [activeSymbol]);
+
   // Load symbols on mount
   useEffect(() => {
     (async () => {
@@ -33,14 +41,6 @@ export default function SettingsScreen() {
       loadSymbolConfig(activeSymbol).then(loaded => setConfig(loaded));
     } else {
       setConfig(null);
-    }
-  }, [activeSymbol]);
-
-  const refreshSymbols = useCallback(async () => {
-    const allSymbols = await getAllSymbols();
-    setSymbols(allSymbols);
-    if (allSymbols.length > 0 && !activeSymbol) {
-      setActiveSymbol(allSymbols[0]);
     }
   }, [activeSymbol]);
 
