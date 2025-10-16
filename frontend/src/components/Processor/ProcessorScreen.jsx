@@ -31,6 +31,12 @@ import EmptyState from './EmptyState.jsx';
 const ALL_GROUP_ID = '__ALL__';
 const LAST_SESSION_STORAGE_VERSION = 1;
 
+const createInitialGroupSelections = () => ({
+  [OPERATION_TYPES.OPCIONES]: ALL_GROUP_ID,
+  [OPERATION_TYPES.COMPRA_VENTA]: ALL_GROUP_ID,
+  [OPERATION_TYPES.ARBITRAJES]: ALL_GROUP_ID,
+});
+
 const sanitizeForTestId = (value = '') => value.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase();
 
 const buildGroupKey = (symbol = '', expiration = 'NONE') => `${symbol}::${expiration}`;
@@ -369,10 +375,49 @@ const ProcessorScreen = () => {
   const [warningCodes, setWarningCodes] = useState([]);
   const [actionFeedback, setActionFeedback] = useState(null);
   const [activePreview, setActivePreview] = useState(CLIPBOARD_SCOPES.CALLS);
-  const [selectedGroupId, setSelectedGroupId] = useState(ALL_GROUP_ID);
   const [activeOperationType, setActiveOperationType] = useState(OPERATION_TYPES.OPCIONES);
+  const [selectedGroupIds, setSelectedGroupIds] = useState(() => createInitialGroupSelections());
+  const selectedGroupId = selectedGroupIds[activeOperationType] ?? ALL_GROUP_ID;
   const scopedDataCacheRef = useRef(new Map());
   const sessionRestoredRef = useRef(false);
+
+  const setSelectedGroupIdForType = useCallback((type, nextValue) => {
+    if (!type) {
+      return;
+    }
+
+    setSelectedGroupIds((prev) => {
+      const currentValue = prev[type] ?? ALL_GROUP_ID;
+      const safeValue = nextValue ?? ALL_GROUP_ID;
+      if (currentValue === safeValue) {
+        return prev;
+      }
+      return {
+        ...prev,
+        [type]: safeValue,
+      };
+    });
+  }, []);
+
+  const resetGroupSelections = useCallback(() => {
+    setSelectedGroupIds((prev) => {
+      const initial = createInitialGroupSelections();
+      const keys = new Set([...Object.keys(prev), ...Object.keys(initial)]);
+      let next = prev;
+
+      keys.forEach((key) => {
+        const targetValue = initial[key] ?? ALL_GROUP_ID;
+        if ((next[key] ?? ALL_GROUP_ID) !== targetValue) {
+          if (next === prev) {
+            next = { ...prev };
+          }
+          next[key] = targetValue;
+        }
+      });
+
+      return next;
+    });
+  }, []);
 
   const buildConfiguration = useCallback(
     (overrides = {}) => ({
@@ -434,7 +479,7 @@ const ProcessorScreen = () => {
     setActionFeedback(null);
     setWarningCodes([]);
     setActivePreview(CLIPBOARD_SCOPES.CALLS);
-    setSelectedGroupId(ALL_GROUP_ID);
+    resetGroupSelections();
     if (!file) {
       setReport(null);
       removeItem(storageKeys.lastReport);
@@ -475,26 +520,28 @@ const ProcessorScreen = () => {
   };
 
   useEffect(() => {
-    if (!report?.groups || report.groups.length === 0) {
-      if (selectedGroupId !== ALL_GROUP_ID) {
-        setSelectedGroupId(ALL_GROUP_ID);
-      }
+    const reportGroups = Array.isArray(report?.groups) ? report.groups : [];
+    if (reportGroups.length === 0) {
+      resetGroupSelections();
       return;
     }
 
-    if (report.groups.length === 1) {
-      const onlyGroupId = report.groups[0].id;
-      if (selectedGroupId !== onlyGroupId) {
-        setSelectedGroupId(onlyGroupId);
-      }
-      return;
-    }
+    const validIds = new Set(reportGroups.map((group) => group.id));
+    validIds.add(ALL_GROUP_ID);
 
-    const exists = report.groups.some((group) => group.id === selectedGroupId);
-    if (!exists) {
-      setSelectedGroupId(ALL_GROUP_ID);
-    }
-  }, [report, selectedGroupId]);
+    setSelectedGroupIds((prev) => {
+      let next = prev;
+      Object.entries(prev).forEach(([type, value]) => {
+        if (!validIds.has(value)) {
+          if (next === prev) {
+            next = { ...prev };
+          }
+          next[type] = ALL_GROUP_ID;
+        }
+      });
+      return next;
+    });
+  }, [report, resetGroupSelections]);
 
   const warningMessages = useMemo(() => {
     if (!warningCodes || warningCodes.length === 0) {
@@ -517,7 +564,7 @@ const ProcessorScreen = () => {
       .filter(Boolean);
   }, [warningCodes, processorStrings.warnings]);
 
-  const groups = report?.groups ?? [];
+  const groups = useMemo(() => report?.groups ?? [], [report]);
   const filterStrings = processorStrings.filters ?? {};
 
   const groupedOperations = useMemo(() => {
@@ -615,12 +662,13 @@ const ProcessorScreen = () => {
 
   const callsOperations = currentView?.calls?.operations ?? [];
   const putsOperations = currentView?.puts?.operations ?? [];
+  const opcionesSelectedGroupId = selectedGroupIds[OPERATION_TYPES.OPCIONES] ?? ALL_GROUP_ID;
 
   const handleGroupChange = useCallback((nextValue) => {
     if (nextValue) {
-      setSelectedGroupId(nextValue);
+      setSelectedGroupIdForType(activeOperationType, nextValue);
     }
-  }, []);
+  }, [activeOperationType, setSelectedGroupIdForType]);
 
   const handleCopy = async (scope) => {
     if (!scopedReport) {
@@ -666,39 +714,38 @@ const ProcessorScreen = () => {
     }
 
     const optionGroups = groups.filter(isOptionGroup);
+    const currentSelection = opcionesSelectedGroupId;
 
-    if (selectedGroupId === ALL_GROUP_ID) {
+    if (currentSelection === ALL_GROUP_ID) {
       if (optionGroups.length === 1) {
         const onlyGroupId = optionGroups[0].id;
         if (onlyGroupId !== ALL_GROUP_ID) {
-          setSelectedGroupId(onlyGroupId);
+          setSelectedGroupIdForType(OPERATION_TYPES.OPCIONES, onlyGroupId);
         }
       }
       return;
     }
 
-    const selectedGroup = groups.find((group) => group.id === selectedGroupId);
+    const selectedGroup = groups.find((group) => group.id === currentSelection);
     if (isOptionGroup(selectedGroup)) {
       return;
     }
 
     if (optionGroups.length === 0) {
-      if (selectedGroupId !== ALL_GROUP_ID) {
-        setSelectedGroupId(ALL_GROUP_ID);
-      }
+      setSelectedGroupIdForType(OPERATION_TYPES.OPCIONES, ALL_GROUP_ID);
       return;
     }
 
     if (optionGroups.length === 1) {
       const onlyGroupId = optionGroups[0].id;
-      if (selectedGroupId !== onlyGroupId) {
-        setSelectedGroupId(onlyGroupId);
+      if (currentSelection !== onlyGroupId) {
+        setSelectedGroupIdForType(OPERATION_TYPES.OPCIONES, onlyGroupId);
       }
       return;
     }
 
-    setSelectedGroupId(ALL_GROUP_ID);
-  }, [activeOperationType, selectedGroupId, groups]);
+    setSelectedGroupIdForType(OPERATION_TYPES.OPCIONES, ALL_GROUP_ID);
+  }, [activeOperationType, opcionesSelectedGroupId, groups, setSelectedGroupIdForType]);
 
   useEffect(() => {
     if (sessionRestoredRef.current) {
@@ -726,8 +773,40 @@ const ProcessorScreen = () => {
       setReport(storedReport);
       setWarningCodes(Array.isArray(storedReport?.summary?.warnings) ? storedReport.summary.warnings : []);
       setSelectedFile(stored.fileName ? { name: stored.fileName } : { name: 'Operaciones previas' });
-      if (typeof stored.selectedGroupId === 'string') {
-        setSelectedGroupId(stored.selectedGroupId);
+      if (stored.selectedGroupIds && typeof stored.selectedGroupIds === 'object') {
+        const entries = Object.entries(stored.selectedGroupIds).filter(([, value]) => typeof value === 'string');
+        if (entries.length > 0) {
+          setSelectedGroupIds((prev) => {
+            let next = prev;
+            entries.forEach(([type, value]) => {
+              const currentValue = next[type] ?? ALL_GROUP_ID;
+              if (currentValue !== value) {
+                if (next === prev) {
+                  next = { ...prev };
+                }
+                next[type] = value;
+              }
+            });
+            return next;
+          });
+        }
+      } else if (typeof stored.selectedGroupId === 'string') {
+        const fallbackValue = stored.selectedGroupId;
+        setSelectedGroupIds((prev) => {
+          const keys = Object.keys(prev).length > 0
+            ? Object.keys(prev)
+            : Object.keys(createInitialGroupSelections());
+          let next = prev;
+          keys.forEach((key) => {
+            if ((next[key] ?? ALL_GROUP_ID) !== fallbackValue) {
+              if (next === prev) {
+                next = { ...prev };
+              }
+              next[key] = fallbackValue;
+            }
+          });
+          return next;
+        });
       }
 
       if (Object.values(OPERATION_TYPES).includes(stored.activeOperationType)) {
@@ -756,12 +835,13 @@ const ProcessorScreen = () => {
       fileName: selectedFile.name ?? null,
       report,
       selectedGroupId,
+      selectedGroupIds,
       activeOperationType,
       activePreview,
     };
 
     writeItem(storageKeys.lastReport, snapshot);
-  }, [report, selectedFile, selectedGroupId, activeOperationType, activePreview]);
+  }, [report, selectedFile, selectedGroupId, selectedGroupIds, activeOperationType, activePreview]);
 
   const renderActiveView = () => {
     if (!report) {

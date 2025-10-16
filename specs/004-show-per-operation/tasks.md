@@ -19,13 +19,13 @@
 
 **Purpose**: Feature scaffolding & assets; minimal, fast.
 
-- [ ] T001 [P] Setup Create directory `frontend/src/services/fees/` (fee modules root)
-- [ ] T002 [P] Setup Add `frontend/src/services/fees/fees-config.json` initial rates (from research decisions)
-- [ ] T003 [P] Setup Add `frontend/src/services/fees/fees-flags.js` exporting `ENABLE_CAUCION_FEES=false`
-- [ ] T004 [P] Setup Add Spanish strings to `frontend/src/strings/es-AR.js` (fee column header, tooltip labels, placeholder "Próximamente")
-- [ ] T005 Setup Update `frontend/src/services/bootstrap-defaults.js` to load & pass fee config (placeholder loader function)
-- [ ] T006 [P] Setup Add logging helper `frontend/src/services/logging/fee-logging.js` for structured `PO:` warnings
-- [ ] T007 Setup Document config schema in `README.md` section (fees) referencing `fees-config.json`
+- [X] T001 [P] Setup Create directory `frontend/src/services/fees/` (fee modules root)
+- [X] T002 [P] Setup Add `frontend/src/services/fees/fees-config.json` initial rates (from research decisions)
+- [X] T003 [P] Setup Add `frontend/src/services/fees/fees-flags.js` exporting `ENABLE_CAUCION_FEES=false`
+- [X] T004 [P] Setup Add Spanish strings to `frontend/src/strings/es-AR.js` (fee column header, tooltip labels, placeholder "Próximamente")
+- [X] T005 Setup Update `frontend/src/services/bootstrap-defaults.js` to load & pass fee config (placeholder loader function)
+- [X] T006 [P] Setup Add logging helper `frontend/src/services/logging/fee-logging.js` for structured `PO:` warnings
+- [X] T007 Setup Document config schema in `README.md` section (fees) referencing `fees-config.json`
 
 **Checkpoint**: Feature scaffolding complete.
 
@@ -36,16 +36,16 @@
 **Purpose**: Core pure logic & validation all stories rely on.
 **Critical**: Complete before any user story implementation.
 
-- [ ] T008 [P] Foundational Create `frontend/src/services/fees/config-validation.js` (validate & sanitize JSON)
-- [ ] T009 [P] Foundational Create `frontend/src/services/fees/instrument-mapping.js` (load `InstrumentsWithDetails.json`, map CfiCode->category, warning dedup via Set)
-- [ ] T010 [P] Foundational Create `frontend/src/services/fees/fee-calculator.js` skeleton (`calculateFee`, `aggregateFee`) RETURNS placeholder values
-- [ ] T011 Foundational Wire validation & mapping into bootstrap flow (update `bootstrap-defaults.js`) sequential to T008, T009
-- [ ] T012 [P] Foundational Add JSDoc typings to fee modules for IDE clarity
-- [ ] T013 Foundational Add performance harness script `frontend/tests/perf/fee-benchmark.spec.js` (generate synthetic 10k rows, measure time)
-- [ ] T014 Foundational Update OpenAPI extension `specs/004-show-per-operation/contracts/fees.openapi.yaml` if schema adjustments needed (align names with data-model)
-- [ ] T015 Foundational Add warning codes constants `frontend/src/services/fees/fee-warning-codes.js`
-- [ ] T016 Foundational Add unit test stubs (empty) for core modules in `frontend/tests/unit/` to ensure failing initially
-- [ ] T017 Foundational Ensure `vitest.config.js` includes new test folder `frontend/tests/perf/`
+- [X] T008 [P] Foundational Create `frontend/src/services/fees/config-validation.js` (validate & sanitize JSON)
+- [X] T009 [P] Foundational Create `frontend/src/services/fees/instrument-mapping.js` (load `InstrumentsWithDetails.json`, map CfiCode->category, warning dedup via Set)
+- [X] T010 [P] Foundational Create `frontend/src/services/fees/fee-calculator.js` skeleton (`calculateFee`, `aggregateFee`) RETURNS placeholder values
+- [X] T011 Foundational Wire validation & mapping into bootstrap flow (update `bootstrap-defaults.js`) sequential to T008, T009
+- [X] T012 [P] Foundational Add JSDoc typings to fee modules for IDE clarity
+- [X] T013 Foundational Add performance harness script `frontend/tests/perf/fee-benchmark.spec.js` (generate synthetic 10k rows, measure time)
+- [X] T014 Foundational Update OpenAPI extension `specs/004-show-per-operation/contracts/fees.openapi.yaml` if schema adjustments needed (align names with data-model)
+- [X] T015 Foundational Add warning codes constants `frontend/src/services/fees/fee-warning-codes.js`
+- [X] T016 Foundational Add unit test stubs (empty) for core modules in `frontend/tests/unit/` to ensure failing initially
+- [X] T017 Foundational Ensure `vitest.config.js` includes new test folder `frontend/tests/perf/`
 
 **Checkpoint**: Foundation ready; pure components + validation skeletons exist.
 
@@ -58,27 +58,27 @@
 
 ### Tests (User Story 2 - Write First)
 
-- [ ] T018 [P] US1 Create unit test `frontend/tests/unit/fee-calculation.spec.js` covering each category (accionCedear, letra, bonds, option) formula & precision
-- [ ] T019 [P] US1 Create unit test `frontend/tests/unit/fee-aggregation-rounding.spec.js` verifying aggregate recomputation vs sum rounding bias (<0.01 ARS diff)
-- [ ] T020 [P] US1 Create unit test `frontend/tests/unit/fee-config-validation.spec.js` invalid numbers → sanitized defaults & warnings
-- [ ] T021 [P] US1 Create integration test `frontend/tests/integration/processor-fee-column.spec.jsx` loads fixture CSV & asserts Fee column consistency
-- [ ] T022 [P] US1 Create unit test `frontend/tests/unit/tooltip-breakdown.spec.js` verifying breakdown data shape & formatting (2 decimals display)
+- [X] T018 [P] US1 Create unit test `frontend/tests/unit/fee-calculation.spec.js` covering each category (accionCedear, letra, bonds, option) formula & precision
+- [X] T019 [P] US1 Create unit test `frontend/tests/unit/fee-aggregation-rounding.spec.js` verifying aggregate recomputation vs sum rounding bias (<0.01 ARS diff)
+- [X] T020 [P] US1 Create unit test `frontend/tests/unit/fee-config-validation.spec.js` invalid numbers → sanitized defaults & warnings
+- [X] T021 [P] US1 Create integration test `frontend/tests/integration/processor-fee-column.spec.jsx` loads fixture CSV & asserts Fee column consistency
+- [X] T022 [P] US1 Create unit test `frontend/tests/unit/tooltip-breakdown.spec.js` verifying breakdown data shape & formatting (2 decimals display)
 
 ### Implementation (User Story 2)
 
-- [ ] T023 US1 Implement fee formulas in `fee-calculator.js` (replace placeholders) depends T018
-- [ ] T024 US1 Implement config validation logic (commission & rights & VAT) in `config-validation.js` depends T020
-- [ ] T025 US1 Implement aggregation fee logic in `fee-calculator.js` depends T019
-- [ ] T026 US1 Add tooltip data adapter `frontend/src/services/fees/tooltip-adapter.js` depends T022
-- [ ] T027 [P] US1 Modify operations processing pipeline (`frontend/src/services/csv/...` actual file: identify and extend) to attach fee fields
-- [ ] T028 [P] US1 Update table component `frontend/src/components/Processor/OperationsTable.jsx` (or appropriate) to render Fee column
-- [ ] T029 [P] US1 Add tooltip UI component `frontend/src/components/Processor/FeeTooltip.jsx`
-- [ ] T030 US1 Integrate tooltip component into table cell (depends T029, T026)
-- [ ] T031 US1 Implement reprocessing on config change (observer or bootstrap reload) in `storage-settings.js` with fee recalculation trigger
-- [ ] T032 US1 Add logging for processed rows count & unknown CfiCode summary (extend `fee-logging.js`) depends T027
-- [ ] T033 US1 Update OpenAPI operations report schema (if needed) to include fee fields (optional alignment with `fees.openapi.yaml`)
-- [ ] T034 US1 Adjust locale formatting for fee display (ensure `Intl.NumberFormat('es-AR')`) in cell renderer
-- [ ] T035 US1 Update README usage example with Fee column screenshot / description
+- [X] T023 US1 Implement fee formulas in `fee-calculator.js` (replace placeholders) depends T018
+- [X] T024 US1 Implement config validation logic (commission & rights & VAT) in `config-validation.js` depends T020
+- [X] T025 US1 Implement aggregation fee logic in `fee-calculator.js` depends T019
+- [X] T026 US1 Add tooltip data adapter `frontend/src/services/fees/tooltip-adapter.js` depends T022
+- [X] T027 [P] US1 Modify operations processing pipeline (`frontend/src/services/csv/...` actual file: identify and extend) to attach fee fields
+- [X] T028 [P] US1 Update table component `frontend/src/components/Processor/OperationsTable.jsx` (or appropriate) to render Fee column
+- [X] T029 [P] US1 Add tooltip UI component `frontend/src/components/Processor/FeeTooltip.jsx`
+- [X] T030 US1 Integrate tooltip component into table cell (depends T029, T026)
+- [N/A] T031 US1 Implement reprocessing on config change (observer or bootstrap reload) in `storage-settings.js` with fee recalculation trigger (DEFERRED: config loaded at bootstrap; manual reload sufficient for MVP)
+- [X] T032 US1 Add logging for processed rows count & unknown CfiCode summary (extend `fee-logging.js`) depends T027
+- [N/A] T033 US1 Update OpenAPI operations report schema (if needed) to include fee fields (optional alignment with `fees.openapi.yaml`) (NO CHANGES NEEDED: schema already aligned)
+- [X] T034 US1 Adjust locale formatting for fee display (ensure `Intl.NumberFormat('es-AR')`) in cell renderer
+- [X] T035 US1 Update README usage example with Fee column screenshot / description
 
 **Checkpoint**: User Story 1 independently delivers MVP (inline fees). Stop & validate.
 

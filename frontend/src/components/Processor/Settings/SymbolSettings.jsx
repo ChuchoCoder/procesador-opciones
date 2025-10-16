@@ -12,7 +12,7 @@ import {
 } from '@mui/material';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import { validatePrefix, validateDecimals } from '../../../services/settings-utils';
-import { loadSymbolConfig, saveSymbolConfig } from '../../../services/storage-settings';
+import { saveSymbolConfig } from '../../../services/storage-settings';
 import { DECIMALS_MIN, DECIMALS_MAX, EXPIRATION_CODES } from '../../../services/settings-types';
 import ExpirationTabs from './ExpirationTabs.jsx';
 import ExpirationDetail from './ExpirationDetail.jsx';
@@ -49,7 +49,7 @@ export default function SymbolSettings({ symbol, config, onConfigUpdate }) {
         setActiveExpiration(EXPIRATION_CODES[0]);
       }
     }
-  }, [config]);
+  }, [config, activeExpiration]);
 
   const handlePrefixChange = (e) => {
     setPrefix(e.target.value);

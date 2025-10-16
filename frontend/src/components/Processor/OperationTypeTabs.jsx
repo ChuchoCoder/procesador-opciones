@@ -9,6 +9,7 @@ import ShowChartIcon from '@mui/icons-material/ShowChart';
 import SwapHorizIcon from '@mui/icons-material/SwapHoriz';
 import TimelineIcon from '@mui/icons-material/Timeline';
 
+// Export constant for use in ProcessorScreen
 export const OPERATION_TYPES = {
   OPCIONES: 'opciones',
   COMPRA_VENTA: 'compraVenta',
@@ -100,3 +101,5 @@ const OperationTypeTabs = ({ strings, activeTab, onTabChange, onClose, fileName 
 };
 
 export default OperationTypeTabs;
+
+// If other modules need OPERATION_TYPES, they should import from a dedicated constants file

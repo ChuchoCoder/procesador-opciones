@@ -75,6 +75,22 @@ export const consolidateOperations = (
 
     const representativeSymbol = group.legs[0]?.originalSymbol ?? group.matchedSymbol;
 
+    // Aggregate fee data from legs (Feature 004)
+    const totalGrossNotional = group.legs.reduce((sum, leg) => sum + (leg.grossNotional || 0), 0);
+    const totalFeeAmount = group.legs.reduce((sum, leg) => sum + (leg.feeAmount || 0), 0);
+    const firstLeg = group.legs[0];
+    const category = firstLeg?.category || 'bonds';
+    
+    // Recompute fee breakdown for the total gross notional
+    // (not using first leg's breakdown since it's for a single leg)
+    const feeBreakdown = firstLeg?.feeBreakdown ? {
+      ...firstLeg.feeBreakdown,
+      // Recalculate amounts based on totalGrossNotional
+      commissionAmount: totalGrossNotional * firstLeg.feeBreakdown.commissionPct,
+      rightsAmount: totalGrossNotional * firstLeg.feeBreakdown.rightsPct,
+      vatAmount: totalGrossNotional * (firstLeg.feeBreakdown.commissionPct + firstLeg.feeBreakdown.rightsPct) * firstLeg.feeBreakdown.vatPct,
+    } : null;
+
     const consolidated = {
       originalSymbol: representativeSymbol,
       matchedSymbol: group.matchedSymbol,
@@ -84,6 +100,11 @@ export const consolidateOperations = (
       averagePrice,
       legs: group.legs,
       orderId: group.orderId,
+      // Fee fields (aggregated)
+      grossNotional: totalGrossNotional,
+      feeAmount: totalFeeAmount,
+      feeBreakdown,
+      category,
     };
 
     if (group.optionType === 'CALL') {

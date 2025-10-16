@@ -1,0 +1,20 @@
+{
+  "byma": {
+    "derechosDeMercado": {
+      "accionCedear": 0.07,
+      "letra": 0.001,
+      "bonds": 0.01,
+      "option": 0.2,
+      "iva": 0.21
+    },
+    "cauciones": {
+      "derechosDeMercadoDailyRate": 0.0005,
+      "gastosGarantiaDailyRate": 0.0005
+    }
+  },
+  "broker": {
+    "commission": 0.6,
+    "arancelCaucionColocadora": 1.5,
+    "arancelCaucionTomadora": 3.0
+  }
+}
