@@ -78,6 +78,23 @@ Collected unknowns from `plan.md` Technical Context & Phase 0 section. For each,
 - Rationale: Avoids premature dependency; simplicity principle.
 - Alternatives considered: Add virtualization now (extra dependency, complexity).
 
+### 12. Operations Context Integration Strategy (Gate-CTX)
+
+- Decision: Extend existing `config-context` rather than create a separate `operations-context` file. Add operations sync state slices (`sync`, `brokerAuth`, `stagingOps`) to existing reducer to avoid duplicate provider trees.
+- Rationale: Reuse hydration and persistence patterns already present; keeps Principle 1 minimal surface by avoiding parallel context complexity. Estimated overlap of required base config capabilities >40%.
+- Alternatives: New `operations-context.jsx` (rejected due to added boilerplate & provider nesting); global singleton (rejected for testability).
+
+### 13. Batching Strategy (Gate-BATCH)
+
+- Decision: Start with page size 500 operations; per-page normalization + dedupe executed immediately using `requestIdleCallback` when available, else schedule with `setTimeout(0)` for large pages to yield.
+- Metrics Target: Per-page processing <50ms average; largest block <100ms with instrumentation (see `performance-instrumentation.js`).
+- Alternatives: Smaller page size 200 (more round trips); Web Worker offload (deferred until block exceeds threshold).
+
+### 14. Virtualization Need (Gate-VIRT)
+
+- Decision: Defer virtualization. Existing operations table expected to handle initial datasets; will profile after implementing performance harness. Adopt virtualization only if rendering 2k+ rows >60ms commit.
+- Alternatives: Immediate integration of react-window (adds dependency & complexity) — rejected.
+
 ## Justifications (Simplicity / Dependencies)
 
 - jsRofex official package omitted to reduce bundle impact and surface area; custom thin client limited to required endpoints.

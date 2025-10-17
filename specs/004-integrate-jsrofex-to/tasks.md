@@ -16,6 +16,13 @@ T003: [Setup] Add operations context scaffolding `frontend/src/state/operations-
 T004: [Setup] Ensure Vitest configuration supports new test folders (`tests/unit`, `tests/integration`)—adjust `vitest.config.js` if necessary for path aliases. [P]
 T005: [Setup] Add logging prefix utilities (if absent) `frontend/src/services/logging/broker-sync-log-util.js` for consistent `PO:` messages. [P]
 T006: [Setup] Document setup decisions in README section referencing quickstart (optional). [P]
+T030: [Setup] Initial localization compliance scan (Spanish strings usage validation; automated English placeholder scan). [P]
+T055: [Setup] Gate decision: operations context integration vs new context (record rationale in research.md). [P]
+T056: [Setup] Gate decision: batching strategy (page size target & scheduling) with profiling plan. [P]
+T057: [Setup] Gate decision: virtualization need (render 10k synthetic ops; measure commit time). [P]
+T058: [Setup] Add performance instrumentation harness (timing & main-thread block measurement). [P]
+T059: [Setup] Add automated localization scan test `tests/unit/localization-scan.spec.js` (fail on English UI strings). [P]
+T060: [Setup] Dependency justification gate (jsRofex vs thin REST client) documented; block T007 until PASS. [P]
 
 ## Phase 2: Foundational (Blocking Prerequisites)
 
@@ -29,6 +36,12 @@ T013: [Foundational] Add performance test scaffold (20k ops synthetic) `tests/un
 T014: [Foundational] Add error taxonomy mapping module `frontend/src/services/broker/error-taxonomy.js`. [P]
 T015: [Foundational] Add retry/backoff utility `frontend/src/services/broker/retry-util.js` (sequence 2s,5s,10s). [P]
 T016: [Foundational] Integrate token storage & expiry check in `operations-context.jsx` or dedicated `auth-state` module. [P]
+T061: [Foundational] Implement in-memory SyncSession log structure (append-only) in context. [P]
+T062: [Foundational] Token security test `tests/unit/token-security.spec.js` (assert no raw credentials persisted). [P]
+T063: [Foundational] Timestamp tolerance boundary tests (<1s merge, ≥1s distinct) appended to `dedupe-merge.spec.js`. [P]
+T064: [Foundational] Revision aggregation tests (sum quantity, latest price, status) in `dedupe-merge.spec.js`. [P]
+T065: [Foundational] Atomic rollback integration test `tests/integration/broker-sync-rollback.spec.jsx` (simulate mid-sync failure; assert no partial commit). [P]
+T072: [Foundational] Move audit logging stub `frontend/src/services/broker/audit-log.js` earlier; add test verifying SyncSession recorded post-sync. [P]
 
 Checkpoint: Foundational pure logic & state patterns implemented; proceed to user stories.
 
@@ -50,7 +63,9 @@ T026: [US1] Add integration test `tests/integration/broker-sync-flow.spec.jsx` m
 T027: [US1] Add integration test for auth failure scenario (401) ensures no operations added. [P]
 T028: [US1] Add integration test for cancellation mid-sync verifies no partial commit. [P]
 T029: [US1] Add integration test for retry sequence (simulate transient errors then success). [P]
-T030: [US1] Add Spanish strings usage validation (scan components for English). [P]
+T066: [US1] Initial sync rate limit integration test (429 on first page -> wait message). [P]
+T067: [US1] Implement broker account switch logic (clear broker-sourced operations; retain CSV-sourced). [P]
+T068: [US1] Integration test for broker account switch behavior. [P]
 
 Checkpoint: Demo: Login + automatic sync working with error handling & tests passing.
 
@@ -82,6 +97,9 @@ T042: [US3] Add integration test for refresh retrieving new subset only (mock de
 T043: [US3] Add test for rate limit response during refresh showing recommended wait message. [P]
 T044: [US3] Add test for token expiry trigger refresh showing re-auth workflow. [P]
 T045: [US3] Add Spanish strings for all new status messages. [P]
+T069: [US3] Implement refresh cancellation (reuse CANCEL_SYNC with refresh flag). [P]
+T070: [US3] Integration test for refresh cancellation (no timestamp update). [P]
+T071: [US3] Integration test for initial refresh rate limit recommended wait parsing. [P]
 
 Checkpoint: Demo: Manual refresh & status panel functioning.
 
@@ -95,6 +113,7 @@ T050: [Polish] Bundle size check; verify <4KB delta vs baseline; record in plan 
 T051: [Polish] Add error taxonomy unit tests (mapping) `tests/unit/error-taxonomy.spec.js`. [P]
 T052: [Polish] Add retry-util unit tests `tests/unit/retry-util.spec.js`. [P]
 T053: [Polish] Add optional audit logging stub (record SyncSession metadata) `frontend/src/services/broker/audit-log.js`. [P]
+T073: [Polish] End-to-end performance test ingesting synthetic 20k operations measuring total time & main-thread blocks. [P]
 T054: [Polish] Review Spanish translations with native speaker pass (manual checklist). [P]
 
 ## Dependencies & Story Order
@@ -119,13 +138,13 @@ Final: Polish phase tasks.
 
 ## Task Counts
 
-- Total Tasks: 54
-- Setup: 6
-- Foundational: 10
-- US1: 14
+- Total Tasks: 73
+- Setup: 13
+- Foundational: 18
+- US1: 17
 - US2: 7
-- US3: 8
-- Polish: 10
+- US3: 11
+- Polish: 11
 
 ## Independent Test Criteria Summary
 

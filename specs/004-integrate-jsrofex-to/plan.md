@@ -21,6 +21,17 @@ Enable automatic retrieval of trading operations after in-app broker authenticat
 **Constraints**: No backend services; must respect broker rate limits; avoid bundle bloat (>10KB delta requires justification)  
 **Scale/Scope**: Up to 20k operations in memory; single user session context; one broker account active at a time  
 
+### Dependency & Design Gates
+
+Before implementing broker client code the following MUST be decided and documented (Constitution Principle 4 compliance):
+
+- GATE-DEP: jsRofex dependency justification (benefit, size delta, rejected simpler alternative). If size delta >10KB, propose thin custom REST client.
+- GATE-CTX: Operations state integration strategy (extend existing config-context vs new operations-context). Prefer extending if overlap >40% of state concerns.
+- GATE-BATCH: Batching strategy (page size, scheduling approach) ensuring per-page processing <50ms and no main-thread block >100ms end-to-end.
+- GATE-VIRT: Large list virtualization decision for >2k rows; only adopt virtualization if rendering profiling shows >60ms commit without it.
+
+All gates recorded in `research.md` and referenced in tasks before starting implementation tasks (T007 etc.).
+
 NEEDS CLARIFICATION items for research:
 
 - jsRofex integration approach: Is there an official npm package or REST-only? Auth flow specifics (token vs session cookie).
@@ -148,6 +159,28 @@ Patterns Exploration:
 
 - Atomic batch commit & rollback pattern in React state + optional staging buffer.
 - Progressive feedback (spinner vs progress bar) for long-running sync.
+
+### Atomic Commit & Rollback Algorithm (FR-008)
+
+1. Initialize SyncSession with status `in-progress` and empty staging buffer.
+2. Fetch page -> normalize -> dedupe -> append to staging buffer (do not mutate main list).
+3. On page success, update progress counters (operationsImportedCount, pagesFetched).
+4. On transient error: apply retry/backoff; if final failure set status `failed` and discard staging buffer.
+5. On cancellation: set status `canceled`, discard staging buffer, do not update last sync timestamp.
+6. On successful final page: perform single commit merge (batch append + order revision update) under one context dispatch, then set status `success`.
+7. If partial failure after some pages succeeded but before commit, discard staging buffer entirely (no partial commit).
+
+### Progress Feedback Mechanism (FR-009)
+
+Context state shape additions: `sync: { status, startTime, pagesFetched, operationsImportedCount, lastUpdateTime }` updated after each processed page (throttled to animation frame). After 2s elapsed show counts; after 5s show extended message. Instrumentation harness records durations.
+
+### Virtualization Evaluation (Gate-VIRT)
+
+Prototype rendering of 10k synthetic operations list; measure React commit time via Profiler. If >60ms, plan adoption of lightweight virtualization (e.g., react-window) else defer.
+
+### Batching Strategy (Gate-BATCH)
+
+Default page size target: 500 operations (adjust after profiling). Aim for normalization + dedupe <50ms per page; if exceeded consider reducing page size or offloading heavy computation to Web Worker (deferred unless proven necessary).
 
 Deliverable: `research.md` will document each decision with: Decision / Rationale / Alternatives considered.
 

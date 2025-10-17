@@ -176,7 +176,6 @@ User can manually trigger a "Refresh operations" action and view last sync times
 - Initial automatic retrieval scope is limited to today's operations (current trading day) by default; extended history can be fetched via future enhancements or manual actions.
 - Network failures are transient; user can retry manually.
 - Only an expiring session token is stored post-login; raw credentials are never persisted.
-- Only an expiring session token is stored post-login; raw credentials are never persisted.
 - Refresh attempts are not locally throttled; broker responses govern effective rate limiting.
 - Uniqueness hierarchy: Prefer (order_id + operation_id); fallback to composite identity when order_id absent (for CSV).
 - Transient failure handling: Up to 3 auto-retries (2s,5s,10s) then surface failure.
@@ -212,5 +211,42 @@ User can manually trigger a "Refresh operations" action and view last sync times
 | FR-018 | SC-002 (duplicate control), SC-006 (data consistency) |
 | FR-019 | SC-007 (failure handling responsiveness) |
 
+### Non-Functional Requirements
+
+- **NFR-001**: Ingesting up to 20,000 operations MUST keep any single main-thread blocking segment under 100ms and complete refresh or initial daily sync in under 10 seconds while remaining interactive (progress indicators visible).
+
+### Implementation Clarifications
+
+#### Composite Identity & Duplicate Matching
+
+For duplicate detection (FR-003, FR-012, FR-013) the composite identity when `order_id` is absent MUST include: `symbol`, `optionType`, `action`, `strike`, `expirationDate`, `quantity`, `price`, `tradeTimestamp` (±1 second tolerance), and `sourceReferenceId` if provided. Normalization MUST standardize symbol casing and compare timestamps in UTC.
+
+#### Order Revision Aggregation (FR-018)
+
+When multiple revisions (same `order_id`, different `operation_id`) are merged:
+
+- `aggregateQuantity` = sum of revision quantities.
+- `latestPrice` = price of newest revision by timestamp.
+- `status` = newest revision's status field.
+- Re-import of an identical revision MUST NOT alter aggregate metrics or duplicate revisions.
+
+#### Progress Feedback (FR-009)
+
+1. Spinner appears immediately on sync start.
+2. If sync exceeds 2 seconds, display imported operations count and pages fetched.
+3. If sync exceeds 5 seconds, display localized "Still syncing…" message with ongoing counts.
+4. Cancellation discards staged pages and leaves last sync timestamp unchanged.
+
+#### Cancellation Semantics (FR-014)
+
+Cancel action discards any staged but uncommitted operations and MUST NOT modify existing operations or last sync timestamp.
+
+#### Audit Logging Scope (FR-011)
+
+Maintain an in-memory array of `SyncSession` objects (sessionId, startTime, endTime, status, operationsImportedCount, source, message). No UI visualization in this feature.
+
+#### Token Handling (FR-016)
+
+Only session token and expiry metadata stored; tests MUST assert absence of raw credential fields (`username`, `password`). Silent refresh MUST replace token without exposing credentials.
 | FR-016 | SC-007 (security feedback on failure) |
 
