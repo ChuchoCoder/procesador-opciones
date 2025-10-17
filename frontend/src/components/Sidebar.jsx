@@ -29,7 +29,23 @@ const Sidebar = ({ strings, routes }) => {
   const [expandedMenus, setExpandedMenus] = useState({});
 
   const isActive = useCallback(
-    (path) => Boolean(path) && location.pathname.startsWith(path),
+    (path, options = {}) => {
+      if (!path) {
+        return false;
+      }
+
+      const { exact = false } = options;
+      const normalizedPath = path.endsWith('/') && path !== '/' ? path.slice(0, -1) : path;
+      const currentPath = location.pathname.endsWith('/') && location.pathname !== '/'
+        ? location.pathname.slice(0, -1)
+        : location.pathname;
+
+      if (exact) {
+        return currentPath === normalizedPath;
+      }
+
+      return currentPath === normalizedPath || currentPath.startsWith(`${normalizedPath}/`);
+    },
     [location.pathname],
   );
 
@@ -49,10 +65,19 @@ const Sidebar = ({ strings, routes }) => {
           {
             key: 'settings-general',
             path: routes.settings,
+            exact: true,
             label:
               strings.navigation.settingsGeneral ||
               strings.settings?.title ||
               strings.navigation.settings,
+          },
+          {
+            key: 'settings-fees',
+            path: routes.settingsFees,
+            label:
+              strings.navigation.settingsFees ||
+              strings.settings?.brokerFees?.title ||
+              'Comisiones',
           },
         ],
       },
@@ -160,7 +185,7 @@ const Sidebar = ({ strings, routes }) => {
           {menuItems.map((item) => {
             const hasChildren = Boolean(item.children?.length);
             const itemActive = isActive(item.path);
-            const childActive = hasChildren && item.children.some((child) => isActive(child.path));
+            const childActive = hasChildren && item.children.some((child) => isActive(child.path, { exact: child.exact }));
             const isExpanded = hasChildren ? expandedMenus[item.key] || childActive : false;
             const buttonProps = hasChildren
               ? { onClick: () => handleSubmenuToggle(item.key) }
@@ -222,7 +247,7 @@ const Sidebar = ({ strings, routes }) => {
                   <Collapse in={open && Boolean(isExpanded)} timeout="auto" unmountOnExit>
                     <List component="div" disablePadding id={`submenu-${item.key}`}>
                       {item.children.map((child) => {
-                        const childIsActive = isActive(child.path);
+                        const childIsActive = isActive(child.path, { exact: child.exact });
                         return (
                           <ListItem key={child.key} disablePadding sx={{ display: 'block' }}>
                             <ListItemButton

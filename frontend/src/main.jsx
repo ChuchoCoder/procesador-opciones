@@ -7,15 +7,23 @@ import App from './app/App.jsx';
 import { ConfigProvider } from './state/config-context.jsx';
 import { bootstrapFeeServices } from './services/bootstrap-defaults.js';
 
-// Initialize fee services once at app startup (Feature 004)
-bootstrapFeeServices();
+const startApplication = async () => {
+  try {
+    await bootstrapFeeServices();
+  } catch (error) {
+    // eslint-disable-next-line no-console
+    console.error('PO: bootstrapFeeServices failed', error);
+  }
 
-createRoot(document.getElementById('root')).render(
-  <StrictMode>
-    <HashRouter>
-      <ConfigProvider>
-        <App />
-      </ConfigProvider>
-    </HashRouter>
-  </StrictMode>,
-);
+  createRoot(document.getElementById('root')).render(
+    <StrictMode>
+      <HashRouter>
+        <ConfigProvider>
+          <App />
+        </ConfigProvider>
+      </HashRouter>
+    </StrictMode>,
+  );
+};
+
+startApplication();

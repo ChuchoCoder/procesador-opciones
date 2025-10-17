@@ -8,6 +8,7 @@ const strings = {
     processor: 'Operaciones',
     settings: 'Configuración',
     settingsGeneral: 'Instrumentos',
+    settingsFees: 'Comisiones',
   },
   processor: {
     filters: {
@@ -245,6 +246,22 @@ const strings = {
         errorRawDuplicate: 'Ese valor ya tiene un ajuste.',
         errorFormattedRequired: 'Ingresá el valor formateado.',
       },
+    },
+    brokerFees: {
+      title: 'Comisiones',
+      description: 'Configurá las comisiones que aplica tu broker para usarlas en el cálculo automático de gastos.',
+      commissionLabel: 'Comisión sobre operaciones (%)',
+      commissionHelper: 'Ingresá el porcentaje total que te cobra el broker por operaciones en el mercado secundario.',
+      arancelColocadoraLabel: 'Arancel caución colocadora anual (%)',
+      arancelColocadoraHelper: 'Porcentaje anual aplicado cuando actuás como colocador/a en cauciones.',
+      arancelTomadoraLabel: 'Arancel caución tomadora anual (%)',
+      arancelTomadoraHelper: 'Porcentaje anual aplicado cuando tomás cauciones.',
+      saveButton: 'Guardar cambios',
+      resetButton: 'Restaurar valores iniciales',
+      successMessage: 'Comisiones actualizadas.',
+      resetMessage: 'Se restauraron los valores iniciales.',
+      errorMessage: 'No se pudieron guardar los cambios. Volvé a intentarlo.',
+      validationError: 'Ingresá valores mayores o iguales a 0.',
     },
   },
 };
