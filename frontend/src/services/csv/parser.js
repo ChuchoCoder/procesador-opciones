@@ -56,31 +56,7 @@ export const parseOperationsCsv = (input, config = {}) =>
       return raw;
     };
 
-    // Handle async arrayBuffer separately (convert then invoke Papa.parse)
-    const proceed = (finalInput) => {
-      Papa.parse(finalInput, parserConfig);
-    };
-
-    if (input && typeof input === 'object' && input.arrayBuffer && typeof input.arrayBuffer === 'function') {
-      // Perform async conversion then start parse
-      input.arrayBuffer()
-        .then((buf) => {
-          try {
-            const text = new TextDecoder('utf-8').decode(buf);
-            proceed(text);
-          } catch (e) {
-            if (typeof console !== 'undefined' && console.warn) {
-              console.warn('CSV TextDecoder failed; using original buffer input', e);
-            }
-            proceed(input); // fallback
-          }
-        })
-        .catch(() => proceed(input));
-    } else {
-      normalizedInput = normalizeInputSync(input);
-      proceed(normalizedInput);
-    }
-
+    // Configure the parser (must be declared before use in proceed function)
     const parserConfig = {
       header: true,
       skipEmptyLines: 'greedy',
@@ -131,6 +107,31 @@ export const parseOperationsCsv = (input, config = {}) =>
         reject(error);
       },
     };
+
+    // Handle async arrayBuffer separately (convert then invoke Papa.parse)
+    const proceed = (finalInput) => {
+      Papa.parse(finalInput, parserConfig);
+    };
+
+    if (input && typeof input === 'object' && input.arrayBuffer && typeof input.arrayBuffer === 'function') {
+      // Perform async conversion then start parse
+      input.arrayBuffer()
+        .then((buf) => {
+          try {
+            const text = new TextDecoder('utf-8').decode(buf);
+            proceed(text);
+          } catch (e) {
+            if (typeof console !== 'undefined' && console.warn) {
+              console.warn('CSV TextDecoder failed; using original buffer input', e);
+            }
+            proceed(input); // fallback
+          }
+        })
+        .catch(() => proceed(input));
+    } else {
+      normalizedInput = normalizeInputSync(input);
+      proceed(normalizedInput);
+    }
 
   });
 

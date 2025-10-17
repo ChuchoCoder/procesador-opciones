@@ -83,7 +83,7 @@ describe('SymbolSettings Component Logic', () => {
   });
 
   describe('Write-on-blur persistence', () => {
-    it('should save updated prefix on blur', () => {
+    it('should save updated prefix on blur', async () => {
       // Setup: create initial config
       const initialConfig = {
         symbol: 'GGAL',
@@ -91,22 +91,22 @@ describe('SymbolSettings Component Logic', () => {
         defaultDecimals: 2,
         expirations: [],
       };
-      saveSymbolConfig(initialConfig);
+      await saveSymbolConfig(initialConfig);
 
       // Simulate user edit: change prefix to 'GGAL'
       const updatedConfig = {
         ...initialConfig,
         prefix: 'GGAL',
       };
-      saveSymbolConfig(updatedConfig);
+      await saveSymbolConfig(updatedConfig);
 
       // Verify persistence
-      const loaded = loadSymbolConfig('GGAL');
+      const loaded = await loadSymbolConfig('GGAL');
       expect(loaded.prefix).toBe('GGAL');
       expect(loaded.updatedAt).toBeTruthy();
     });
 
-    it('should save updated decimals on blur', () => {
+    it('should save updated decimals on blur', async () => {
       // Setup: create initial config
       const initialConfig = {
         symbol: 'GGAL',
@@ -114,22 +114,22 @@ describe('SymbolSettings Component Logic', () => {
         defaultDecimals: 2,
         expirations: [],
       };
-      saveSymbolConfig(initialConfig);
+      await saveSymbolConfig(initialConfig);
 
       // Simulate user edit: change decimals to 3
       const updatedConfig = {
         ...initialConfig,
         defaultDecimals: 3,
       };
-      saveSymbolConfig(updatedConfig);
+      await saveSymbolConfig(updatedConfig);
 
       // Verify persistence
-      const loaded = loadSymbolConfig('GGAL');
+      const loaded = await loadSymbolConfig('GGAL');
       expect(loaded.defaultDecimals).toBe(3);
       expect(loaded.updatedAt).toBeTruthy();
     });
 
-    it('should update timestamp on each save', () => {
+    it('should update timestamp on each save', async () => {
       const config = {
         symbol: 'GGAL',
         prefix: 'GFG',
@@ -137,22 +137,21 @@ describe('SymbolSettings Component Logic', () => {
         expirations: [],
       };
 
-      saveSymbolConfig(config);
-      const firstSave = loadSymbolConfig('GGAL');
+      await saveSymbolConfig(config);
+      const firstSave = await loadSymbolConfig('GGAL');
       const firstTimestamp = firstSave.updatedAt;
 
       // Wait a bit and save again
-      setTimeout(() => {
-        config.prefix = 'GGAL';
-        saveSymbolConfig(config);
-        const secondSave = loadSymbolConfig('GGAL');
-        expect(secondSave.updatedAt).toBeGreaterThanOrEqual(firstTimestamp);
-      }, 10);
+      await new Promise(resolve => setTimeout(resolve, 10));
+      config.prefix = 'GGAL';
+      await saveSymbolConfig(config);
+      const secondSave = await loadSymbolConfig('GGAL');
+      expect(secondSave.updatedAt).toBeGreaterThanOrEqual(firstTimestamp);
     });
   });
 
   describe('Reset to saved behavior', () => {
-    it('should reload config from storage discarding local changes', () => {
+    it('should reload config from storage discarding local changes', async () => {
       // Setup: save config
       const savedConfig = {
         symbol: 'GGAL',
@@ -160,7 +159,7 @@ describe('SymbolSettings Component Logic', () => {
         defaultDecimals: 2,
         expirations: [],
       };
-      saveSymbolConfig(savedConfig);
+      await saveSymbolConfig(savedConfig);
 
       // Simulate: user makes local edits (not saved)
       // In component, this would be state only
@@ -168,7 +167,7 @@ describe('SymbolSettings Component Logic', () => {
       const localDecimals = 4;
 
       // User clicks Reset: reload from storage
-      const reloadedConfig = loadSymbolConfig('GGAL');
+      const reloadedConfig = await loadSymbolConfig('GGAL');
       
       // Verify: local changes discarded, saved values restored
       expect(reloadedConfig.prefix).toBe('GFG');
@@ -179,12 +178,12 @@ describe('SymbolSettings Component Logic', () => {
   });
 
   describe('Edge cases', () => {
-    it('should handle missing config gracefully', () => {
-      const loaded = loadSymbolConfig('NONEXISTENT');
+    it('should handle missing config gracefully', async () => {
+      const loaded = await loadSymbolConfig('NONEXISTENT');
       expect(loaded).toBeNull();
     });
 
-    it('should preserve expirations array when updating defaults', () => {
+    it('should preserve expirations array when updating defaults', async () => {
       const config = {
         symbol: 'GGAL',
         prefix: 'GFG',
@@ -193,18 +192,18 @@ describe('SymbolSettings Component Logic', () => {
           { code: 'DIC', suffix: 'D', decimals: 1, overrides: [] },
         ],
       };
-      saveSymbolConfig(config);
+      await saveSymbolConfig(config);
 
       // Update only prefix
       config.prefix = 'GGAL';
-      saveSymbolConfig(config);
+      await saveSymbolConfig(config);
 
-      const loaded = loadSymbolConfig('GGAL');
+      const loaded = await loadSymbolConfig('GGAL');
       expect(loaded.expirations).toHaveLength(1);
       expect(loaded.expirations[0].code).toBe('DIC');
     });
 
-    it('should handle rapid consecutive saves', () => {
+    it('should handle rapid consecutive saves', async () => {
       const config = {
         symbol: 'GGAL',
         prefix: 'GFG',
@@ -213,11 +212,11 @@ describe('SymbolSettings Component Logic', () => {
       };
 
       // Simulate rapid field changes
-      saveSymbolConfig({ ...config, prefix: 'G1' });
-      saveSymbolConfig({ ...config, prefix: 'G2' });
-      saveSymbolConfig({ ...config, prefix: 'G3' });
+      await saveSymbolConfig({ ...config, prefix: 'G1' });
+      await saveSymbolConfig({ ...config, prefix: 'G2' });
+      await saveSymbolConfig({ ...config, prefix: 'G3' });
 
-      const loaded = loadSymbolConfig('GGAL');
+      const loaded = await loadSymbolConfig('GGAL');
       expect(loaded.prefix).toBe('G3'); // Last write wins
     });
   });

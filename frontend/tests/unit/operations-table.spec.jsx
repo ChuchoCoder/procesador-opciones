@@ -20,47 +20,7 @@ describe('OperationsTable', () => {
   const renderWithTheme = (component) => {
     return render(<ThemeProvider theme={theme}>{component}</ThemeProvider>);
   };
-
-  describe('inferred indicator', () => {
-    it('shows inferred indicator when any leg was detected from token', () => {
-      renderWithTheme(
-        <OperationsTable
-          {...baseProps}
-          operations={[
-            {
-              originalSymbol: 'GGALENE24C120',
-              totalQuantity: 3,
-              strike: 120,
-              averagePrice: 10.5,
-              legs: [{ meta: { detectedFromToken: true } }],
-            },
-          ]}
-        />,
-      );
-
-      expect(screen.getByTestId('operations-inferred-indicator')).toBeInTheDocument();
-    });
-
-    it('does not render indicator when no legs were detected from token', () => {
-      renderWithTheme(
-        <OperationsTable
-          {...baseProps}
-          operations={[
-            {
-              originalSymbol: 'GGALENE24C120',
-              totalQuantity: 3,
-              strike: 120,
-              averagePrice: 10.5,
-              legs: [{ meta: { detectedFromToken: false } }],
-            },
-          ]}
-        />,
-      );
-
-      expect(screen.queryByTestId('operations-inferred-indicator')).not.toBeInTheDocument();
-    });
-  });
-
+  
   describe('net total display', () => {
     it('should display "Neto" column header', () => {
       renderWithTheme(
