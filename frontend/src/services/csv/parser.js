@@ -30,7 +30,7 @@ const sanitizeRow = (row) => {
 };
 
 export const parseOperationsCsv = (input, config = {}) =>
-  new Promise(async (resolve, reject) => {
+  new Promise((resolve, reject) => {
     const rows = [];
     let rowCount = 0;
     let exceededMaxRows = false;
@@ -38,26 +38,47 @@ export const parseOperationsCsv = (input, config = {}) =>
 
     // Normalize input so Papa.parse always receives a string or a File/Blob it knows how to handle.
     let normalizedInput = input;
-    try {
-      if (input && typeof input === 'object') {
-        // If tests pass a mock File-like without slice/read methods, fallback to reading arrayBuffer
-        if (input.arrayBuffer && typeof input.arrayBuffer === 'function') {
-          const buf = await input.arrayBuffer();
-          // Decode assuming UTF-8
-            normalizedInput = new TextDecoder('utf-8').decode(buf);
-        } else if (input instanceof Blob) {
-          // leave as is (Papa can handle real Blob/File)
-        } else if (input.data) {
-          // Some mocks might send { data: 'csv...' }
-          normalizedInput = input.data;
+    const normalizeInputSync = (raw) => {
+      try {
+        if (raw && typeof raw === 'object') {
+          if (raw instanceof Blob) {
+            return raw; // Papa can handle
+          }
+          if (raw.data) {
+            return raw.data;
+          }
+        }
+      } catch (e) {
+        if (typeof console !== 'undefined' && console.warn) {
+          console.warn('CSV normalization failed (sync path); continuing with original input', e);
         }
       }
-    } catch (e) {
-      // If normalization fails, proceed with original input so Papa can attempt parse
-      // but log (in dev) silently.
-      if (typeof console !== 'undefined' && console.warn) {
-        console.warn('CSV normalization failed; continuing with original input', e);  
-      }
+      return raw;
+    };
+
+    // Handle async arrayBuffer separately (convert then invoke Papa.parse)
+    const proceed = (finalInput) => {
+      Papa.parse(finalInput, parserConfig);
+    };
+
+    if (input && typeof input === 'object' && input.arrayBuffer && typeof input.arrayBuffer === 'function') {
+      // Perform async conversion then start parse
+      input.arrayBuffer()
+        .then((buf) => {
+          try {
+            const text = new TextDecoder('utf-8').decode(buf);
+            proceed(text);
+          } catch (e) {
+            if (typeof console !== 'undefined' && console.warn) {
+              console.warn('CSV TextDecoder failed; using original buffer input', e);
+            }
+            proceed(input); // fallback
+          }
+        })
+        .catch(() => proceed(input));
+    } else {
+      normalizedInput = normalizeInputSync(input);
+      proceed(normalizedInput);
     }
 
     const parserConfig = {
@@ -111,7 +132,6 @@ export const parseOperationsCsv = (input, config = {}) =>
       },
     };
 
-    Papa.parse(normalizedInput, parserConfig);
   });
 
 export const createCsvStringFromRows = (rows, headers) => {

@@ -19,6 +19,8 @@ import { useTheme } from '@mui/material/styles';
 
 import GroupFilter from './GroupFilter.jsx';
 import { getBuySellOperations } from '../../services/csv/buy-sell-matcher.js';
+import { resolveExpirationLabel } from '../../services/csv/expiration-labels.js';
+import FeeTooltip from './FeeTooltip.jsx';
 
 const quantityFormatter = typeof Intl !== 'undefined'
   ? new Intl.NumberFormat('es-AR', {
@@ -57,7 +59,67 @@ const formatDecimal = (value) => {
   return String(safeValue);
 };
 
+const formatFee = (value) => {
+  if (!Number.isFinite(value)) {
+    return '';
+  }
+  return new Intl.NumberFormat('es-AR', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(value);
+};
+
+/**
+ * Calculate net total based on operation side.
+ * BUY operations: add fees to gross total (you pay more)
+ * SELL operations: subtract fees from gross total (you receive less)
+ * 
+ * @param {number} grossNotional - The gross notional value
+ * @param {number} feeAmount - The total fee amount
+ * @param {string} side - The operation side: 'BUY' or 'SELL'
+ * @returns {number} The net total
+ */
+const calculateNetTotal = (grossNotional, feeAmount, side) => {
+  const gross = grossNotional ?? 0;
+  const fee = feeAmount ?? 0;
+  
+  // BUY operations: gross + fees (you pay the gross amount plus fees)
+  if (side === 'BUY') {
+    return gross + fee;
+  }
+  
+  // SELL operations: gross - fees (you receive the gross amount minus fees)
+  return gross - fee;
+};
+
 const DEFAULT_SETTLEMENT = 'CI';
+const OPTION_OPERATION_TYPES = new Set(['CALL', 'PUT']);
+
+const extractOptionToken = (operation = {}) => {
+  const candidates = [
+    operation?.meta?.sourceToken,
+    operation?.meta?.instrumentToken,
+    operation?.originalSymbol,
+    operation?.raw?.symbol,
+    operation?.symbol,
+  ];
+
+  for (let index = 0; index < candidates.length; index += 1) {
+    const candidate = candidates[index];
+    if (typeof candidate !== 'string') {
+      continue;
+    }
+
+    const trimmed = candidate.trim();
+    if (!trimmed) {
+      continue;
+    }
+
+    return trimmed.toUpperCase();
+  }
+
+  return '';
+};
 
 const normalizeSymbol = (symbol = '') => {
   const trimmed = symbol.trim();
@@ -96,6 +158,22 @@ const normalizeSettlement = (value = '') => {
   return settlement.toUpperCase();
 };
 
+const resolveSettlementLabel = (operation = {}, { expirationLabels } = {}) => {
+  const fallbackValue = operation?.settlement ?? operation?.expiration;
+
+  if (OPTION_OPERATION_TYPES.has(operation?.optionType)) {
+    const optionLabel = resolveExpirationLabel(operation?.expiration ?? fallbackValue ?? '', {
+      expirationLabels,
+    });
+    if (optionLabel) {
+      return optionLabel;
+    }
+    return normalizeSettlement(operation?.expiration ?? fallbackValue ?? '');
+  }
+
+  return normalizeSettlement(fallbackValue ?? '');
+};
+
 const aggregateRows = (rows) => {
   if (!rows.length) {
     return rows;
@@ -113,11 +191,18 @@ const aggregateRows = (rows) => {
         quantity: 0,
         weightedPriceSum: 0,
         totalWeight: 0,
+        feeAmount: 0,
+        grossNotional: 0,
+        feeBreakdown: row.feeBreakdown,
+        category: row.category,
+        side: row.side, // Preserve side from first row in group
       });
     }
 
     const entry = groups.get(key);
     entry.quantity += row.quantity;
+    entry.feeAmount += (row.feeAmount || 0);
+    entry.grossNotional += (row.grossNotional || 0);
     const weight = Number.isFinite(row.weight) && row.weight > 0
       ? row.weight
       : Math.abs(row.quantity);
@@ -126,13 +211,28 @@ const aggregateRows = (rows) => {
   });
 
   return Array.from(groups.values())
-    .map((entry) => ({
-      key: entry.key,
-      symbol: entry.symbol,
-      settlement: entry.settlement,
-      quantity: entry.quantity,
-      price: entry.totalWeight ? entry.weightedPriceSum / entry.totalWeight : 0,
-    }))
+    .map((entry) => {
+      // Recalculate fee breakdown for aggregated gross notional
+      const feeBreakdown = entry.feeBreakdown && entry.grossNotional > 0 ? {
+        ...entry.feeBreakdown,
+        commissionAmount: entry.grossNotional * entry.feeBreakdown.commissionPct,
+        rightsAmount: entry.grossNotional * entry.feeBreakdown.rightsPct,
+        vatAmount: entry.grossNotional * (entry.feeBreakdown.commissionPct + entry.feeBreakdown.rightsPct) * entry.feeBreakdown.vatPct,
+      } : entry.feeBreakdown;
+
+      return {
+        key: entry.key,
+        symbol: entry.symbol,
+        settlement: entry.settlement,
+        quantity: entry.quantity,
+        price: entry.totalWeight ? entry.weightedPriceSum / entry.totalWeight : 0,
+        feeAmount: entry.feeAmount,
+        grossNotional: entry.grossNotional,
+        feeBreakdown,
+        category: entry.category,
+        side: entry.side, // Preserve side in aggregated output
+      };
+    })
     .sort((a, b) => {
       if (a.symbol === b.symbol) {
         return a.settlement.localeCompare(b.settlement);
@@ -141,12 +241,15 @@ const aggregateRows = (rows) => {
     });
 };
 
-const buildRows = (operations = [], side = 'BUY') => {
+const buildRows = (operations = [], side = 'BUY', { expirationLabels } = {}) => {
   const sign = side === 'SELL' ? -1 : 1;
 
   return operations.map((operation, index) => {
-    const symbol = normalizeSymbol(operation.symbol ?? '');
-    const settlement = normalizeSettlement(operation.expiration ?? operation.settlement);
+    const isOption = OPTION_OPERATION_TYPES.has(operation.optionType);
+    const normalizedFallback = normalizeSymbol(operation.symbol ?? '');
+    const rawSymbol = isOption ? extractOptionToken(operation) : (operation.symbol ?? '');
+    const symbol = isOption ? rawSymbol || normalizedFallback : normalizeSymbol(rawSymbol);
+    const settlement = resolveSettlementLabel(operation, { expirationLabels });
     const rawQuantity = Number(operation.quantity ?? 0);
     const quantity = Number.isFinite(rawQuantity) ? rawQuantity * sign : 0;
     const price = Number(operation.price ?? 0);
@@ -158,6 +261,11 @@ const buildRows = (operations = [], side = 'BUY') => {
       quantity,
       price,
       weight: Math.abs(rawQuantity),
+      feeAmount: operation.feeAmount || 0,
+      grossNotional: operation.grossNotional || 0,
+      feeBreakdown: operation.feeBreakdown,
+      category: operation.category || 'bonds',
+      side, // Add side to the row
     };
   });
 };
@@ -209,7 +317,7 @@ const BuySellTable = ({
           <TableHead>
             <TableRow>
               <TableCell
-                colSpan={4}
+                colSpan={5}
                 sx={{
                   position: 'sticky',
                   top: 0,
@@ -260,34 +368,52 @@ const BuySellTable = ({
               <TableCell>{strings?.tables?.settlement ?? 'Plazo'}</TableCell>
               <TableCell align="right">{strings?.tables?.quantity ?? 'Cantidad'}</TableCell>
               <TableCell align="right">{strings?.tables?.price ?? 'Precio'}</TableCell>
+              <TableCell align="right">{strings?.tables?.netTotal ?? 'Neto'}</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
             {!hasData && (
               <TableRow>
-                <TableCell colSpan={4} align="center">
+                <TableCell colSpan={5} align="center">
                   <Typography variant="body2" color="text.secondary">
                     {strings?.tables?.empty ?? 'Sin datos para mostrar.'}
                   </Typography>
                 </TableCell>
               </TableRow>
             )}
-            {operations.map((row, index) => (
-              <TableRow
-                key={row.key}
-                sx={index % 2 === 1 ? { backgroundColor: 'action.hover' } : undefined}
-              >
-                <TableCell>{row.symbol}</TableCell>
-                <TableCell>{row.settlement}</TableCell>
-                <TableCell
-                  align="right"
-                  sx={{ color: row.quantity < 0 ? 'error.main' : undefined }}
+            {operations.map((row, index) => {
+              const netTotal = calculateNetTotal(row.grossNotional, row.feeAmount, row.side);
+              
+              return (
+                <TableRow
+                  key={row.key}
+                  sx={index % 2 === 1 ? { backgroundColor: 'action.hover' } : undefined}
                 >
-                  {formatQuantity(row.quantity)}
-                </TableCell>
-                <TableCell align="right">{formatDecimal(row.price)}</TableCell>
-              </TableRow>
-            ))}
+                  <TableCell>{row.symbol}</TableCell>
+                  <TableCell>{row.settlement}</TableCell>
+                  <TableCell
+                    align="right"
+                    sx={{ color: row.quantity < 0 ? 'error.main' : undefined }}
+                  >
+                    {formatQuantity(row.quantity)}
+                  </TableCell>
+                  <TableCell align="right">{formatDecimal(row.price)}</TableCell>
+                  <TableCell align="right">
+                    <FeeTooltip
+                      feeBreakdown={row.feeBreakdown}
+                      grossNotional={row.grossNotional}
+                      netTotal={netTotal}
+                      totalQuantity={row.quantity}
+                      strings={strings}
+                    >
+                      <Typography variant="body2" component="span">
+                        {formatFee(netTotal)}
+                      </Typography>
+                    </FeeTooltip>
+                  </TableCell>
+                </TableRow>
+              );
+            })}
           </TableBody>
         </Table>
       </TableContainer>
@@ -300,10 +426,10 @@ const CompraVentaView = ({
   groupOptions,
   selectedGroupId,
   strings,
+  expirationLabels,
   onGroupChange,
 }) => {
   const filterStrings = strings?.filters ?? {};
-  const theme = useTheme();
 
   const [averagingEnabled, setAveragingEnabled] = useState(true);
 
@@ -311,8 +437,14 @@ const CompraVentaView = ({
     return getBuySellOperations(operations);
   }, [operations]);
 
-  const buyRows = useMemo(() => buildRows(buys, 'BUY'), [buys]);
-  const sellRows = useMemo(() => buildRows(sells, 'SELL'), [sells]);
+  const buyRows = useMemo(
+    () => buildRows(buys, 'BUY', { expirationLabels }),
+    [buys, expirationLabels],
+  );
+  const sellRows = useMemo(
+    () => buildRows(sells, 'SELL', { expirationLabels }),
+    [sells, expirationLabels],
+  );
 
   const processedBuys = useMemo(
     () => (averagingEnabled ? aggregateRows(buyRows) : buyRows),

@@ -27,7 +27,7 @@ import strings from '../../../strings';
  * @param {Object} props.expiration - ExpirationSetting object
  * @param {Function} props.onExpirationUpdate - Callback when expiration is updated
  */
-export default function ExpirationDetail({ symbol, expirationCode, expiration, onExpirationUpdate }) {
+export default function ExpirationDetail({ expirationCode, expiration, onExpirationUpdate }) {
   const s = strings.settings.symbolSettings.expirationTabs;
 
   const [suffixes, setSuffixes] = useState([]);
