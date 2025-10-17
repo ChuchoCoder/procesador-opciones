@@ -1,38 +1,61 @@
 import { symbolExists, saveSymbolConfig } from './storage-settings.js';
 import { createDefaultSymbolConfigWithOverrides } from './settings-types.js';
 import { DEFAULT_SYMBOL_CONFIGS } from './prefix-defaults.js';
-// Fee config loader with validation (Phase 2 integration)
 import feeConfigJson from './fees/fees-config.json';
 import { validateFeeConfig, computeEffectiveRates } from './fees/config-validation.js';
 import { loadInstrumentMapping } from './fees/instrument-mapping.js';
-// Instrument data for mapping
+import { loadBrokerFees } from './fees/broker-fees-storage.js';
 import instrumentsData from '../../InstrumentsWithDetails.json';
 
 let _validatedFeeConfig = null;
 let _effectiveRates = null;
+let _loadingFeeConfigPromise = null;
+
+const buildFeeConfig = async () => {
+  try {
+    const brokerOverrides = await loadBrokerFees();
+    const mergedConfig = {
+      ...feeConfigJson,
+      broker: {
+        ...feeConfigJson?.broker,
+        ...brokerOverrides,
+      },
+    };
+
+    _validatedFeeConfig = validateFeeConfig(mergedConfig);
+    _effectiveRates = computeEffectiveRates(_validatedFeeConfig);
+    // eslint-disable-next-line no-console
+    console.info('PO: fee-config-validated', Object.keys(_effectiveRates));
+  } catch (error) {
+    // eslint-disable-next-line no-console
+    console.error('PO: fee-config-validation-failed', error);
+    _validatedFeeConfig = { byma: {}, broker: {} };
+    _effectiveRates = {};
+  }
+
+  return _validatedFeeConfig;
+};
+
+const ensureFeeConfigLoaded = async () => {
+  if (_validatedFeeConfig) {
+    return _validatedFeeConfig;
+  }
+
+  if (!_loadingFeeConfigPromise) {
+    _loadingFeeConfigPromise = buildFeeConfig().finally(() => {
+      _loadingFeeConfigPromise = null;
+    });
+  }
+
+  return _loadingFeeConfigPromise;
+};
 
 /**
  * Loads, validates, and caches the fee configuration.
  * Call once during app bootstrap.
  * @returns {object} validated config structure
  */
-export function loadFeeConfig() {
-  if (_validatedFeeConfig) return _validatedFeeConfig;
-  
-  try {
-    _validatedFeeConfig = validateFeeConfig(feeConfigJson);
-    _effectiveRates = computeEffectiveRates(_validatedFeeConfig);
-    // eslint-disable-next-line no-console
-    console.info('PO: fee-config-validated', Object.keys(_effectiveRates));
-  } catch (e) {
-    // eslint-disable-next-line no-console
-    console.error('PO: fee-config-validation-failed', e);
-    _validatedFeeConfig = { byma: {}, broker: {} };
-    _effectiveRates = {};
-  }
-  
-  return _validatedFeeConfig;
-}
+export const loadFeeConfig = () => ensureFeeConfigLoaded();
 
 /**
  * Returns precomputed effective fee rates by category.
@@ -41,10 +64,16 @@ export function loadFeeConfig() {
  */
 export function getEffectiveRates() {
   if (!_effectiveRates) {
-    loadFeeConfig(); // lazy init
+    throw new Error('Fee services not initialized. Call bootstrapFeeServices() first.');
   }
   return _effectiveRates;
 }
+
+export const refreshFeeServices = async () => {
+  _validatedFeeConfig = null;
+  _effectiveRates = null;
+  return ensureFeeConfigLoaded();
+};
 
 /**
  * Initializes instrument CfiCode mapping.
@@ -97,7 +126,7 @@ export async function seedDefaultSymbols() {
  * Initializes all bootstrap services: fee config, instrument mapping.
  * Call once during app startup.
  */
-export function bootstrapFeeServices() {
-  loadFeeConfig();
+export async function bootstrapFeeServices() {
+  await ensureFeeConfigLoaded();
   initializeInstrumentMapping();
 }
