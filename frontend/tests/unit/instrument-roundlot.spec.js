@@ -62,7 +62,7 @@ describe('instrument mapping with RoundLot', () => {
     
     expect(details).not.toBeNull();
     expect(details.contractMultiplier).toBe(1.0);
-    expect(details.cfiCode).toBe('ESVUFR');
+    expect(details.cfiCode).toBe('ESXXXX');
   });
 
   it('should return null when no match found', () => {

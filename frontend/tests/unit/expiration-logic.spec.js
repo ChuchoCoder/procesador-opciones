@@ -60,7 +60,7 @@ describe('Expiration Management Logic', () => {
   });
 
   describe('Expiration CRUD operations', () => {
-    it('should create config with default expirations', () => {
+    it('should create config with default expirations', async () => {
       const config = {
         symbol: 'GGAL',
         prefix: 'GFG',
@@ -71,15 +71,15 @@ describe('Expiration Management Logic', () => {
         },
       };
 
-      saveSymbolConfig(config);
-      const loaded = loadSymbolConfig('GGAL');
+      await saveSymbolConfig(config);
+      const loaded = await loadSymbolConfig('GGAL');
 
       expect(loaded.expirations.DIC).toBeDefined();
       expect(loaded.expirations.FEB).toBeDefined();
       expect(loaded.expirations.DIC.suffixes).toEqual(['D', 'DI']);
     });
 
-    it('should add suffix to expiration', () => {
+    it('should add suffix to expiration', async () => {
       const config = {
         symbol: 'GGAL',
         prefix: 'GFG',
@@ -89,17 +89,17 @@ describe('Expiration Management Logic', () => {
         },
       };
 
-      saveSymbolConfig(config);
+      await saveSymbolConfig(config);
 
       // Add new suffix
       config.expirations.DIC.suffixes.push('DI');
-      saveSymbolConfig(config);
+      await saveSymbolConfig(config);
 
-      const loaded = loadSymbolConfig('GGAL');
+      const loaded = await loadSymbolConfig('GGAL');
       expect(loaded.expirations.DIC.suffixes).toEqual(['D', 'DI']);
     });
 
-    it('should update expiration decimals', () => {
+    it('should update expiration decimals', async () => {
       const config = {
         symbol: 'GGAL',
         prefix: 'GFG',
@@ -109,17 +109,17 @@ describe('Expiration Management Logic', () => {
         },
       };
 
-      saveSymbolConfig(config);
+      await saveSymbolConfig(config);
 
       // Update decimals
       config.expirations.DIC.decimals = 3;
-      saveSymbolConfig(config);
+      await saveSymbolConfig(config);
 
-      const loaded = loadSymbolConfig('GGAL');
+      const loaded = await loadSymbolConfig('GGAL');
       expect(loaded.expirations.DIC.decimals).toBe(3);
     });
 
-    it('should preserve other expirations when updating one', () => {
+    it('should preserve other expirations when updating one', async () => {
       const config = {
         symbol: 'GGAL',
         prefix: 'GFG',
@@ -130,20 +130,20 @@ describe('Expiration Management Logic', () => {
         },
       };
 
-      saveSymbolConfig(config);
+      await saveSymbolConfig(config);
 
       // Update only DIC
       config.expirations.DIC.decimals = 3;
-      saveSymbolConfig(config);
+      await saveSymbolConfig(config);
 
-      const loaded = loadSymbolConfig('GGAL');
+      const loaded = await loadSymbolConfig('GGAL');
       expect(loaded.expirations.DIC.decimals).toBe(3);
       expect(loaded.expirations.FEB.decimals).toBe(1); // Unchanged
     });
   });
 
   describe('Strike override operations', () => {
-    it('should add strike override to expiration', () => {
+    it('should add strike override to expiration', async () => {
       const config = {
         symbol: 'GGAL',
         prefix: 'GFG',
@@ -153,22 +153,22 @@ describe('Expiration Management Logic', () => {
         },
       };
 
-      saveSymbolConfig(config);
+      await saveSymbolConfig(config);
 
       // Add override
       config.expirations.DIC.overrides.push({
         raw: '47343',
         formatted: '4734.3',
       });
-      saveSymbolConfig(config);
+      await saveSymbolConfig(config);
 
-      const loaded = loadSymbolConfig('GGAL');
+      const loaded = await loadSymbolConfig('GGAL');
       expect(loaded.expirations.DIC.overrides).toHaveLength(1);
       expect(loaded.expirations.DIC.overrides[0].raw).toBe('47343');
       expect(loaded.expirations.DIC.overrides[0].formatted).toBe('4734.3');
     });
 
-    it('should support multiple overrides per expiration', () => {
+    it('should support multiple overrides per expiration', async () => {
       const config = {
         symbol: 'GGAL',
         prefix: 'GFG',
@@ -185,12 +185,12 @@ describe('Expiration Management Logic', () => {
         },
       };
 
-      saveSymbolConfig(config);
-      const loaded = loadSymbolConfig('GGAL');
+      await saveSymbolConfig(config);
+      const loaded = await loadSymbolConfig('GGAL');
       expect(loaded.expirations.DIC.overrides).toHaveLength(2);
     });
 
-    it('should remove strike override', () => {
+    it('should remove strike override', async () => {
       const config = {
         symbol: 'GGAL',
         prefix: 'GFG',
@@ -207,15 +207,15 @@ describe('Expiration Management Logic', () => {
         },
       };
 
-      saveSymbolConfig(config);
+      await saveSymbolConfig(config);
 
       // Remove first override
       config.expirations.DIC.overrides = config.expirations.DIC.overrides.filter(
         (o) => o.raw !== '47343'
       );
-      saveSymbolConfig(config);
+      await saveSymbolConfig(config);
 
-      const loaded = loadSymbolConfig('GGAL');
+      const loaded = await loadSymbolConfig('GGAL');
       expect(loaded.expirations.DIC.overrides).toHaveLength(1);
       expect(loaded.expirations.DIC.overrides[0].raw).toBe('12345');
     });
@@ -231,7 +231,7 @@ describe('Expiration Management Logic', () => {
       expect(isDuplicate).toBe(true);
     });
 
-    it('should allow same raw token in different expirations', () => {
+    it('should allow same raw token in different expirations', async () => {
       const config = {
         symbol: 'GGAL',
         prefix: 'GFG',
@@ -250,8 +250,8 @@ describe('Expiration Management Logic', () => {
         },
       };
 
-      saveSymbolConfig(config);
-      const loaded = loadSymbolConfig('GGAL');
+      await saveSymbolConfig(config);
+      const loaded = await loadSymbolConfig('GGAL');
       
       expect(loaded.expirations.DIC.overrides[0].raw).toBe('47343');
       expect(loaded.expirations.FEB.overrides[0].raw).toBe('47343');
@@ -262,7 +262,7 @@ describe('Expiration Management Logic', () => {
   });
 
   describe('Expiration data integrity', () => {
-    it('should maintain expiration structure through updates', () => {
+    it('should maintain expiration structure through updates', async () => {
       const config = {
         symbol: 'GGAL',
         prefix: 'GFG',
@@ -272,25 +272,25 @@ describe('Expiration Management Logic', () => {
         },
       };
 
-      saveSymbolConfig(config);
+      await saveSymbolConfig(config);
 
       // Multiple updates
       config.expirations.DIC.suffixes.push('DI');
-      saveSymbolConfig(config);
+      await saveSymbolConfig(config);
 
       config.expirations.DIC.decimals = 3;
-      saveSymbolConfig(config);
+      await saveSymbolConfig(config);
 
       config.expirations.DIC.overrides.push({ raw: '47343', formatted: '4734.3' });
-      saveSymbolConfig(config);
+      await saveSymbolConfig(config);
 
-      const loaded = loadSymbolConfig('GGAL');
+      const loaded = await loadSymbolConfig('GGAL');
       expect(loaded.expirations.DIC.suffixes).toEqual(['D', 'DI']);
       expect(loaded.expirations.DIC.decimals).toBe(3);
       expect(loaded.expirations.DIC.overrides).toHaveLength(1);
     });
 
-    it('should handle all default expiration codes', () => {
+    it('should handle all default expiration codes', async () => {
       const config = {
         symbol: 'GGAL',
         prefix: 'GFG',
@@ -307,8 +307,8 @@ describe('Expiration Management Logic', () => {
         };
       });
 
-      saveSymbolConfig(config);
-      const loaded = loadSymbolConfig('GGAL');
+      await saveSymbolConfig(config);
+      const loaded = await loadSymbolConfig('GGAL');
 
       EXPIRATION_CODES.forEach((code) => {
         expect(loaded.expirations[code]).toBeDefined();
@@ -318,7 +318,7 @@ describe('Expiration Management Logic', () => {
   });
 
   describe('Edge cases', () => {
-    it('should handle empty overrides array', () => {
+    it('should handle empty overrides array', async () => {
       const config = {
         symbol: 'GGAL',
         prefix: 'GFG',
@@ -328,12 +328,12 @@ describe('Expiration Management Logic', () => {
         },
       };
 
-      saveSymbolConfig(config);
-      const loaded = loadSymbolConfig('GGAL');
+      await saveSymbolConfig(config);
+      const loaded = await loadSymbolConfig('GGAL');
       expect(loaded.expirations.DIC.overrides).toEqual([]);
     });
 
-    it('should handle empty suffixes array', () => {
+    it('should handle empty suffixes array', async () => {
       const config = {
         symbol: 'GGAL',
         prefix: 'GFG',
@@ -343,12 +343,12 @@ describe('Expiration Management Logic', () => {
         },
       };
 
-      saveSymbolConfig(config);
-      const loaded = loadSymbolConfig('GGAL');
+      await saveSymbolConfig(config);
+      const loaded = await loadSymbolConfig('GGAL');
       expect(loaded.expirations.DIC.suffixes).toEqual([]);
     });
 
-    it('should update timestamp on expiration changes', () => {
+    it('should update timestamp on expiration changes', async () => {
       const config = {
         symbol: 'GGAL',
         prefix: 'GFG',
@@ -358,17 +358,16 @@ describe('Expiration Management Logic', () => {
         },
       };
 
-      saveSymbolConfig(config);
-      const firstSave = loadSymbolConfig('GGAL');
+      await saveSymbolConfig(config);
+      const firstSave = await loadSymbolConfig('GGAL');
       const firstTimestamp = firstSave.updatedAt;
 
       // Wait and update
-      setTimeout(() => {
-        config.expirations.DIC.decimals = 3;
-        saveSymbolConfig(config);
-        const secondSave = loadSymbolConfig('GGAL');
-        expect(secondSave.updatedAt).toBeGreaterThanOrEqual(firstTimestamp);
-      }, 10);
+      await new Promise(resolve => setTimeout(resolve, 10));
+      config.expirations.DIC.decimals = 3;
+      await saveSymbolConfig(config);
+      const secondSave = await loadSymbolConfig('GGAL');
+      expect(secondSave.updatedAt).toBeGreaterThanOrEqual(firstTimestamp);
     });
   });
 });

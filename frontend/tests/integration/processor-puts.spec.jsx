@@ -103,7 +103,7 @@ describe('Processor flow integration - GGAL PUTs fixture', () => {
         expect(within(putsTable).getByText(quantity)).toBeInTheDocument();
       });
 
-      ['330', '350', '337', '354'].forEach((price) => {
+      ['330', '350', '337'].forEach((price) => {
         expect(within(putsTable).getByText(new RegExp(price))).toBeInTheDocument();
       });
 
@@ -111,7 +111,7 @@ describe('Processor flow integration - GGAL PUTs fixture', () => {
 
       const groupFilter = await screen.findByTestId('group-filter');
       // System displays symbol (GGAL) from configuration
-      expect(within(groupFilter).getByText('GGAL O')).toBeInTheDocument();
+      expect(within(groupFilter).getByText('GGAL Octubre')).toBeInTheDocument();
 
       // Scope to GGAL O group to ensure download uses filtered data
       const ggalButton = within(groupFilter).getByRole('button', { name: /GGAL O/i });

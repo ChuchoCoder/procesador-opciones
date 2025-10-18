@@ -9,6 +9,8 @@ export default defineConfig({
     setupFiles: ['./tests/setup/vitest.setup.js'],
     threads: false,
     include: ['tests/**/*.spec.{js,jsx}'], // Include unit, integration, and perf tests
+    reporters: ['default', 'json'],
+    outputFile: './tests/test-results.json',
     coverage: {
       reporter: ['text', 'html'],
     },

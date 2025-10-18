@@ -174,14 +174,33 @@ Prettier se usa vía configuración `.prettierrc` (singleQuote, trailing commas,
 
 La configuración se guarda en `localStorage` del navegador:
 
-- Lista de símbolos personalizados
-- Lista de vencimientos (nombre + sufijos)
-- Símbolo activo y vencimiento activo
-- Preferencia de “promediar por strike”
 
 Si el almacenamiento falla (modo privado estricto, etc.) se muestra un aviso y la sesión trabaja en memoria.
 
 ## 📄 Formato CSV Esperado
+
+## 🔄 Sincronización Automática (Broker) (Preview)
+
+La rama `004-integrate-jsrofex-to` agrega soporte para iniciar sesión contra un broker (jsRofex) y sincronizar automáticamente las operaciones del día sin necesidad de subir el CSV manualmente. El flujo CSV se mantiene como alternativa.
+
+Placeholders creados (Fase 1 Setup):
+
+- `frontend/src/services/broker/jsrofex-client.js`
+- `frontend/src/services/broker/sync-service.js`
+- `frontend/src/services/broker/dedupe-utils.js`
+- Slices nuevas en el reducer (`brokerAuth`, `sync`, `stagingOps`)
+- Instrumentación de performance (`performance-instrumentation.js`)
+- Utilidad de logging (`broker-sync-log-util.js`)
+
+Próximas fases implementarán:
+
+- Autenticación y almacenamiento seguro de token (sin credenciales en estado persistido).
+- Detección de duplicados y merge atómico.
+- Progreso por página, cancelación y reintentos con backoff.
+
+Ver guía rápida: `specs/004-integrate-jsrofex-to/quickstart.md`.
+
+> Estado actual: sólo scaffolding. Lógica se añadirá en fases Foundational y US1.
 
 Columnas mínimas utilizadas por el procesador React:
 
