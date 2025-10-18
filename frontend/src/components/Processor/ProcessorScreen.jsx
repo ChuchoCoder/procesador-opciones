@@ -36,6 +36,7 @@ import EmptyState from './EmptyState.jsx';
 import BrokerLogin from './BrokerLogin.jsx';
 import DataSourceSelector from './DataSourceSelector.jsx';
 import DataSourcesPanel from './DataSourcesPanel.jsx';
+import FileMenu from './FileMenu.jsx';
 
 const ALL_GROUP_ID = '__ALL__';
 const LAST_SESSION_STORAGE_VERSION = 1;
@@ -1211,6 +1212,15 @@ const ProcessorScreen = () => {
                     }
                     onRefreshBroker={() => triggerSync({ mode: 'refresh' })}
                     onRemoveCsv={() => setSelectedFile(null)}
+                  />
+                }
+                fileMenuSlot={
+                  <FileMenu
+                    strings={strings}
+                    selectedFileName={null}
+                    isProcessing={isProcessing}
+                    onSelectFile={handleFileSelected}
+                    onClearFile={() => {}}
                   />
                 }
               />
