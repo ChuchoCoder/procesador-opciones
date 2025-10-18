@@ -4,6 +4,7 @@ export const ROUTES = {
   settingsFees: '/configuracion/comisiones',
   settingsPrefixes: '/configuracion/prefijos',
   settingsExpirations: '/configuracion/vencimientos',
+  settingsBroker: '/configuracion/broker',
 };
 
 export const APP_ROUTE_SEGMENTS = [

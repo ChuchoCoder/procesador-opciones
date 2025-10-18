@@ -11,6 +11,8 @@ Todas las modificaciones notables de este proyecto se documentarán en este arch
 - Suite de pruebas unitarias e integración (Vitest + Testing Library).
 - Internacionalización base `es-AR` para la nueva interfaz.
 - Documentación renovada (README en es-AR, quickstart, checklist smoke test).
+- **Integración de jsRofex**: Biblioteca oficial de Matba Rofex para conectar con la API del broker.
+- **Dropdown de brokers**: Selector con URLs preconfiguradas para múltiples brokers (Cocos Capital, Eco Valores, Veta Capital, Bull Market, Cohen, Adcap, BCCH) más opción de URL personalizada.
 
 ### Cambiado
 

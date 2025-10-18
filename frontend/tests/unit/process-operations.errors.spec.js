@@ -63,4 +63,15 @@ describe('processOperations error handling', () => {
     expect(report.meta.parse.errors).toHaveLength(1);
     expect(report.meta.parse.errors[0].type).toBe('MalformedTokenList');
   });
+
+  it('throws a Spanish error when parser reports invalid CSV format', async () => {
+    parseOperationsCsv.mockRejectedValueOnce(new Error('Invalid delimiter'));
+
+    await expect(
+      processOperations({
+        file: { name: 'invalid.csv' },
+        configuration: baseConfiguration,
+      }),
+    ).rejects.toThrow('No pudimos leer el archivo CSV');
+  });
 });
