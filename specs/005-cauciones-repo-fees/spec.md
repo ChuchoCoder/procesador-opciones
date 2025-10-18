@@ -15,6 +15,10 @@
 - Q: Should the repo fee configuration settings be scoped per broker, or are they global for all operations? → A: Global for all operations - single set of rates applies to all repos processed
 - Q: What logging level should be used for repo calculation validation warnings (missing tenor, reconciliation failures)? → A: WARN - Logged as warnings for investigation but not critical
 
+### Session 2025-10-18
+
+- Q: Which rounding mode and when should rounding be applied for displayed amounts? → A: Display-only rounding; round half up to 2 decimals (look at 3rd digit)
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Calculate and Display Repo Expense Breakdown for Lender (Priority: P1)
@@ -123,7 +127,7 @@ As a front-office operator, I need the system to gracefully handle repo instrume
 - **FR-010**: System MUST support currency-specific fee rates for both ARS and USD, selecting rates based on operation currency
 - **FR-011**: System MUST calculate Accrued Interest using formula: `P * (priceTNA / 100) * d / 365`
 - **FR-012**: System MUST validate that Base Amount reconciles with `P + AccruedInterest` within 0.01 tolerance; on mismatch, log at WARN level to existing logging facility and proceed with calculation using the provided Base Amount value
-- **FR-013**: System MUST apply 2-decimal precision and consistent rounding for both ARS and USD currency calculations
+- **FR-013**: System MUST apply 2-decimal precision for displayed amounts only; internal calculations should keep full precision. Display rounding must use "round half up" (look at 3rd decimal digit; if >=5 round the 2nd digit up) to two decimal places for both ARS and USD.
 - **FR-014**: System MUST display validation warning and set all expenses to zero when parsed tenor days is zero, negative, or missing; log at WARN level
 - **FR-015**: System MUST display validation warning and set all expenses to zero when Base Amount is zero; log at WARN level
 - **FR-016**: System MUST block calculations and display human-readable error when fee configuration is incomplete for the operation's currency and role combination
