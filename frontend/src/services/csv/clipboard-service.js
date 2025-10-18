@@ -13,7 +13,15 @@ export const CLIPBOARD_ERROR_MESSAGES = {
   copyFailed: 'No se pudo copiar al portapapeles. Inténtalo nuevamente.',
 };
 
-const HEADERS = ['Cantidad', 'Strike', 'Precio'];
+const HEADERS = ['Fecha', 'Cantidad', 'Strike', 'Precio'];
+
+const DATE_FORMATTER = typeof Intl !== 'undefined'
+  ? new Intl.DateTimeFormat(navigator?.language || 'es-AR', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    })
+  : null;
 
 const STRIKE_FORMATTER = typeof Intl !== 'undefined'
   ? new Intl.NumberFormat('en-US', {
@@ -67,7 +75,37 @@ const formatQuantity = (quantity) => {
   return String(quantity);
 };
 
+const formatDate = (operation) => {
+  // Try to get the date from the operation's raw data
+  const transactTime = operation?.raw?.transact_time || operation?.legs?.[0]?.raw?.transact_time;
+  
+  if (!transactTime) {
+    return '';
+  }
+
+  try {
+    // transact_time is typically in ISO format: "2025-10-08 13:58:51.454000Z"
+    const date = new Date(transactTime);
+    
+    if (!isNaN(date.getTime())) {
+      if (DATE_FORMATTER) {
+        return DATE_FORMATTER.format(date);
+      }
+      // Fallback: manual formatting as YYYY-MM-DD or MM/DD/YYYY
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      return `${month}/${day}/${year}`;
+    }
+  } catch (error) {
+    // If date parsing fails, return empty string
+  }
+
+  return '';
+};
+
 const formatOperationRow = (operation) => [
+  formatDate(operation),
   formatQuantity(operation?.totalQuantity),
   formatStrike(operation?.strike),
   formatPrice(operation?.averagePrice),

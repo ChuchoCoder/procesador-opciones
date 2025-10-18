@@ -10,6 +10,7 @@ Migración en curso desde un popup HTML (Vanilla JS) a una Single Page Applicati
 
 - Procesamiento de archivos CSV (Papaparse) con filtros por símbolo y vencimiento
 - Vista dividida: pestañas CALLS / PUTS + indicador de vista actual
+- **Cálculo de gastos (fees) por operación**: comisión, derechos de mercado e IVA con tooltip detallado
 - Filtro de grupos derivado automáticamente y persistencia de selección reciente
 - Modo de promedios (opcional): consolida operaciones por strike sumando cantidades y recalculando precio promedio ponderado
 - Acciones de exportación: copiar o descargar CSV (vista actual, CALLS, PUTS o combinado)
@@ -109,6 +110,56 @@ npm run test:watch
 ```
 
 Cobertura (si se añade configuración): ejecutar Vitest con `--coverage` (no configurado por defecto en este commit).
+
+## 💸 Configuración de Gastos (Fees) (Feature 004)
+
+La funcionalidad de gastos por operación usa un archivo de configuración JSON en `frontend/src/services/fees/fees-config.json` con el siguiente esquema:
+
+```json
+{
+  "byma": {
+    "derechosMercadoPct": 0.00005,
+    "caucionesPct": 0.00002,
+    "vatPct": 0.21
+  },
+  "broker": {
+    "commissionAccionCedearPct": 0.0006,
+    "commissionLetraPct": 0.0004,
+    "commissionBondPct": 0.0005,
+    "commissionOptionPct": 0.0006,
+    "commissionCaucionPct": 0.0003
+  }
+}
+```
+
+Notas:
+
+- Todos los valores son porcentajes expresados como fracciones (0.0006 = 0.06%).
+- `vatPct` representa IVA aplicado sobre (comisión + derechos).
+- Si algún valor es inválido o falta, la validación futura lo sanitiza a 0 (o 0.21 para IVA por defecto).
+- El flag para habilitar cauciones (`ENABLE_CAUCION_FEES`) vive en `fees-flags.js` y está desactivado inicialmente.
+
+Uso básico (fase inicial): el bootstrap carga el JSON de forma síncrona y lo expone para el cálculo de gastos en módulos posteriores.
+
+### Visualización de Gastos en la Tabla
+
+Cada fila de operación muestra una columna "Gastos" con el monto total calculado en pesos argentinos (ARS). Al pasar el cursor sobre el monto, aparece un tooltip detallado con:
+
+- **Categoría**: Tipo de instrumento (Opción, Acción/CEDAR, Letra, Bono)
+- **Bruto**: Importe bruto de la operación (cantidad × precio)
+- **Comisión**: Monto y porcentaje aplicado
+- **Derechos**: Derechos de mercado (BYMA) y porcentaje
+- **IVA**: Impuesto al valor agregado sobre la suma de comisión + derechos
+- **Total**: Suma de todos los componentes (coincide con el valor mostrado en la celda)
+- **Fuente**: Indica si proviene de configuración o es un placeholder
+
+Para operaciones de caución (cuando la funcionalidad esté habilitada), se muestra "—" con tooltip "Próximamente".
+
+### Modificar Tasas de Gastos
+
+Editá `frontend/src/services/fees/fees-config.json` ajustando los porcentajes deseados. Tras guardar el archivo, recargá la aplicación para aplicar los cambios. Los valores se validan automáticamente al inicio: números inválidos o negativos se reemplazan por 0 (excepto IVA que tiene un fallback de 0.21).
+
+
 
 ## 🧰 Linter & Formato
 
@@ -256,4 +307,4 @@ Uso abierto orientado a análisis de operaciones de opciones. Evaluar requisitos
 
 ---
 
-_Documento generado y actualizado durante la migración a la arquitectura React (locale es-AR)._ 
+_Documento generado y actualizado durante la migración a la arquitectura React (locale es-AR)._

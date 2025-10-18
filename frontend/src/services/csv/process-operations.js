@@ -5,6 +5,7 @@ import { createDevLogger } from '../logging/dev-logger.js';
 import { normalizeOperationRows } from './legacy-normalizer.js';
 import { getAllSymbols, loadSymbolConfig } from '../storage-settings.js';
 import { normalizeOperation } from '../broker/dedupe-utils.js';
+import { enrichOperationsWithFees } from '../fees/fee-enrichment.js';
 
 const OPTION_TOKEN_REGEX = /^([A-Z0-9]+?)([CV])(\d+(?:\.\d+)?)(.*)$/;
 const DEFAULT_EXPIRATION = 'NONE';
@@ -944,11 +945,12 @@ export const processOperations = async ({
 
     const optionType = enrichment.type === 'CALL' || enrichment.type === 'PUT' ? enrichment.type : 'UNKNOWN';
     const strike = enrichment.strike ?? row.strike ?? null;
+    const originalSymbol = typeof row.symbol === 'string' ? row.symbol.trim() : '';
 
     return {
       id: enrichment.id || String(row.order_id || index),
       orderId: row.order_id,
-      originalSymbol: toUpperCase(row.symbol) || enrichment.symbol,
+      originalSymbol: originalSymbol || enrichment.symbol,
       matchedSymbol: enrichment.symbol,
       symbol: enrichment.symbol,
       expiration: enrichment.expiration,
@@ -966,9 +968,13 @@ export const processOperations = async ({
     };
   }));
 
-  const normalizedOperations = enrichedOperations.map(createNormalizedCsvOperation);
+  // Enrich operations with fee calculations (Feature 004)
+  const enrichedWithFees = enrichOperationsWithFees(enrichedOperations);
 
-  const optionOperationsForConsolidation = enrichedOperations.filter(
+  // Normalize operations for CSV source (Feature 004-integrate-jsrofex-to)
+  const normalizedOperations = enrichedWithFees.map(createNormalizedCsvOperation);
+
+  const optionOperationsForConsolidation = enrichedWithFees.filter(
     (operation) => operation.optionType === 'CALL' || operation.optionType === 'PUT',
   );
 
@@ -1082,7 +1088,7 @@ export const processOperations = async ({
     views: viewSnapshots,
     activeView: activeViewKey,
     groups: groupSummaries,
-    operations: enrichedOperations,
+    operations: enrichedWithFees,
     normalizedOperations,
     meta: {
       parse: parseMeta,

@@ -1,30 +1,94 @@
 import { symbolExists, saveSymbolConfig } from './storage-settings.js';
 import { createDefaultSymbolConfigWithOverrides } from './settings-types.js';
+import { DEFAULT_SYMBOL_CONFIGS } from './prefix-defaults.js';
+import feeConfigJson from './fees/fees-config.json';
+import { validateFeeConfig, computeEffectiveRates } from './fees/config-validation.js';
+import { loadInstrumentMapping } from './fees/instrument-mapping.js';
+import { loadBrokerFees } from './fees/broker-fees-storage.js';
+import instrumentsData from '../../InstrumentsWithDetails.json';
 
-// Default symbol configurations with prefixes
-// Based on MCP/BCBA ticker patterns (company-root style prefixes)
-const DEFAULT_SYMBOL_CONFIGS = [
-  { symbol: 'AL30', prefix: 'A30' },
-  { symbol: 'ALUA', prefix: 'ALU' },
-  { symbol: 'BBAR', prefix: 'BBA' },
-  { symbol: 'BHIP', prefix: 'BHI' },
-  { symbol: 'BMA', prefix: 'BMA' },
-  { symbol: 'BYMA', prefix: 'BYM' },
-  { symbol: 'CEPU', prefix: 'CEP' },
-  { symbol: 'COME', prefix: 'COM' },
-  { symbol: 'EDN', prefix: 'EDN' },
-  { symbol: 'GGAL', prefix: 'GFG' },  // Grupo Financiero Galicia
-  { symbol: 'METR', prefix: 'MET' },
-  { symbol: 'MIRG', prefix: 'MIR' },
-  { symbol: 'PAMP', prefix: 'PAM' },
-  { symbol: 'SUPV', prefix: 'SUP' },
-  { symbol: 'TECO2', prefix: 'TEC' },
-  { symbol: 'TGNO4', prefix: 'TGN' },
-  { symbol: 'TGSU2', prefix: 'TGS' },
-  { symbol: 'TRAN', prefix: 'TRA' },
-  { symbol: 'TXAR', prefix: 'TXA' },
-  { symbol: 'YPFD', prefix: 'YPF' },
-];
+let _validatedFeeConfig = null;
+let _effectiveRates = null;
+let _loadingFeeConfigPromise = null;
+
+const buildFeeConfig = async () => {
+  try {
+    const brokerOverrides = await loadBrokerFees();
+    const mergedConfig = {
+      ...feeConfigJson,
+      broker: {
+        ...feeConfigJson?.broker,
+        ...brokerOverrides,
+      },
+    };
+
+    _validatedFeeConfig = validateFeeConfig(mergedConfig);
+    _effectiveRates = computeEffectiveRates(_validatedFeeConfig);
+    // eslint-disable-next-line no-console
+    console.info('PO: fee-config-validated', Object.keys(_effectiveRates));
+  } catch (error) {
+    // eslint-disable-next-line no-console
+    console.error('PO: fee-config-validation-failed', error);
+    _validatedFeeConfig = { byma: {}, broker: {} };
+    _effectiveRates = {};
+  }
+
+  return _validatedFeeConfig;
+};
+
+const ensureFeeConfigLoaded = async () => {
+  if (_validatedFeeConfig) {
+    return _validatedFeeConfig;
+  }
+
+  if (!_loadingFeeConfigPromise) {
+    _loadingFeeConfigPromise = buildFeeConfig().finally(() => {
+      _loadingFeeConfigPromise = null;
+    });
+  }
+
+  return _loadingFeeConfigPromise;
+};
+
+/**
+ * Loads, validates, and caches the fee configuration.
+ * Call once during app bootstrap.
+ * @returns {object} validated config structure
+ */
+export const loadFeeConfig = () => ensureFeeConfigLoaded();
+
+/**
+ * Returns precomputed effective fee rates by category.
+ * Must call loadFeeConfig() first.
+ * @returns {object} rates map
+ */
+export function getEffectiveRates() {
+  if (!_effectiveRates) {
+    throw new Error('Fee services not initialized. Call bootstrapFeeServices() first.');
+  }
+  return _effectiveRates;
+}
+
+export const refreshFeeServices = async () => {
+  _validatedFeeConfig = null;
+  _effectiveRates = null;
+  return ensureFeeConfigLoaded();
+};
+
+/**
+ * Initializes instrument CfiCode mapping.
+ * Call once during app bootstrap after instruments data available.
+ */
+export function initializeInstrumentMapping() {
+  try {
+    loadInstrumentMapping(instrumentsData);
+    // eslint-disable-next-line no-console
+    console.info('PO: instrument-mapping-initialized');
+  } catch (e) {
+    // eslint-disable-next-line no-console
+    console.error('PO: instrument-mapping-init-failed', e);
+  }
+}
 
 /**
  * Seed storage with default symbol configs if missing.
@@ -55,4 +119,13 @@ export async function seedDefaultSymbols() {
   }
 
   return created;
+}
+
+/**
+ * Initializes all bootstrap services: fee config, instrument mapping.
+ * Call once during app startup.
+ */
+export async function bootstrapFeeServices() {
+  await ensureFeeConfigLoaded();
+  initializeInstrumentMapping();
 }

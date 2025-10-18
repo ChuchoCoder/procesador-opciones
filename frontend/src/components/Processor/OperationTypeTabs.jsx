@@ -10,7 +10,6 @@ import SwapHorizIcon from '@mui/icons-material/SwapHoriz';
 import TimelineIcon from '@mui/icons-material/Timeline';
 import { OPERATION_TYPES } from './operation-types.js';
 
-
 const OperationTypeTabs = ({ 
   strings, 
   activeTab, 
@@ -107,3 +106,5 @@ const OperationTypeTabs = ({
 };
 
 export default OperationTypeTabs;
+
+// If other modules need OPERATION_TYPES, they should import from a dedicated constants file

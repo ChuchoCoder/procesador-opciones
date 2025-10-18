@@ -13,6 +13,7 @@ export const storageKeys = {
   brokerApiUrl: 'po.brokerApiUrl',
   brokerAuth: 'po.brokerAuth',
   operations: 'po.operations',
+  brokerFees: 'po.brokerFees.v1',
 };
 
 /**

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Container, Box, Typography, Button, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, Stack, Alert, Snackbar } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import RestoreIcon from '@mui/icons-material/Restore';
@@ -19,14 +19,21 @@ export default function SettingsScreen() {
   const [restoreDialogOpen, setRestoreDialogOpen] = useState(false);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
 
+  const refreshSymbols = useCallback(async () => {
+    const allSymbols = await getAllSymbols();
+    setSymbols(allSymbols);
+    if (allSymbols.length > 0 && !activeSymbol) {
+      setActiveSymbol(allSymbols[0]);
+    }
+  }, [activeSymbol]);
+
   // Load symbols on mount
   useEffect(() => {
-    // Seed default symbols into storage (if missing) then refresh UI
     (async () => {
       await seedDefaultSymbols();
-      refreshSymbols();
+      await refreshSymbols();
     })();
-  }, []);
+  }, [refreshSymbols]);
 
   // Load config when active symbol changes
   useEffect(() => {
@@ -36,14 +43,6 @@ export default function SettingsScreen() {
       setConfig(null);
     }
   }, [activeSymbol]);
-
-  const refreshSymbols = async () => {
-    const allSymbols = await getAllSymbols();
-    setSymbols(allSymbols);
-    if (allSymbols.length > 0 && !activeSymbol) {
-      setActiveSymbol(allSymbols[0]);
-    }
-  };
 
   const handleSymbolAdded = (symbol) => {
     refreshSymbols();
