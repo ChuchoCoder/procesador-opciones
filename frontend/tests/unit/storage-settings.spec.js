@@ -41,7 +41,7 @@ describe('storage-settings', () => {
   });
 
   describe('saveSymbolConfig', () => {
-    it('should save a valid config to localStorage', () => {
+    it('should save a valid config to localStorage', async () => {
       const config = {
         symbol: 'GGAL',
         prefix: 'GFG',
@@ -50,7 +50,7 @@ describe('storage-settings', () => {
         updatedAt: Date.now(),
       };
 
-      const result = saveSymbolConfig(config);
+      const result = await saveSymbolConfig(config);
       expect(result).toBe(true);
 
       const saved = localStorage.getItem('po:settings:GGAL');
@@ -60,16 +60,16 @@ describe('storage-settings', () => {
       expect(parsed.prefix).toBe('GFG');
     });
 
-    it('should reject config without symbol', () => {
+    it('should reject config without symbol', async () => {
       const config = { prefix: 'ABC', defaultDecimals: 1 };
-      const result = saveSymbolConfig(config);
+      const result = await saveSymbolConfig(config);
       expect(result).toBe(false);
     });
 
-    it('should update timestamp on save', () => {
+    it('should update timestamp on save', async () => {
       const before = Date.now();
       const config = { symbol: 'TEST', prefix: 'TST', defaultDecimals: 2 };
-      saveSymbolConfig(config);
+      await saveSymbolConfig(config);
 
       const saved = JSON.parse(localStorage.getItem('po:settings:TEST'));
       expect(saved.updatedAt).toBeGreaterThanOrEqual(before);
@@ -77,24 +77,24 @@ describe('storage-settings', () => {
   });
 
   describe('loadSymbolConfig', () => {
-    it('should load an existing config', () => {
+    it('should load an existing config', async () => {
       const config = { symbol: 'GGAL', prefix: 'GFG', defaultDecimals: 2, updatedAt: Date.now() };
       localStorage.setItem('po:settings:GGAL', JSON.stringify(config));
 
-      const loaded = loadSymbolConfig('GGAL');
+      const loaded = await loadSymbolConfig('GGAL');
       expect(loaded).toEqual(config);
     });
 
-    it('should return null for non-existent symbol', () => {
-      const loaded = loadSymbolConfig('MISSING');
+    it('should return null for non-existent symbol', async () => {
+      const loaded = await loadSymbolConfig('MISSING');
       expect(loaded).toBeNull();
     });
 
-    it('should handle malformed JSON gracefully', () => {
+    it('should handle malformed JSON gracefully', async () => {
       const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
       localStorage.setItem('po:settings:BAD', '{invalid json}');
 
-      const loaded = loadSymbolConfig('BAD');
+      const loaded = await loadSymbolConfig('BAD');
       expect(loaded).toBeNull();
       expect(consoleError).toHaveBeenCalled();
 
@@ -103,54 +103,54 @@ describe('storage-settings', () => {
   });
 
   describe('getAllSymbols', () => {
-    it('should return empty array when no symbols exist', () => {
-      const symbols = getAllSymbols();
+    it('should return empty array when no symbols exist', async () => {
+      const symbols = await getAllSymbols();
       expect(symbols).toEqual([]);
     });
 
-    it('should return all symbol keys sorted', () => {
-      saveSymbolConfig({ symbol: 'GGAL', prefix: 'GFG', defaultDecimals: 2 });
-      saveSymbolConfig({ symbol: 'YPFD', prefix: 'YPF', defaultDecimals: 2 });
-      saveSymbolConfig({ symbol: 'ALUA', prefix: 'ALU', defaultDecimals: 1 });
+    it('should return all symbol keys sorted', async () => {
+      await saveSymbolConfig({ symbol: 'GGAL', prefix: 'GFG', defaultDecimals: 2 });
+      await saveSymbolConfig({ symbol: 'YPFD', prefix: 'YPF', defaultDecimals: 2 });
+      await saveSymbolConfig({ symbol: 'ALUA', prefix: 'ALU', defaultDecimals: 1 });
 
-      const symbols = getAllSymbols();
+      const symbols = await getAllSymbols();
       expect(symbols).toEqual(['ALUA', 'GGAL', 'YPFD']);
     });
 
-    it('should ignore non-settings keys', () => {
+    it('should ignore non-settings keys', async () => {
       localStorage.setItem('other:key', 'value');
-      saveSymbolConfig({ symbol: 'GGAL', prefix: 'GFG', defaultDecimals: 2 });
+      await saveSymbolConfig({ symbol: 'GGAL', prefix: 'GFG', defaultDecimals: 2 });
 
-      const symbols = getAllSymbols();
+      const symbols = await getAllSymbols();
       expect(symbols).toEqual(['GGAL']);
     });
   });
 
   describe('symbolExists', () => {
-    it('should return true for existing symbol', () => {
-      saveSymbolConfig({ symbol: 'GGAL', prefix: 'GFG', defaultDecimals: 2 });
-      expect(symbolExists('GGAL')).toBe(true);
+    it('should return true for existing symbol', async () => {
+      await saveSymbolConfig({ symbol: 'GGAL', prefix: 'GFG', defaultDecimals: 2 });
+      expect(await symbolExists('GGAL')).toBe(true);
     });
 
-    it('should return false for non-existent symbol', () => {
-      expect(symbolExists('MISSING')).toBe(false);
+    it('should return false for non-existent symbol', async () => {
+      expect(await symbolExists('MISSING')).toBe(false);
     });
 
-    it('should be case-insensitive', () => {
-      saveSymbolConfig({ symbol: 'GGAL', prefix: 'GFG', defaultDecimals: 2 });
-      expect(symbolExists('ggal')).toBe(true);
-      expect(symbolExists('Ggal')).toBe(true);
+    it('should be case-insensitive', async () => {
+      await saveSymbolConfig({ symbol: 'GGAL', prefix: 'GFG', defaultDecimals: 2 });
+      expect(await symbolExists('ggal')).toBe(true);
+      expect(await symbolExists('Ggal')).toBe(true);
     });
   });
 
   describe('deleteSymbolConfig', () => {
-    it('should remove a symbol config', () => {
-      saveSymbolConfig({ symbol: 'GGAL', prefix: 'GFG', defaultDecimals: 2 });
-      expect(symbolExists('GGAL')).toBe(true);
+    it('should remove a symbol config', async () => {
+      await saveSymbolConfig({ symbol: 'GGAL', prefix: 'GFG', defaultDecimals: 2 });
+      expect(await symbolExists('GGAL')).toBe(true);
 
-      const result = deleteSymbolConfig('GGAL');
+      const result = await deleteSymbolConfig('GGAL');
       expect(result).toBe(true);
-      expect(symbolExists('GGAL')).toBe(false);
+      expect(await symbolExists('GGAL')).toBe(false);
     });
   });
 });

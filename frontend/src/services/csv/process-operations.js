@@ -4,6 +4,7 @@ import { buildConsolidatedViews } from './consolidator.js';
 import { createDevLogger } from '../logging/dev-logger.js';
 import { normalizeOperationRows } from './legacy-normalizer.js';
 import { getAllSymbols, loadSymbolConfig } from '../storage-settings.js';
+import { normalizeOperation } from '../broker/dedupe-utils.js';
 import { enrichOperationsWithFees } from '../fees/fee-enrichment.js';
 
 const OPTION_TOKEN_REGEX = /^([A-Z0-9]+?)([CV])(\d+(?:\.\d+)?)(.*)$/;
@@ -797,11 +798,15 @@ const resolveRows = async ({ rows, file, parserConfig }) => {
     throw new Error('Debes proporcionar un archivo CSV o filas procesadas para continuar.');
   }
 
-  const parsed = await parseOperationsCsv(file, parserConfig);
-  return {
-    rows: parsed.rows,
-    meta: normalizeParseMeta(parsed.rows, parsed.meta),
-  };
+  try {
+    const parsed = await parseOperationsCsv(file, parserConfig);
+    return {
+      rows: parsed.rows,
+      meta: normalizeParseMeta(parsed.rows, parsed.meta),
+    };
+  } catch (error) {
+    throw new Error('No pudimos leer el archivo CSV. Verificá que tenga encabezados y un separador válido.');
+  }
 };
 
 const resolveFileName = ({ fileName, file }) => {
@@ -815,6 +820,73 @@ const resolveFileName = ({ fileName, file }) => {
 };
 
 const formatLogFileInfo = (name, rowCount) => `${name} | filas: ${rowCount}`;
+
+const normalizeTimestampValue = (value) => {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value;
+  }
+
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    if (!trimmed) {
+      return null;
+    }
+
+    const isoCandidate = trimmed.includes('T') ? trimmed : trimmed.replace(' ', 'T');
+    const parsed = Date.parse(isoCandidate);
+    if (!Number.isNaN(parsed)) {
+      return parsed;
+    }
+  }
+
+  return null;
+};
+
+const resolveTradeTimestamp = (raw = {}) => {
+  const candidates = [
+    raw.tradeTimestamp,
+    raw.trade_timestamp,
+    raw.transactTime,
+    raw.transact_time,
+    raw.executionTime,
+    raw.execution_time,
+    raw.lastExecutionTime,
+    raw.last_execution_time,
+    raw.eventTime,
+    raw.event_time,
+  ];
+
+  for (const candidate of candidates) {
+    const parsed = normalizeTimestampValue(candidate);
+    if (parsed !== null) {
+      return parsed;
+    }
+  }
+
+  return Date.now();
+};
+
+const createNormalizedCsvOperation = (operation) => {
+  const rawSource = operation?.raw ?? {};
+
+  return normalizeOperation(
+    {
+      order_id: operation?.orderId ?? rawSource.order_id ?? operation?.id ?? null,
+      operation_id: rawSource.operation_id ?? rawSource.execution_id ?? rawSource.id ?? null,
+      symbol: operation?.symbol,
+      optionType: operation?.optionType,
+      side: operation?.side,
+      quantity: operation?.quantity,
+      price: operation?.price,
+      tradeTimestamp: resolveTradeTimestamp(rawSource),
+      strike: operation?.strike,
+      expirationDate: operation?.expiration,
+      status: operation?.meta?.status ?? rawSource.status ?? null,
+      sourceReferenceId: operation?.id ?? rawSource.order_id ?? null,
+    },
+    'csv',
+  );
+};
 
 const sanitizeConfiguration = (configuration) => {
   if (!configuration) {
@@ -887,6 +959,7 @@ export const processOperations = async ({
       quantity: row.quantity,
       price: row.price,
       side: row.side,
+      source: 'csv',
       meta: {
         ...enrichment.meta,
         status: row.status ?? '',
@@ -897,6 +970,9 @@ export const processOperations = async ({
 
   // Enrich operations with fee calculations (Feature 004)
   const enrichedWithFees = enrichOperationsWithFees(enrichedOperations);
+
+  // Normalize operations for CSV source (Feature 004-integrate-jsrofex-to)
+  const normalizedOperations = enrichedWithFees.map(createNormalizedCsvOperation);
 
   const optionOperationsForConsolidation = enrichedWithFees.filter(
     (operation) => operation.optionType === 'CALL' || operation.optionType === 'PUT',
@@ -1013,6 +1089,7 @@ export const processOperations = async ({
     activeView: activeViewKey,
     groups: groupSummaries,
     operations: enrichedWithFees,
+    normalizedOperations,
     meta: {
       parse: parseMeta,
     },

@@ -114,7 +114,6 @@ export async function seedDefaultSymbols() {
       }
     } catch (e) {
       // ignore per-symbol errors but log
-      // eslint-disable-next-line no-console
       console.error('seedDefaultSymbols: failed for', sym, e);
     }
   }
