@@ -8,12 +8,8 @@ import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile';
 import ShowChartIcon from '@mui/icons-material/ShowChart';
 import SwapHorizIcon from '@mui/icons-material/SwapHoriz';
 import TimelineIcon from '@mui/icons-material/Timeline';
+import { OPERATION_TYPES } from './operation-types.js';
 
-export const OPERATION_TYPES = {
-  OPCIONES: 'opciones',
-  COMPRA_VENTA: 'compraVenta',
-  ARBITRAJES: 'arbitrajes',
-};
 
 const OperationTypeTabs = ({ strings, activeTab, onTabChange, onClose, fileName }) => {
   const opcionesLabel = strings?.operationTypeTabs?.opciones ?? 'Opciones';

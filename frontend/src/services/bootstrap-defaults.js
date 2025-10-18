@@ -1,4 +1,4 @@
-import { symbolExists, saveSymbolConfig, loadSymbolConfig } from './storage-settings.js';
+import { symbolExists, saveSymbolConfig } from './storage-settings.js';
 import { createDefaultSymbolConfigWithOverrides } from './settings-types.js';
 
 // Default symbol configurations with prefixes
@@ -50,7 +50,6 @@ export async function seedDefaultSymbols() {
       }
     } catch (e) {
       // ignore per-symbol errors but log
-      // eslint-disable-next-line no-console
       console.error('seedDefaultSymbols: failed for', sym, e);
     }
   }

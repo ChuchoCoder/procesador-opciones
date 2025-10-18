@@ -10,6 +10,8 @@ export const storageKeys = {
   activeExpiration: 'po.activeExpiration',
   useAveraging: 'po.useAveraging',
   lastReport: 'po.lastReport.v1',
+  brokerApiUrl: 'po.brokerApiUrl',
+  brokerAuth: 'po.brokerAuth',
 };
 
 /**

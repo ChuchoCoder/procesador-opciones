@@ -22,15 +22,43 @@ Feature: Integrate jsRofex for automatic operations retrieval (branch `004-integ
 
 ## Core Flow
 
+### Initial Login & Automatic Sync (US1)
+
 1. User opens processor UI.
 2. If no active broker session: show BrokerLogin component.
-3. User submits credentials -> `jsrofex-client.login()` -> token + expiry stored.
-4. `sync-service.startDailySync()` paginates `/operations` endpoint:
-   - For each page: normalize -> dedupe -> stage.
-   - Emit progress updates to `SyncStatus`.
-5. On completion: atomic commit of staged operations.
-6. User can trigger manual refresh (`sync-service.refreshNewOperations()`) which requests pages newer than last sync timestamp (or full re-fetch if not supported by API).
-7. Cancellation sets `isCancelled` flag; staging discarded.
+3. User submits credentials -> `jsrofex-client.login()` -> token + expiry stored in context.
+4. `sync-service.startDailySync()` automatically triggers and paginates `/operations` endpoint:
+   - For each page: normalize -> dedupe against existing operations -> stage.
+   - Emit progress updates to `SyncStatus` component via `onProgress` callback.
+   - Supports cancellation: user clicks cancel -> `cancelSync()` -> staging discarded, no partial commit.
+5. On completion: atomic commit of staged operations via `commitSync()` action.
+6. Token auto-refreshes if within 60s of expiry (proactive refresh).
+
+### Manual Refresh (US3)
+
+1. User clicks refresh button in `SyncStatus` component.
+2. `sync-service.refreshNewOperations()` fetches only operations newer than `lastSyncTimestamp`:
+   - Filters server responses by `tradeTimestamp > lastSyncTimestamp`.
+   - Dedupes against existing operations (broker + CSV).
+   - Updates sync metadata and displays count of new operations.
+3. If no new operations: displays localized message "No hay nuevas operaciones".
+4. Refresh supports cancellation and rate limiting like initial sync.
+
+### CSV Upload Coexistence (US2)
+
+1. User uploads CSV file via existing file picker.
+2. CSV operations normalized with `source: 'csv'` attribute.
+3. Merged with existing operations (broker + CSV) using same dedupe logic.
+4. UI displays source breakdown: Broker count, CSV count, Total.
+
+### Broker Account Switch (T067)
+
+1. User can switch broker accounts (via login form or account menu).
+2. `switchBrokerAccount(newAuthData)` action:
+   - Clears all broker-sourced operations.
+   - Retains all CSV-sourced operations.
+   - Resets sync state.
+3. User can then perform new initial sync with new account.
 
 ## Duplicate Detection
 

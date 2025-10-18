@@ -4,9 +4,13 @@ import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import LinearProgress from '@mui/material/LinearProgress';
 import Stack from '@mui/material/Stack';
+import Typography from '@mui/material/Typography';
 
 import { processOperations } from '../../services/csv/process-operations.js';
 import { buildConsolidatedViews } from '../../services/csv/consolidator.js';
+import { login as brokerLogin, setBaseUrl } from '../../services/broker/jsrofex-client.js';
+import { startDailySync, refreshNewOperations } from '../../services/broker/sync-service.js';
+import { dedupeOperations, mergeBrokerBatch } from '../../services/broker/dedupe-utils.js';
 import {
   CLIPBOARD_SCOPES,
   copyReportToClipboard,
@@ -22,11 +26,15 @@ import {
   storageKeys,
 } from '../../services/storage/local-storage.js';
 
-import OperationTypeTabs, { OPERATION_TYPES } from './OperationTypeTabs.jsx';
+import OperationTypeTabs from './OperationTypeTabs.jsx';
+import { OPERATION_TYPES } from './operation-types.js';
 import OpcionesView from './OpcionesView.jsx';
 import CompraVentaView from './CompraVentaView.jsx';
 import ArbitrajesView from './ArbitrajesView.jsx';
 import EmptyState from './EmptyState.jsx';
+import BrokerLogin from './BrokerLogin.jsx';
+import SyncStatus from './SyncStatus.jsx';
+import DataSourceSelector from './DataSourceSelector.jsx';
 
 const ALL_GROUP_ID = '__ALL__';
 const LAST_SESSION_STORAGE_VERSION = 1;
@@ -354,12 +362,26 @@ const computeScopedData = ({
 const ProcessorScreen = () => {
   const strings = useStrings();
   const processorStrings = strings.processor;
+  const brokerStrings = strings.brokerSync;
   const {
     prefixRules,
     expirations,
     activeExpiration,
     useAveraging,
     setAveraging,
+    brokerAuth,
+    brokerApiUrl,
+    sync,
+    operations: syncedOperations,
+    setOperations,
+    setBrokerAuth,
+    clearBrokerAuth,
+    startSync,
+    stagePage,
+    commitSync,
+    failSync,
+    cancelSync,
+    applyChanges,
   } = useConfig();
 
   const [selectedFile, setSelectedFile] = useState(null);
@@ -373,6 +395,66 @@ const ProcessorScreen = () => {
   const [activeOperationType, setActiveOperationType] = useState(OPERATION_TYPES.OPCIONES);
   const scopedDataCacheRef = useRef(new Map());
   const sessionRestoredRef = useRef(false);
+  const [brokerLoginError, setBrokerLoginError] = useState(null);
+  const [isBrokerLoginLoading, setIsBrokerLoginLoading] = useState(false);
+  const syncCancellationRef = useRef(null);
+  const autoSyncTokenRef = useRef(null);
+
+  const isAuthenticated = Boolean(brokerAuth?.token);
+  const syncState = sync ?? { status: 'idle', inProgress: false };
+  const syncInProgress = Boolean(syncState.inProgress);
+
+  const localizedSyncState = useMemo(() => {
+    if (!syncState || !syncState.error) {
+      return syncState;
+    }
+
+    const waitMsFromState = syncState.rateLimitMs;
+    let message = syncState.error;
+
+    if (typeof syncState.error === 'string' && syncState.error.startsWith('RATE_LIMITED')) {
+      const rawValue = syncState.error.split(':')[1];
+      const waitMs = Number.isFinite(Number.parseInt(rawValue, 10))
+        ? Number.parseInt(rawValue, 10)
+        : waitMsFromState;
+      const seconds = Number.isFinite(waitMs) ? Math.max(Math.round(waitMs / 1000), 1) : 60;
+      const template = brokerStrings.rateLimitedWait || brokerStrings.rateLimited || message;
+      message = template.replace('{seconds}', seconds);
+    } else if (
+      typeof syncState.error === 'string'
+      && syncState.error.startsWith('TOKEN_EXPIRED')
+    ) {
+      message = brokerStrings.sessionExpired || brokerStrings.loginError || message;
+    }
+
+    return {
+      ...syncState,
+      error: message,
+    };
+  }, [brokerStrings.loginError, brokerStrings.rateLimited, brokerStrings.rateLimitedWait, brokerStrings.sessionExpired, syncState]);
+
+  const existingOperations = useMemo(
+    () => (Array.isArray(syncedOperations) ? syncedOperations : []),
+    [syncedOperations],
+  );
+
+  const sourceCounts = useMemo(() => {
+    return existingOperations.reduce(
+      (acc, operation) => {
+        const sourceKey = operation?.source;
+        if (sourceKey === 'broker') {
+          acc.broker += 1;
+        } else if (sourceKey === 'csv') {
+          acc.csv += 1;
+        } else {
+          acc.other += 1;
+        }
+        acc.total += 1;
+        return acc;
+      },
+      { broker: 0, csv: 0, other: 0, total: 0 },
+    );
+  }, [existingOperations]);
 
   const buildConfiguration = useCallback(
     (overrides = {}) => ({
@@ -405,6 +487,17 @@ const ProcessorScreen = () => {
 
         setReport(result);
         setWarningCodes(result.summary.warnings ?? []);
+        if (
+          typeof setOperations === 'function'
+          && Array.isArray(result.normalizedOperations)
+          && result.normalizedOperations.length > 0
+        ) {
+          const incomingCsv = dedupeOperations(existingOperations, result.normalizedOperations);
+          if (incomingCsv.length > 0) {
+            const { mergedOps } = mergeBrokerBatch(existingOperations, incomingCsv);
+            setOperations(mergedOps);
+          }
+        }
         const initialViewKey = configurationPayload.useAveraging ? 'averaged' : 'raw';
         const initialView = result.views?.[initialViewKey];
         const initialCalls = initialView?.calls?.operations?.length ?? 0;
@@ -425,8 +518,201 @@ const ProcessorScreen = () => {
         setIsProcessing(false);
       }
     },
-    [buildConfiguration, processorStrings.errors.processingFailed],
+    [buildConfiguration, existingOperations, processorStrings.errors.processingFailed, setOperations],
   );
+
+  const triggerSync = useCallback(
+    async ({ authOverride = null, mode = 'daily', brokerApiUrl: apiUrlOverride = null } = {}) => {
+      const auth = authOverride ?? brokerAuth;
+      if (!auth || !auth.token) {
+        return { success: false, error: 'NOT_AUTHENTICATED', mode };
+      }
+
+      if (syncInProgress) {
+        return { success: false, error: 'SYNC_IN_PROGRESS', mode };
+      }
+
+      if (mode === 'refresh') {
+        setActionFeedback(null);
+      }
+
+      const cancellationToken = { isCanceled: false };
+      syncCancellationRef.current = cancellationToken;
+
+      const effectiveBrokerApiUrl = apiUrlOverride || brokerApiUrl;
+
+      const syncPayload = {
+        brokerAuth: auth,
+        existingOperations,
+        operations: existingOperations,
+        setBrokerAuth,
+        startSync,
+        stagePage,
+        commitSync,
+        failSync,
+        cancelSync,
+        tradingDay: 'today',
+        cancellationToken,
+        sync: syncState,
+        brokerApiUrl: effectiveBrokerApiUrl,
+      };
+
+      let result;
+      try {
+        if (mode === 'refresh') {
+          result = await refreshNewOperations(syncPayload);
+        } else {
+          result = await startDailySync({ ...syncPayload, mode: 'daily' });
+        }
+
+        if (result.success) {
+          setBrokerLoginError(null);
+
+          if (mode === 'refresh') {
+            if (result.operationsAdded > 0) {
+              const template = brokerStrings.refreshSuccess || '';
+              const message = template
+                ? template.replace('{count}', String(result.operationsAdded))
+                : `${result.operationsAdded} operaciones nuevas.`;
+              setActionFeedback({ type: 'success', message });
+            } else {
+              setActionFeedback({ type: 'info', message: brokerStrings.noNewOperations });
+            }
+          } else {
+            setActionFeedback(null);
+          }
+        } else if (result.needsReauth) {
+          clearBrokerAuth();
+          setBrokerLoginError(brokerStrings.loginError);
+          if (mode === 'refresh') {
+            const message = brokerStrings.sessionExpired || brokerStrings.loginError;
+            setActionFeedback({ type: 'error', message });
+          }
+        } else if (mode === 'refresh' && result.rateLimited) {
+          const waitMs = result.rateLimitMs ?? 60000;
+          const seconds = Math.max(Math.round(waitMs / 1000), 1);
+          const template = brokerStrings.rateLimitedWait || brokerStrings.rateLimited;
+          const message = template
+            ? template.replace('{seconds}', seconds)
+            : `Límite de velocidad alcanzado. Intentá nuevamente en ~${seconds} segundos.`;
+          setActionFeedback({ type: 'warning', message });
+        } else if (mode === 'refresh' && result.error) {
+          setActionFeedback({
+            type: 'error',
+            message: brokerStrings.refreshError || 'Ocurrió un error al actualizar las operaciones.',
+          });
+        }
+      } catch (error) {
+        const message = error?.message || 'Error de sincronización';
+        failSync({ error: message, mode });
+        result = { success: false, error: message, mode };
+      } finally {
+        syncCancellationRef.current = null;
+      }
+
+      return result;
+    },
+    [
+      brokerApiUrl,
+      brokerAuth,
+      brokerStrings.loginError,
+      brokerStrings.noNewOperations,
+      brokerStrings.rateLimited,
+      brokerStrings.rateLimitedWait,
+      brokerStrings.refreshSuccess,
+      brokerStrings.sessionExpired,
+      cancelSync,
+      clearBrokerAuth,
+      commitSync,
+      existingOperations,
+      failSync,
+      refreshNewOperations,
+      setActionFeedback,
+      setBrokerAuth,
+      setBrokerLoginError,
+      stagePage,
+      startDailySync,
+      startSync,
+      syncInProgress,
+      syncState,
+    ],
+  );
+
+  const handleBrokerLogin = useCallback(
+    async (username, password, apiUrl) => {
+      setIsBrokerLoginLoading(true);
+      setBrokerLoginError(null);
+      try {
+        // Update the API URL in config if provided and different
+        if (apiUrl && apiUrl !== brokerApiUrl) {
+          applyChanges({ brokerApiUrl: apiUrl });
+        }
+
+        // Set the base URL in the jsrofex client before login
+        const effectiveApiUrl = apiUrl || brokerApiUrl;
+        if (effectiveApiUrl) {
+          setBaseUrl(effectiveApiUrl);
+        }
+
+        const authResponse = await brokerLogin({ username, password });
+        const authPayload = {
+          token: authResponse.token,
+          expiry: authResponse.expiry,
+          accountId: username,
+        };
+
+  setBrokerAuth(authPayload);
+  autoSyncTokenRef.current = authPayload.token;
+  await triggerSync({ authOverride: authPayload, mode: 'daily', brokerApiUrl: effectiveApiUrl });
+      } catch (error) {
+        console.warn('PO: Broker login failed', error?.message || error);
+        clearBrokerAuth();
+        setBrokerLoginError(brokerStrings.loginError);
+      } finally {
+        setIsBrokerLoginLoading(false);
+      }
+    },
+    [applyChanges, brokerApiUrl, brokerStrings.loginError, clearBrokerAuth, setBrokerAuth, triggerSync],
+  );
+
+  const handleBrokerLogout = useCallback(() => {
+    clearBrokerAuth();
+    setActionFeedback({ type: 'info', message: 'Sesión cerrada' });
+  }, [clearBrokerAuth, setActionFeedback]);
+
+  const handleCancelSync = useCallback(() => {
+    if (syncCancellationRef.current) {
+      syncCancellationRef.current.isCanceled = true;
+    }
+    cancelSync({ mode: syncState?.mode ?? 'daily' });
+    if (syncState?.mode === 'refresh') {
+      setActionFeedback({ type: 'info', message: brokerStrings.canceled });
+    }
+  }, [brokerStrings.canceled, cancelSync, setActionFeedback, syncState]);
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      autoSyncTokenRef.current = null;
+      return;
+    }
+
+    if (syncInProgress) {
+      return;
+    }
+
+    if (autoSyncTokenRef.current === brokerAuth.token) {
+      return;
+    }
+
+  autoSyncTokenRef.current = brokerAuth.token;
+  triggerSync({ authOverride: brokerAuth, mode: 'daily', brokerApiUrl });
+  }, [brokerAuth, brokerApiUrl, isAuthenticated, syncInProgress, triggerSync]);
+
+  useEffect(() => () => {
+    if (syncCancellationRef.current) {
+      syncCancellationRef.current.isCanceled = true;
+    }
+  }, []);
 
   const handleFileSelected = (file) => {
     setSelectedFile(file);
@@ -701,48 +987,52 @@ const ProcessorScreen = () => {
   }, [activeOperationType, selectedGroupId, groups]);
 
   useEffect(() => {
-    if (sessionRestoredRef.current) {
-      return;
-    }
-
-    const stored = readItem(storageKeys.lastReport);
-    if (!stored || typeof stored !== 'object') {
-      sessionRestoredRef.current = true;
-      return;
-    }
-
-    if (stored.version !== LAST_SESSION_STORAGE_VERSION || !stored.report) {
-      removeItem(storageKeys.lastReport);
-      sessionRestoredRef.current = true;
-      return;
-    }
-
-    try {
-      const storedReport = stored.report;
-      if (!storedReport || typeof storedReport !== 'object') {
-        throw new Error('invalid report');
+    const restoreSession = async () => {
+      if (sessionRestoredRef.current) {
+        return;
       }
 
-      setReport(storedReport);
-      setWarningCodes(Array.isArray(storedReport?.summary?.warnings) ? storedReport.summary.warnings : []);
-      setSelectedFile(stored.fileName ? { name: stored.fileName } : { name: 'Operaciones previas' });
-      if (typeof stored.selectedGroupId === 'string') {
-        setSelectedGroupId(stored.selectedGroupId);
+      const stored = await readItem(storageKeys.lastReport);
+      if (!stored || typeof stored !== 'object') {
+        sessionRestoredRef.current = true;
+        return;
       }
 
-      if (Object.values(OPERATION_TYPES).includes(stored.activeOperationType)) {
-        setActiveOperationType(stored.activeOperationType);
+      if (stored.version !== LAST_SESSION_STORAGE_VERSION || !stored.report) {
+        await removeItem(storageKeys.lastReport);
+        sessionRestoredRef.current = true;
+        return;
       }
 
-      if (Object.values(CLIPBOARD_SCOPES).includes(stored.activePreview)) {
-        setActivePreview(stored.activePreview);
+      try {
+        const storedReport = stored.report;
+        if (!storedReport || typeof storedReport !== 'object') {
+          throw new Error('invalid report');
+        }
+
+        setReport(storedReport);
+        setWarningCodes(Array.isArray(storedReport?.summary?.warnings) ? storedReport.summary.warnings : []);
+        setSelectedFile(stored.fileName ? { name: stored.fileName } : { name: 'Operaciones previas' });
+        if (typeof stored.selectedGroupId === 'string') {
+          setSelectedGroupId(stored.selectedGroupId);
+        }
+
+        if (Object.values(OPERATION_TYPES).includes(stored.activeOperationType)) {
+          setActiveOperationType(stored.activeOperationType);
+        }
+
+        if (Object.values(CLIPBOARD_SCOPES).includes(stored.activePreview)) {
+          setActivePreview(stored.activePreview);
+        }
+      } catch (restoreError) {
+        console.warn('PO: Failed to restore last session', restoreError);
+        await removeItem(storageKeys.lastReport);
+      } finally {
+        sessionRestoredRef.current = true;
       }
-    } catch (restoreError) {
-      console.warn('PO: Failed to restore last session', restoreError);
-      removeItem(storageKeys.lastReport);
-    } finally {
-      sessionRestoredRef.current = true;
-    }
+    };
+    
+    restoreSession();
   }, []);
 
   useEffect(() => {
@@ -811,6 +1101,47 @@ const ProcessorScreen = () => {
     }
   };
 
+  const renderSourceSummary = () => {
+    if (!sourceCounts.total) {
+      return null;
+    }
+
+    const indicatorStrings = processorStrings.sourcesIndicator ?? {};
+
+    return (
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 2,
+          px: 3,
+          pt: 2,
+        }}
+        data-testid="processor-source-indicator"
+      >
+        <Typography variant="caption" color="text.secondary">
+          {indicatorStrings.title ?? 'Operaciones cargadas'}
+        </Typography>
+        <Stack direction="row" spacing={2}>
+          <Typography variant="caption" color="text.secondary">
+            {(indicatorStrings.brokerLabel ?? 'Broker')}: {sourceCounts.broker}
+          </Typography>
+          <Typography variant="caption" color="text.secondary">
+            {(indicatorStrings.csvLabel ?? 'CSV')}: {sourceCounts.csv}
+          </Typography>
+          <Typography variant="caption" color="text.secondary">
+            {(indicatorStrings.totalLabel ?? 'Total')}: {sourceCounts.total}
+          </Typography>
+          {sourceCounts.other > 0 && (
+            <Typography variant="caption" color="text.secondary">
+              {(indicatorStrings.otherLabel ?? 'Otros')}: {sourceCounts.other}
+            </Typography>
+          )}
+        </Stack>
+      </Box>
+    );
+  };
+
   return (
     <Box
       sx={{
@@ -821,6 +1152,18 @@ const ProcessorScreen = () => {
         overflow: 'auto',
       }}
     >
+      <Stack spacing={2} sx={{ mx: 3, mt: 2 }}>
+        <SyncStatus
+          strings={strings}
+          syncState={localizedSyncState}
+          onRefresh={() => triggerSync({ mode: 'refresh' })}
+          onCancel={handleCancelSync}
+          canRefresh={!syncInProgress}
+          isAuthenticated={isAuthenticated}
+          sourceCounts={sourceCounts}
+        />
+      </Stack>
+
       {isProcessing && <LinearProgress />}
 
       {processingError && <Alert severity="error" sx={{ mx: 3, mt: 2 }}>{processingError}</Alert>}
@@ -837,12 +1180,24 @@ const ProcessorScreen = () => {
           )}
 
           {!selectedFile ? (
-            <EmptyState 
-              strings={processorStrings}
-              onSelectFile={handleFileSelected}
-            />
+            <>
+              {renderSourceSummary()}
+              <DataSourceSelector
+                strings={strings}
+                onSelectFile={handleFileSelected}
+                onBrokerLogin={handleBrokerLogin}
+                onBrokerLogout={handleBrokerLogout}
+                isBrokerLoginLoading={isBrokerLoginLoading}
+                brokerLoginError={brokerLoginError}
+                isAuthenticated={isAuthenticated}
+                syncInProgress={syncInProgress}
+                defaultApiUrl={brokerApiUrl}
+                brokerAccountId={brokerAuth?.accountId}
+              />
+            </>
           ) : report ? (
             <>
+              {renderSourceSummary()}
               {/* Operation Type Tabs */}
               <OperationTypeTabs
                 strings={processorStrings}

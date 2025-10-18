@@ -7,17 +7,37 @@ import { ProcessorScreen } from '../components/Processor/index.js';
 import { SettingsScreen } from '../components/Processor/Settings/index.js';
 import Sidebar from '../components/Sidebar.jsx';
 import { useStrings } from '../strings/index.js';
+import { useConfig } from '../state/index.js';
 import { ROUTES } from './routes.jsx';
 import theme from './theme.js';
 
 const App = () => {
   const strings = useStrings();
+  const { brokerAuth, sync, operations, clearBrokerAuth } = useConfig();
+  
+  const brokerStatus = {
+    isAuthenticated: Boolean(brokerAuth?.token),
+    accountId: brokerAuth?.accountId,
+    syncInProgress: sync?.inProgress || false,
+    lastSyncTime: sync?.lastSyncTimestamp,
+    operationsCount: operations?.length,
+    pagesFetched: sync?.pagesFetched,
+  };
+
+  const handleBrokerLogout = () => {
+    clearBrokerAuth();
+  };
   
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <Box sx={{ display: 'flex', width: '100vw', height: '100vh' }}>
-        <Sidebar strings={strings} routes={ROUTES} />
+        <Sidebar 
+          strings={strings} 
+          routes={ROUTES} 
+          brokerStatus={brokerStatus}
+          onBrokerLogout={handleBrokerLogout}
+        />
         <Box
           component="main"
           sx={{
@@ -31,6 +51,7 @@ const App = () => {
             <Route path={ROUTES.settings} element={<SettingsScreen />} />
             <Route path={ROUTES.settingsPrefixes} element={<Navigate to={ROUTES.settings} replace />} />
             <Route path={ROUTES.settingsExpirations} element={<Navigate to={ROUTES.settings} replace />} />
+            <Route path={ROUTES.settingsBroker} element={<Navigate to={ROUTES.settings} replace />} />
             <Route path="/settings/*" element={<Navigate to={ROUTES.settings} replace />} />
             <Route path="/" element={<Navigate to={ROUTES.processor} replace />} />
             <Route path="*" element={<Navigate to={ROUTES.processor} replace />} />

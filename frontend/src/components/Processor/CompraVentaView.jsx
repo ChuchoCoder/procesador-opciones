@@ -15,7 +15,6 @@ import Tooltip from '@mui/material/Tooltip';
 import Chip from '@mui/material/Chip';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import TrendingDownIcon from '@mui/icons-material/TrendingDown';
-import { useTheme } from '@mui/material/styles';
 
 import GroupFilter from './GroupFilter.jsx';
 import { getBuySellOperations } from '../../services/csv/buy-sell-matcher.js';
@@ -162,6 +161,7 @@ const buildRows = (operations = [], side = 'BUY') => {
   });
 };
 
+
 const BuySellTable = ({
   title,
   operations,
@@ -172,7 +172,6 @@ const BuySellTable = ({
   showAveragingControl,
 }) => {
   const hasData = operations.length > 0;
-  const theme = useTheme();
   const averagingLabel = strings?.tables?.averageByInstrument ?? 'Promediar';
   const averagingTooltip = strings?.tables?.averageTooltip ?? 'Promediar por instrumento y plazo';
   
@@ -180,11 +179,7 @@ const BuySellTable = ({
   const isBuyTable = title?.toLowerCase().includes('compra');
   const isSellTable = title?.toLowerCase().includes('venta');
   
-  const getChipColor = () => {
-    if (isBuyTable) return theme.palette.buy.main;
-    if (isSellTable) return theme.palette.sell.main;
-    return theme.palette.info.main;
-  };
+  // theme used for potential future color styling (placeholder retention)
   
   const getIcon = () => {
     if (isBuyTable) return <TrendingUpIcon sx={{ fontSize: 18 }} />;
@@ -222,14 +217,9 @@ const BuySellTable = ({
                     icon={getIcon()}
                     label={title}
                     sx={{
-                      backgroundColor: getChipColor(),
-                      color: '#fff',
                       fontWeight: 600,
                       fontSize: '0.875rem',
                       letterSpacing: '0.5px',
-                      '& .MuiChip-icon': {
-                        color: '#fff',
-                      },
                     }}
                   />
                   {showAveragingControl && hasData && (
@@ -303,7 +293,6 @@ const CompraVentaView = ({
   onGroupChange,
 }) => {
   const filterStrings = strings?.filters ?? {};
-  const theme = useTheme();
 
   const [averagingEnabled, setAveragingEnabled] = useState(true);
 

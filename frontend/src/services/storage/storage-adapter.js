@@ -1,3 +1,4 @@
+/* global chrome */
 /**
  * Universal storage adapter that works with both localStorage (web) and chrome.storage.local (extension)
  * Provides a consistent async API for both storage backends
@@ -8,9 +9,7 @@
  * @returns {boolean}
  */
 function isChromeExtension() {
-  return typeof chrome !== 'undefined' && 
-         chrome.storage && 
-         chrome.storage.local;
+  return typeof chrome !== 'undefined' && chrome?.storage?.local;
 }
 
 /**
@@ -20,7 +19,9 @@ class StorageAdapter {
   constructor() {
     this.isExtension = isChromeExtension();
     this.storageType = this.isExtension ? 'chrome.storage' : 'localStorage';
-    console.log(`[StorageAdapter] Using ${this.storageType}`);
+    if (typeof console !== 'undefined') {
+      console.log(`[StorageAdapter] Using ${this.storageType}`);
+    }
   }
 
   /**

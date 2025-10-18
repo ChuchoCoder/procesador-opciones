@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { processOperations } from '../../src/services/csv/process-operations.js';
+import { dedupeOperations } from '../../src/services/broker/dedupe-utils.js';
 
 const baseConfiguration = {
   symbols: ['GGAL'],
@@ -84,6 +85,7 @@ describe('processOperations', () => {
 
     const detected = report.operations.find((operation) => operation.orderId === '1');
     expect(detected.meta.detectedFromToken).toBe(true);
+    expect(report.operations.every((operation) => operation.source === 'csv')).toBe(true);
   });
 
   it('consolidates rows by strike and option type computing net quantity and VWAP', async () => {
@@ -184,5 +186,39 @@ describe('processOperations', () => {
     expect(report.summary.validRowCount).toBe(report.calls.operations.length + report.puts.operations.length);
     expect(report.summary.excludedRowCount).toBe(rows.length - report.summary.validRowCount);
     expect(report.summary.validRowCount + report.summary.excludedRowCount).toBe(rows.length);
+  });
+
+  it('exposes normalized operations that dedupe against existing broker data', async () => {
+    const baseTimestamp = Date.now();
+    const rows = [
+      createRow({
+        order_id: 'ORD-1',
+        quantity: 5,
+        price: 12,
+        transact_time: new Date(baseTimestamp).toISOString(),
+      }),
+    ];
+
+    const report = await processOperations({
+      rows,
+      configuration: baseConfiguration,
+      fileName: 'operaciones.csv',
+    });
+
+    expect(Array.isArray(report.normalizedOperations)).toBe(true);
+    expect(report.normalizedOperations).toHaveLength(1);
+    const [normalizedCsvOperation] = report.normalizedOperations;
+    expect(normalizedCsvOperation.source).toBe('csv');
+    expect(typeof normalizedCsvOperation.tradeTimestamp).toBe('number');
+
+    const existingBrokerOps = [
+      {
+        ...normalizedCsvOperation,
+        source: 'broker',
+      },
+    ];
+
+    const uniqueCsvOps = dedupeOperations(existingBrokerOps, report.normalizedOperations);
+    expect(uniqueCsvOps).toHaveLength(0);
   });
 });

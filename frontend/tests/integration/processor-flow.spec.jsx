@@ -2,9 +2,11 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { render, screen, within, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
+import { useEffect, useRef } from 'react';
 
 import App from '../../src/app/App.jsx';
 import { ConfigProvider } from '../../src/state/config-context.jsx';
+import { useConfig } from '../../src/state/config-hooks.js';
 import { storageKeys } from '../../src/services/storage/local-storage.js';
 import * as clipboardService from '../../src/services/csv/clipboard-service.js';
 import * as exportService from '../../src/services/csv/export-service.js';
@@ -93,6 +95,11 @@ describe('Processor flow integration', () => {
       const csvFile = new File([csvFixture], 'operaciones.csv', { type: 'text/csv' });
       await user.upload(fileInput, csvFile);
 
+  const sourceIndicator = await screen.findByTestId('processor-source-indicator');
+  expect(sourceIndicator.textContent).toContain('Broker: 0');
+  expect(sourceIndicator.textContent).toContain('CSV: 3');
+  expect(sourceIndicator.textContent).toContain('Total: 3');
+
       const callsTable = await screen.findByTestId('processor-calls-table');
       const putsTable = screen.getByTestId('processor-puts-table');
 
@@ -140,4 +147,79 @@ describe('Processor flow integration', () => {
     },
     TEST_TIMEOUT,
   );
+
+  it('keeps total count unchanged when CSV duplicates broker operations', async () => {
+    const baseTimestamp = Date.now();
+    const brokerOperations = [
+      {
+        id: 'broker-1',
+        order_id: 'ORD-1',
+        operation_id: null,
+        symbol: 'GGAL',
+        optionType: 'CALL',
+        action: 'buy',
+        quantity: 5,
+        price: 12,
+        tradeTimestamp: baseTimestamp,
+        strike: 120,
+        expirationDate: 'NOV24',
+        source: 'broker',
+        sourceReferenceId: 'ORD-1',
+        importTimestamp: baseTimestamp,
+        status: 'executed',
+      },
+    ];
+
+    const csvDuplicate = `order_id,symbol,side,option_type,strike,quantity,price,status,event_type,transact_time\nORD-1,GGALC120.NOV24,BUY,CALL,120,5,12,fully_executed,execution_report,${new Date(baseTimestamp).toISOString()}\n`;
+
+    const SetupOperations = () => {
+      const config = useConfig();
+      const initializedRef = useRef(false);
+
+      useEffect(() => {
+        if (!config.hydrated || initializedRef.current) {
+          return;
+        }
+        initializedRef.current = true;
+        config.setOperations(brokerOperations);
+      }, [config]);
+
+      return null;
+    };
+
+    render(
+      <MemoryRouter initialEntries={["/processor"]}>
+        <ConfigProvider>
+          <SetupOperations />
+          <App />
+        </ConfigProvider>
+      </MemoryRouter>,
+    );
+
+    const indicatorBefore = await screen.findByTestId('processor-source-indicator');
+    expect(indicatorBefore.textContent).toContain('Broker: 1');
+    expect(indicatorBefore.textContent).toContain('CSV: 0');
+    expect(indicatorBefore.textContent).toContain('Total: 1');
+
+    const user = userEvent.setup();
+    let fileInput = screen.queryByTestId('file-menu-input');
+    if (!fileInput) {
+      await waitFor(() => {
+        expect(document.querySelector('input[type="file"]')).not.toBeNull();
+      });
+      fileInput = document.querySelector('input[type="file"]');
+    }
+
+    await user.upload(
+      fileInput,
+      new File([csvDuplicate], 'duplicado.csv', { type: 'text/csv' }),
+    );
+
+    await waitFor(() => {
+      const indicatorAfter = screen.getByTestId('processor-source-indicator');
+      expect(indicatorAfter.textContent).toContain('Broker: 1');
+      expect(indicatorAfter.textContent).toContain('CSV: 0');
+      expect(indicatorAfter.textContent).toContain('Total: 1');
+    });
+  });
 });

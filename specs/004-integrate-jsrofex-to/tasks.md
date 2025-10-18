@@ -10,38 +10,38 @@ This tasks list is organized by user stories (P1, P2, P3) to ensure each slice i
 
 ## Phase 1: Setup (Shared Infrastructure)
 
-T001: [Setup] Create broker service directory `frontend/src/services/broker/` and placeholder files (`jsrofex-client.js`, `sync-service.js`, `dedupe-utils.js`). [P]
-T002: [Setup] Add Spanish string keys to `frontend/src/strings/es-AR.js` (brokerSync.* placeholders). (Same file as existing strings; sequential)
-T003: [Setup] Add operations context scaffolding `frontend/src/state/operations-context.jsx` (if integrating with existing config-context, add extension points). [P]
-T004: [Setup] Ensure Vitest configuration supports new test folders (`tests/unit`, `tests/integration`)—adjust `vitest.config.js` if necessary for path aliases. [P]
-T005: [Setup] Add logging prefix utilities (if absent) `frontend/src/services/logging/broker-sync-log-util.js` for consistent `PO:` messages. [P]
-T006: [Setup] Document setup decisions in README section referencing quickstart (optional). [P]
-T030: [Setup] Initial localization compliance scan (Spanish strings usage validation; automated English placeholder scan). [P]
-T055: [Setup] Gate decision: operations context integration vs new context (record rationale in research.md). [P]
-T056: [Setup] Gate decision: batching strategy (page size target & scheduling) with profiling plan. [P]
-T057: [Setup] Gate decision: virtualization need (render 10k synthetic ops; measure commit time). [P]
-T058: [Setup] Add performance instrumentation harness (timing & main-thread block measurement). [P]
-T059: [Setup] Add automated localization scan test `tests/unit/localization-scan.spec.js` (fail on English UI strings). [P]
-T060: [Setup] Dependency justification gate (jsRofex vs thin REST client) documented; block T007 until PASS. [P]
+T001: [X] Create broker service directory `frontend/src/services/broker/` and placeholder files (`jsrofex-client.js`, `sync-service.js`, `dedupe-utils.js`). [P]
+T002: [X] Add Spanish string keys to `frontend/src/strings/es-AR.js` (brokerSync.* placeholders). (Same file as existing strings; sequential)
+T003: [X] Add operations context scaffolding (integrated into existing config reducer slices). [P]
+T004: [X] Ensure Vitest configuration supports new test folders (`tests/unit`, `tests/integration`)—adjust `vitest.config.js` if necessary for path aliases. [P]
+T005: [X] Add logging prefix utilities (if absent) `frontend/src/services/logging/broker-sync-log-util.js` for consistent `PO:` messages. [P]
+T006: [X] Document setup decisions in README section referencing quickstart (optional). [P]
+T030: [X] Initial localization compliance scan (Spanish strings usage validation; automated English placeholder scan). [P]
+T055: [X] Gate decision: operations context integration vs new context (record rationale in research.md). [P]
+T056: [X] Gate decision: batching strategy (page size target & scheduling) with profiling plan. [P]
+T057: [X] Gate decision: virtualization need (render 10k synthetic ops; measure commit time). [P]
+T058: [X] Add performance instrumentation harness (timing & main-thread block measurement). [P]
+T059: [X] Add automated localization scan test `tests/unit/localization-scan.spec.js` (fail on English UI strings). [P]
+T060: [X] Dependency justification gate (jsRofex vs thin REST client) documented; block T007 until PASS. [P]
 
 ## Phase 2: Foundational (Blocking Prerequisites)
 
-T007: [Foundational] Implement thin REST client in `jsrofex-client.js` (login, refreshToken, listOperations) using fetch; no side-effects. [P]
-T008: [Foundational] Implement pure normalization function `normalizeOperation(raw, source)` in `dedupe-utils.js`. [P]
-T009: [Foundational] Implement duplicate detection `isDuplicate(existing, candidate)` & batch `dedupeOperations(existingList, incomingList)` in `dedupe-utils.js`. [P]
-T010: [Foundational] Implement merge function `mergeBrokerBatch(existingOps, incomingOps)` returning {mergedOps, newOrders}. [P]
-T011: [Foundational] Add unit tests for normalization, duplicate, merge logic: `tests/unit/dedupe-merge.spec.js`. (Same file; sequential)
-T012: [Foundational] Implement staging and atomic commit pattern in operations context (actions: START_SYNC, STAGE_PAGE, COMMIT_SYNC, FAIL_SYNC, CANCEL_SYNC). [P]
-T013: [Foundational] Add performance test scaffold (20k ops synthetic) `tests/unit/dedupe-merge.performance.spec.js`. [P]
-T014: [Foundational] Add error taxonomy mapping module `frontend/src/services/broker/error-taxonomy.js`. [P]
-T015: [Foundational] Add retry/backoff utility `frontend/src/services/broker/retry-util.js` (sequence 2s,5s,10s). [P]
-T016: [Foundational] Integrate token storage & expiry check in `operations-context.jsx` or dedicated `auth-state` module. [P]
-T061: [Foundational] Implement in-memory SyncSession log structure (append-only) in context. [P]
-T062: [Foundational] Token security test `tests/unit/token-security.spec.js` (assert no raw credentials persisted). [P]
-T063: [Foundational] Timestamp tolerance boundary tests (<1s merge, ≥1s distinct) appended to `dedupe-merge.spec.js`. [P]
-T064: [Foundational] Revision aggregation tests (sum quantity, latest price, status) in `dedupe-merge.spec.js`. [P]
-T065: [Foundational] Atomic rollback integration test `tests/integration/broker-sync-rollback.spec.jsx` (simulate mid-sync failure; assert no partial commit). [P]
-T072: [Foundational] Move audit logging stub `frontend/src/services/broker/audit-log.js` earlier; add test verifying SyncSession recorded post-sync. [P]
+T007: [X] Implement thin REST client in `jsrofex-client.js` (login, refreshToken, listOperations) using fetch; no side-effects. [P]
+T008: [X] Implement pure normalization function `normalizeOperation(raw, source)` in `dedupe-utils.js`. [P]
+T009: [X] Implement duplicate detection `isDuplicate(existing, candidate)` & batch `dedupeOperations(existingList, incomingList)` in `dedupe-utils.js`. [P]
+T010: [X] Implement merge function `mergeBrokerBatch(existingOps, incomingOps)` returning {mergedOps, newOrders}. [P]
+T011: [X] Add unit tests for normalization, duplicate, merge logic: `tests/unit/dedupe-merge.spec.js`. (Same file; sequential)
+T012: [X] Implement staging and atomic commit pattern in operations context (actions: START_SYNC, STAGE_PAGE, COMMIT_SYNC, FAIL_SYNC, CANCEL_SYNC). [P]
+T013: [X] Add performance test scaffold (20k ops synthetic) `tests/unit/dedupe-merge.performance.spec.js`. [P]
+T014: [X] Add error taxonomy mapping module `frontend/src/services/broker/error-taxonomy.js`. [P]
+T015: [X] Add retry/backoff utility `frontend/src/services/broker/retry-util.js` (sequence 2s,5s,10s). [P]
+T016: [X] Integrate token storage & expiry check in `operations-context.jsx` or dedicated `auth-state` module. [P]
+T061: [X] Implement in-memory SyncSession log structure (append-only) in context. [P]
+T062: [X] Token security test `tests/unit/token-security.spec.js` (assert no raw credentials persisted). [P]
+T063: [X] Timestamp tolerance boundary tests (<1s merge, ≥1s distinct) appended to `dedupe-merge.spec.js`. [P]
+T064: [X] Revision aggregation tests (sum quantity, latest price, status) in `dedupe-merge.spec.js`. [P]
+T065: [X] Atomic rollback integration test `tests/integration/broker-sync-rollback.spec.jsx` (simulate mid-sync failure; assert no partial commit). [P]
+T072: [X] Move audit logging stub `frontend/src/services/broker/audit-log.js` earlier; add test verifying SyncSession recorded post-sync. [P]
 
 Checkpoint: Foundational pure logic & state patterns implemented; proceed to user stories.
 
@@ -50,22 +50,22 @@ Checkpoint: Foundational pure logic & state patterns implemented; proceed to use
 Goal: User logs in, automatic operations sync retrieves current trading day operations and displays them without manual upload.
 Independent Test Criteria: After valid login, operations appear; duplicates avoided; atomic commit; error handling for auth & network.
 
-T017: [US1] UI component `BrokerLogin.jsx` with form, Spanish labels, success/error states. [P]
-T018: [US1] UI component `SyncStatus.jsx` basic (in-progress indicator + last sync time). [P]
-T019: [US1] Implement login flow calling `jsrofex-client.login` and storing token + expiry in context. [P]
-T020: [US1] Implement `startDailySync()` in `sync-service.js` (pagination loop, per-page staging, progress emit). [P]
-T021: [US1] Integrate progress updates into `SyncStatus.jsx` via context subscription. [P]
-T022: [US1] Implement automatic trigger post-login (effect in operations context). [P]
-T023: [US1] Add cancellation logic (user cancels -> CANCEL_SYNC action). [P]
-T024: [US1] Add backoff retry integration using `retry-util.js` for TRANSIENT & RATE_LIMIT errors. [P]
-T025: [US1] Add unit test `tests/unit/jsrofex-client.spec.js` for client auth & pagination token handling. [P]
-T026: [US1] Add integration test `tests/integration/broker-sync-flow.spec.jsx` mocking client responses (auth success, multiple pages, final commit). [P]
-T027: [US1] Add integration test for auth failure scenario (401) ensures no operations added. [P]
-T028: [US1] Add integration test for cancellation mid-sync verifies no partial commit. [P]
-T029: [US1] Add integration test for retry sequence (simulate transient errors then success). [P]
-T066: [US1] Initial sync rate limit integration test (429 on first page -> wait message). [P]
-T067: [US1] Implement broker account switch logic (clear broker-sourced operations; retain CSV-sourced). [P]
-T068: [US1] Integration test for broker account switch behavior. [P]
+T017: [X] UI component `BrokerLogin.jsx` with form, Spanish labels, success/error states. [P]
+T018: [X] UI component `SyncStatus.jsx` basic (in-progress indicator + last sync time). [P]
+T019: [X] Implement login flow calling `jsrofex-client.login` and storing token + expiry in context. [P]
+T020: [X] Implement `startDailySync()` in `sync-service.js` (pagination loop, per-page staging, progress emit). [P]
+T021: [X] Integrate progress updates into `SyncStatus.jsx` via context subscription. [P]
+T022: [X] Implement automatic trigger post-login (effect in operations context). [P]
+T023: [X] Add cancellation logic (user cancels -> CANCEL_SYNC action). [P]
+T024: [X] Add backoff retry integration using `retry-util.js` for TRANSIENT & RATE_LIMIT errors. [P]
+T025: [X] Add unit test `tests/unit/jsrofex-client.spec.js` for client auth & pagination token handling. [P]
+T026: [X] Add integration test `tests/integration/broker-sync-flow.spec.jsx` mocking client responses (auth success, multiple pages, final commit). [P]
+T027: [X] Add integration test for auth failure scenario (401) ensures no operations added. [P]
+T028: [X] Add integration test for cancellation mid-sync verifies no partial commit. [P]
+T029: [X] Add integration test for retry sequence (simulate transient errors then success). [P]
+T066: [X] Initial sync rate limit integration test (429 on first page -> wait message). [P]
+T067: [X] Implement broker account switch logic (clear broker-sourced operations; retain CSV-sourced). [P]
+T068: [X] Integration test for broker account switch behavior. [P]
 
 Checkpoint: Demo: Login + automatic sync working with error handling & tests passing.
 
@@ -74,13 +74,13 @@ Checkpoint: Demo: Login + automatic sync working with error handling & tests pas
 Goal: Preserve CSV upload workflow; merging with broker-synced operations without duplicates.
 Independent Test Criteria: CSV upload works standalone; duplicate prevention when overlapping operations; invalid CSV error messaging.
 
-T031: [US2] Review existing CSV import flow; identify extension points to integrate duplicate logic (ensure calling `dedupeOperations`). (Same existing file; sequential)
-T032: [US2] Add source attribution tag (source=csv) during normalization path. [P]
-T033: [US2] Implement merge of CSV operations into existing operations using merge function. [P]
-T034: [US2] Add unit test augmenting existing CSV tests for duplicate overlap scenario with broker operations. [P]
-T035: [US2] Add integration test uploading CSV after broker sync verifying unique count unchanged. [P]
-T036: [US2] Add CSV invalid format test verifying error message in Spanish. [P]
-T037: [US2] Add UI indicator in existing file picker for combined counts (Broker vs CSV). [P]
+T031: [X] Review existing CSV import flow; identify extension points to integrate duplicate logic (ensure calling `dedupeOperations`). (Same existing file; sequential)
+T032: [X] Add source attribution tag (source=csv) during normalization path. [P]
+T033: [X] Implement merge of CSV operations into existing operations using merge function. [P]
+T034: [X] Add unit test augmenting existing CSV tests for duplicate overlap scenario with broker operations. [P]
+T035: [X] Add integration test uploading CSV after broker sync verifying unique count unchanged. [P]
+T036: [X] Add CSV invalid format test verifying error message in Spanish. [P]
+T037: [X] Add UI indicator in existing file picker for combined counts (Broker vs CSV). [P]
 
 Checkpoint: Demo: CSV upload after broker sync with no duplicates; error handling intact.
 
@@ -89,17 +89,17 @@ Checkpoint: Demo: CSV upload after broker sync with no duplicates; error handlin
 Goal: User can manually refresh & view last sync timestamp, import counts by source.
 Independent Test Criteria: Refresh retrieves only new operations (or none), updates UI timestamps & counts, reflects sources.
 
-T038: [US3] Implement `refreshNewOperations()` in `sync-service.js` (fetch pages; filter by timestamp > last sync). [P]
-T039: [US3] Extend `SyncStatus.jsx` to display last sync timestamp, imported count, source breakdown (Broker/CSV). [P]
-T040: [US3] Add detection logic for no new operations -> show localized message. [P]
-T041: [US3] Add integration test for refresh with no new operations scenario. [P]
-T042: [US3] Add integration test for refresh retrieving new subset only (mock delta). [P]
-T043: [US3] Add test for rate limit response during refresh showing recommended wait message. [P]
-T044: [US3] Add test for token expiry trigger refresh showing re-auth workflow. [P]
-T045: [US3] Add Spanish strings for all new status messages. [P]
-T069: [US3] Implement refresh cancellation (reuse CANCEL_SYNC with refresh flag). [P]
-T070: [US3] Integration test for refresh cancellation (no timestamp update). [P]
-T071: [US3] Integration test for initial refresh rate limit recommended wait parsing. [P]
+T038: [X] Implement `refreshNewOperations()` in `sync-service.js` (fetch pages; filter by timestamp > last sync). [P]
+T039: [X] Extend `SyncStatus.jsx` to display last sync timestamp, imported count, source breakdown (Broker/CSV). [P]
+T040: [X] Add detection logic for no new operations -> show localized message. [P]
+T041: [X] Add integration test for refresh with no new operations scenario. [P]
+T042: [X] Add integration test for refresh retrieving new subset only (mock delta). [P]
+T043: [X] Add test for rate limit response during refresh showing recommended wait message. [P]
+T044: [X] Add test for token expiry trigger refresh showing re-auth workflow. [P]
+T045: [X] Add Spanish strings for all new status messages. [P]
+T069: [X] Implement refresh cancellation (reuse CANCEL_SYNC with refresh flag). [P]
+T070: [X] Integration test for refresh cancellation (no timestamp update). [P]
+T071: [X] Integration test for initial refresh rate limit recommended wait parsing. [P]
 
 Checkpoint: Demo: Manual refresh & status panel functioning.
 
@@ -108,11 +108,11 @@ Checkpoint: Demo: Manual refresh & status panel functioning.
 T046: [Polish] Performance profiling script / manual notes: measure chunk merge times (devtools). [P]
 T047: [Polish] Add structured console logging (prefix `PO:`) reduction pass to remove noisy logs. [P]
 T048: [Polish] Add accessibility review for login & status components (ARIA labels). [P]
-T049: [Polish] Add documentation updates in `quickstart.md` for refresh & cancellation steps. [P]
+T049: [X] Add documentation updates in `quickstart.md` for refresh & cancellation steps. [P]
 T050: [Polish] Bundle size check; verify <4KB delta vs baseline; record in plan complexity section. [P]
-T051: [Polish] Add error taxonomy unit tests (mapping) `tests/unit/error-taxonomy.spec.js`. [P]
-T052: [Polish] Add retry-util unit tests `tests/unit/retry-util.spec.js`. [P]
-T053: [Polish] Add optional audit logging stub (record SyncSession metadata) `frontend/src/services/broker/audit-log.js`. [P]
+T051: [X] Add error taxonomy unit tests (mapping) `tests/unit/error-taxonomy.spec.js`. [P]
+T052: [X] Add retry-util unit tests `tests/unit/retry-util.spec.js`. [P]
+T053: [X] Add optional audit logging stub (record SyncSession metadata) `frontend/src/services/broker/audit-log.js`. [P]
 T073: [Polish] End-to-end performance test ingesting synthetic 20k operations measuring total time & main-thread blocks. [P]
 T054: [Polish] Review Spanish translations with native speaker pass (manual checklist). [P]
 
