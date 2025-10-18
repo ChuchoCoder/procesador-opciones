@@ -12,6 +12,7 @@ export const storageKeys = {
   lastReport: 'po.lastReport.v1',
   brokerApiUrl: 'po.brokerApiUrl',
   brokerAuth: 'po.brokerAuth',
+  operations: 'po.operations',
 };
 
 /**

@@ -59,7 +59,6 @@ const SyncStatus = ({
   onCancel,
   canRefresh = true,
   isAuthenticated = false,
-  sourceCounts = null,
 }) => {
   const {
     status = 'idle',
@@ -77,19 +76,15 @@ const SyncStatus = ({
   }, [lastSyncTimestamp]);
 
   const showProgress = inProgress && status === 'in-progress';
-  const showError = status === 'failed' && error;
-  const showCanceled = status === 'canceled';
-  const showSuccess = status === 'success';
+  const showError = status === 'failed' && error && !inProgress;
+  // Only show canceled message if no successful sync has happened yet
+  const showCanceled = status === 'canceled' && !inProgress && !lastSyncTimestamp;
+  const showSuccess = status === 'success' && !inProgress;
   const brokerStrings = strings.brokerSync ?? {};
-
-  const shouldShowSourceCounts = Boolean(
-    sourceCounts && (sourceCounts.total ?? 0) > 0,
-  );
 
   const importedLabel = (brokerStrings.importedCount ?? 'Operaciones nuevas: {count}')
     .replace('{count}', operationsImportedCount);
 
-  const sourceLabels = brokerStrings.sources ?? {};
   const modeLabel = brokerStrings.modes?.[mode] ?? null;
 
   // Don't render if user not authenticated
@@ -175,35 +170,6 @@ const SyncStatus = ({
         {showSuccess && !inProgress && (
           <Stack direction="row" spacing={1} data-testid="sync-status-imported">
             <Chip label={importedLabel} size="small" />
-          </Stack>
-        )}
-
-        {/* Source breakdown */}
-        {shouldShowSourceCounts && (
-          <Stack
-            direction="row"
-            spacing={1}
-            flexWrap="wrap"
-            data-testid="sync-status-source-counts"
-          >
-            <Chip
-              label={`${sourceLabels.broker ?? 'Broker'}: ${sourceCounts.broker ?? 0}`}
-              size="small"
-            />
-            <Chip
-              label={`${sourceLabels.csv ?? 'CSV'}: ${sourceCounts.csv ?? 0}`}
-              size="small"
-            />
-            <Chip
-              label={`${sourceLabels.total ?? 'Total'}: ${sourceCounts.total ?? 0}`}
-              size="small"
-            />
-            {sourceCounts.other > 0 && (
-              <Chip
-                label={`${sourceLabels.other ?? 'Otros'}: ${sourceCounts.other}`}
-                size="small"
-              />
-            )}
           </Stack>
         )}
 

@@ -11,7 +11,14 @@ import TimelineIcon from '@mui/icons-material/Timeline';
 import { OPERATION_TYPES } from './operation-types.js';
 
 
-const OperationTypeTabs = ({ strings, activeTab, onTabChange, onClose, fileName }) => {
+const OperationTypeTabs = ({ 
+  strings, 
+  activeTab, 
+  onTabChange, 
+  onClose, 
+  fileName, 
+  dataSourcesPanel 
+}) => {
   const opcionesLabel = strings?.operationTypeTabs?.opciones ?? 'Opciones';
   const compraVentaLabel = strings?.operationTypeTabs?.compraVenta ?? 'Compra y Venta';
   const arbitrajesLabel = strings?.operationTypeTabs?.arbitrajes ?? 'Arbitrajes de Plazo';
@@ -63,7 +70,7 @@ const OperationTypeTabs = ({ strings, activeTab, onTabChange, onClose, fileName 
           data-testid="tab-arbitrajes"
         />
       </Tabs>
-      {fileName && (
+      {dataSourcesPanel || (fileName && (
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, ml: 2 }}>
           <InsertDriveFileIcon fontSize="small" color="action" />
           <Typography 
@@ -79,7 +86,7 @@ const OperationTypeTabs = ({ strings, activeTab, onTabChange, onClose, fileName 
             {fileName}
           </Typography>
         </Box>
-      )}
+      ))}
       {onClose && (
         <IconButton
           size="small"

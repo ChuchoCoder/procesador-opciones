@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import LinearProgress from '@mui/material/LinearProgress';
+import Snackbar from '@mui/material/Snackbar';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 
@@ -33,8 +34,8 @@ import CompraVentaView from './CompraVentaView.jsx';
 import ArbitrajesView from './ArbitrajesView.jsx';
 import EmptyState from './EmptyState.jsx';
 import BrokerLogin from './BrokerLogin.jsx';
-import SyncStatus from './SyncStatus.jsx';
 import DataSourceSelector from './DataSourceSelector.jsx';
+import DataSourcesPanel from './DataSourcesPanel.jsx';
 
 const ALL_GROUP_ID = '__ALL__';
 const LAST_SESSION_STORAGE_VERSION = 1;
@@ -1152,18 +1153,6 @@ const ProcessorScreen = () => {
         overflow: 'auto',
       }}
     >
-      <Stack spacing={2} sx={{ mx: 3, mt: 2 }}>
-        <SyncStatus
-          strings={strings}
-          syncState={localizedSyncState}
-          onRefresh={() => triggerSync({ mode: 'refresh' })}
-          onCancel={handleCancelSync}
-          canRefresh={!syncInProgress}
-          isAuthenticated={isAuthenticated}
-          sourceCounts={sourceCounts}
-        />
-      </Stack>
-
       {isProcessing && <LinearProgress />}
 
       {processingError && <Alert severity="error" sx={{ mx: 3, mt: 2 }}>{processingError}</Alert>}
@@ -1175,13 +1164,8 @@ const ProcessorScreen = () => {
         ))}
 
         <Stack spacing={0} sx={{ flex: 1, minHeight: 0 }}>
-          {actionFeedback && (
-            <Alert severity={actionFeedback.type} sx={{ mx: 3, mt: 2 }}>{actionFeedback.message}</Alert>
-          )}
-
           {!selectedFile ? (
             <>
-              {renderSourceSummary()}
               <DataSourceSelector
                 strings={strings}
                 onSelectFile={handleFileSelected}
@@ -1197,7 +1181,6 @@ const ProcessorScreen = () => {
             </>
           ) : report ? (
             <>
-              {renderSourceSummary()}
               {/* Operation Type Tabs */}
               <OperationTypeTabs
                 strings={processorStrings}
@@ -1205,6 +1188,31 @@ const ProcessorScreen = () => {
                 onTabChange={handleOperationTypeChange}
                 onClose={() => handleFileSelected(null)}
                 fileName={selectedFile?.name}
+                dataSourcesPanel={
+                  <DataSourcesPanel
+                    brokerSource={
+                      isAuthenticated
+                        ? {
+                            connected: true,
+                            accountId: brokerAuth?.accountId || 'N/A',
+                            operationCount: sourceCounts.broker,
+                            lastSyncTimestamp: syncState?.lastSyncTimestamp,
+                            syncing: syncInProgress,
+                          }
+                        : null
+                    }
+                    csvSource={
+                      selectedFile
+                        ? {
+                            fileName: selectedFile.name,
+                            operationCount: sourceCounts.csv,
+                          }
+                        : null
+                    }
+                    onRefreshBroker={() => triggerSync({ mode: 'refresh' })}
+                    onRemoveCsv={() => setSelectedFile(null)}
+                  />
+                }
               />
 
               {/* Render the active view */}
@@ -1212,6 +1220,25 @@ const ProcessorScreen = () => {
             </>
           ) : null}
         </Stack>
+
+      {/* Toast Notifications */}
+      <Snackbar
+        open={Boolean(actionFeedback)}
+        autoHideDuration={4000}
+        onClose={() => setActionFeedback(null)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        {actionFeedback ? (
+          <Alert 
+            onClose={() => setActionFeedback(null)} 
+            severity={actionFeedback.type} 
+            sx={{ width: '100%' }}
+            variant="filled"
+          >
+            {actionFeedback.message}
+          </Alert>
+        ) : undefined}
+      </Snackbar>
     </Box>
   );
 };

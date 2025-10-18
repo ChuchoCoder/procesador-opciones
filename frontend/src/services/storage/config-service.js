@@ -316,6 +316,7 @@ export const loadConfiguration = async () => {
     useAveraging: await readItem(storageKeys.useAveraging),
     brokerApiUrl: await readItem(storageKeys.brokerApiUrl),
     brokerAuth: await readItem(storageKeys.brokerAuth),
+    operations: await readItem(storageKeys.operations),
   };
 
   return sanitizeConfiguration(candidate);
@@ -333,6 +334,7 @@ export const saveConfiguration = (configuration) => {
   writeItem(storageKeys.useAveraging, sanitized.useAveraging);
   writeItem(storageKeys.brokerApiUrl, sanitized.brokerApiUrl);
   writeItem(storageKeys.brokerAuth, sanitized.brokerAuth);
+  writeItem(storageKeys.operations, sanitized.operations);
 
   return sanitized;
 };
