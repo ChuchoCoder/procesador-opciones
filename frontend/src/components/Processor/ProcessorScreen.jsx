@@ -1386,6 +1386,8 @@ const ProcessorScreen = () => {
           <ArbitrajesView
             {...commonProps}
             groupOptions={allGroupOptions}
+            operations={scopedData.filteredOperations || []}
+            cauciones={[]} // TODO: Integrate cauciones data source
           />
         );
 

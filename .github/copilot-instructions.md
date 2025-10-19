@@ -22,6 +22,9 @@ frontend/
 tests/
 ```
 
+## Documentation
+Do not generate documentation unless explicitly being asked for.
+
 ## Commands
 npm test; npm run lint
 Use Powershell style (; instead of & or &&) when executing console commands on Windows.
