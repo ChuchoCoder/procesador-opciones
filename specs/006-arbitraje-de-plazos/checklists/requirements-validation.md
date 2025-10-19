@@ -12,11 +12,7 @@ Spec: ../spec.md
 
 ## Requirement Completeness
 
-- [ ] No [NEEDS CLARIFICATION] markers remain
-  - Found 3 markers:
-    - Edge Cases: ¿Habilitar estimación de interés con TNA por defecto cuando no hay caución?
-    - FX: Fuente y timestamp del FX a utilizar
-    - Jornada activa y zona horaria
+- [x] No [NEEDS CLARIFICATION] markers remain
 - [x] Requirements are testable and unambiguous
 - [x] Success criteria are measurable
 - [x] Success criteria are technology-agnostic (no implementation details)
@@ -34,4 +30,4 @@ Spec: ../spec.md
 
 ## Notes
 
-Pending clarifications to be addressed via `/speckit.clarify`.
+All checklist items PASS. Ready for planning.

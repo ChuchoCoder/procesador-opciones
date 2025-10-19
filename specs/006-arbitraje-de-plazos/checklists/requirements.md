@@ -13,7 +13,7 @@
 
 ## Requirement Completeness
 
-- [ ] No [NEEDS CLARIFICATION] markers remain
+- [x] No [NEEDS CLARIFICATION] markers remain
 - [x] Requirements are testable and unambiguous
 - [x] Success criteria are measurable
 - [x] Success criteria are technology-agnostic (no implementation details)
@@ -31,8 +31,4 @@
 
 ## Notes
 
-- Pending clarifications (max 3 retained):
-  1) Estimación de interés cuando no hay caución registrada.
-  2) Fuente y timestamp del tipo de cambio (FX) a utilizar.
-  3) Definición de jornada activa y zona horaria.
-- Items marked incomplete require spec updates before `/speckit.clarify` or `/speckit.plan`
+- Checklist complete. Proceed to `/speckit.plan`.
