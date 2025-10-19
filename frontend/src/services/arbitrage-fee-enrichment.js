@@ -9,6 +9,38 @@ import { getEffectiveRates } from './bootstrap-defaults.js';
 import { getRepoFeeConfig } from './storage-settings.js';
 import { getInstrumentDetails } from './fees/instrument-mapping.js';
 
+function resolveInstrumentDetails(operation) {
+  const symbolCandidates = [
+    operation.symbol,
+    operation.instrumento,
+    operation.originalSymbol,
+    operation?.raw?.symbol,
+    operation?.raw?.instrument,
+    operation?.raw?.instrumento,
+  ];
+
+  for (const candidate of symbolCandidates) {
+    if (typeof candidate !== 'string' || candidate.trim().length === 0) {
+      continue;
+    }
+
+    const details = getInstrumentDetails(candidate);
+    if (details) {
+      return details;
+    }
+  }
+
+  if (!resolveInstrumentDetails._logged) {
+    console.warn('PO: arbitrage-fee-enrichment missing instrument details', {
+      availableKeys: Object.keys(operation || {}),
+      symbolCandidates,
+    });
+    resolveInstrumentDetails._logged = true;
+  }
+
+  return null;
+}
+
 /**
  * Enrich a single arbitrage operation with fee calculation
  * @param {Object} operation - Raw operation from CSV
@@ -17,19 +49,29 @@ import { getInstrumentDetails } from './fees/instrument-mapping.js';
  */
 function enrichArbitrageOperation(operation, effectiveRates) {
   try {
-    // Get instrument details for categorization (synchronous)
-    const instrumentDetails = getInstrumentDetails(operation.symbol || operation.instrumento);
+  // Get instrument details for categorization (synchronous)
+  const instrumentDetails = resolveInstrumentDetails(operation);
     
     // Build operation object in expected format for fee calculator
     // Note: Arbitrage operations are CI/24h trades, NOT repos, so we don't pass repoFeeConfig
     const feeOperation = {
       symbol: operation.symbol || operation.instrumento,
       side: operation.side || operation.lado,
-      quantity: operation.last_qty || operation.cantidad,
-      price: operation.last_price || operation.precio,
+      quantity: operation.last_qty || operation.quantity || operation.cantidad,
+      price: operation.last_price || operation.price || operation.precio,
       originalSymbol: operation.symbol || operation.instrumento,
       instrument: instrumentDetails,
     };
+    
+    // Debug: Log first operation to see structure
+    if (!enrichArbitrageOperation._logged) {
+      console.log('PO: arbitrage-fee-enrichment sample operation', {
+        original: operation,
+        feeOperation,
+        instrumentDetails,
+      });
+      enrichArbitrageOperation._logged = true;
+    }
     
     // Enrich with fees (no repoFeeConfig for regular trades)
     const enriched = enrichOperationWithFee(feeOperation, effectiveRates, { 
@@ -41,6 +83,7 @@ function enrichArbitrageOperation(operation, effectiveRates) {
       feeAmount: enriched.feeAmount || 0,
       feeBreakdown: enriched.feeBreakdown || null,
       category: enriched.category || 'unknown',
+      instrumentDetails,
     };
   } catch (error) {
     console.warn('Failed to enrich operation with fees:', operation, error);

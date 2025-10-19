@@ -233,7 +233,9 @@ const OperationsTable = ({ title, operations, sideLabel, isSell }) => {
                   </TableCell>
                   <TableCell align="right">{formatPrice(op.precio)}</TableCell>
                   <TableCell align="right">{formatCurrency(op.total)}</TableCell>
-                  <TableCell align="right">{formatCurrency(op.comisiones)}</TableCell>
+                  <TableCell align="right" sx={{ color: 'text.secondary', fontWeight: 500 }}>
+                    {formatCurrency(op.comisiones)}
+                  </TableCell>
                 </TableRow>
               );
             })}

@@ -72,6 +72,7 @@ const ArbitrajesView = ({
         console.log('ArbitrajesView: No operations available');
         setTableData([]);
         setInstruments([]);
+        setIsCalculating(false);
         return;
       }
 
@@ -82,17 +83,19 @@ const ArbitrajesView = ({
 
       setIsCalculating(true);
 
-      try {
-        // Get current jornada (trading day) - for now use today
-        const jornada = new Date();
+      // Use setTimeout to allow UI to update before heavy processing
+      setTimeout(async () => {
+        try {
+          // Get current jornada (trading day) - for now use today
+          const jornada = new Date();
 
-        // Enrich operations with fee calculations FIRST
-        console.log('ArbitrajesView: Enriching operations with fees...');
-        const enrichedOperations = await enrichArbitrageOperations(operations);
-        console.log('ArbitrajesView: Operations enriched', {
-          count: enrichedOperations.length,
-          sampleFee: enrichedOperations[0]?.feeAmount,
-        });
+          // Enrich operations with fee calculations FIRST
+          console.log('ArbitrajesView: Enriching operations with fees...');
+          const enrichedOperations = await enrichArbitrageOperations(operations);
+          console.log('ArbitrajesView: Operations enriched', {
+            count: enrichedOperations.length,
+            sampleFee: enrichedOperations[0]?.feeAmount,
+          });
 
         // Parse operations and cauciones using the service layer
         // parseOperations will skip PESOS operations (cauciones)
@@ -165,13 +168,14 @@ const ArbitrajesView = ({
         console.log('ArbitrajesView: Final table rows', rows.length);
 
         setTableData(rows);
-      } catch (error) {
-        console.error('Error calculating arbitrage P&L:', error);
-        console.error('Error stack:', error.stack);
-        setTableData([]);
-      } finally {
-        setIsCalculating(false);
-      }
+        } catch (error) {
+          console.error('Error calculating arbitrage P&L:', error);
+          console.error('Error stack:', error.stack);
+          setTableData([]);
+        } finally {
+          setIsCalculating(false);
+        }
+      }, 100); // 100ms delay to allow UI to show loading state
     };
 
     processData();
