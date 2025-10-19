@@ -23,8 +23,8 @@ const CFI_PATTERNS = {
   letra: /^(DT|DY|DB)/,
   // Bonds/Obligaciones: remaining D-prefixed instruments (bonds, notes, convertibles, etc.)
   bonds: /^D(?![TY])/,
-  // Cauciones: FRxxxx or similar repo contracts
-  caucion: /^FR/,
+  // Cauciones: FRxxxx (legacy) or RPxxxx (BYMA repos)
+  caucion: /^(FR|RP)/,
 };
 
 /**
@@ -78,6 +78,8 @@ function buildCfiCodeMap(instrumentsData) {
         cfiCode: cfi || null,
         priceConversionFactor: instr?.PriceConvertionFactor ?? 1,
         contractMultiplier: effectiveMultiplier,
+        currency: instr?.Currency ?? null,
+        displayName: symbol,
       });
     }
   }

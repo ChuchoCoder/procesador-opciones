@@ -325,6 +325,29 @@ const strings = {
       validationError: 'Ingresá valores mayores o iguales a 0.',
     },
   },
+  repo: {
+    tooltip: {
+      arancel: 'Arancel',
+      derechos: 'Derechos de mercado',
+      gastosGarantia: 'Gastos de garantía',
+      iva: 'IVA sobre gastos',
+      totalExpenses: 'Gastos totales',
+      accruedInterest: 'Interés devengado',
+      baseAmount: 'Monto base',
+      netSettlement: 'Neto de liquidación',
+      missingConfigTitle: 'Configurá las tasas de caución',
+      missingConfigDescription: 'No hay tasas configuradas para {currency} {role}. Completalas en Configuración para habilitar el cálculo de gastos ({missing}).',
+      missingRatesFallback: 'tasas pendientes',
+    },
+    roles: {
+      colocadora: 'Colocadora',
+      tomadora: 'Tomadora',
+    },
+    currencies: {
+      ARS: 'ARS',
+      USD: 'USD',
+    },
+  },
 };
 
 export default strings;

@@ -969,7 +969,7 @@ export const processOperations = async ({
   }));
 
   // Enrich operations with fee calculations (Feature 004)
-  const enrichedWithFees = enrichOperationsWithFees(enrichedOperations);
+  const enrichedWithFees = await enrichOperationsWithFees(enrichedOperations);
 
   // Normalize operations for CSV source (Feature 004-integrate-jsrofex-to)
   const normalizedOperations = enrichedWithFees.map(createNormalizedCsvOperation);

@@ -1,0 +1,20 @@
+{
+  "arancelCaucionColocadora": {
+    "ARS": 0.2,
+    "USD": 0.2
+  },
+  "arancelCaucionTomadora": {
+    "ARS": 0.25,
+    "USD": 0.25
+  },
+  "derechosDeMercadoDailyRate": {
+    "ARS": 0.0005,
+    "USD": 0.0005
+  },
+  "gastosGarantiaDailyRate": {
+    "ARS": 0.00035,
+    "USD": 0.00035
+  },
+  "ivaRepoRate": 0.21,
+  "overridesMetadata": []
+}

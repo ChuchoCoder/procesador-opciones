@@ -20,6 +20,7 @@ import GroupFilter from './GroupFilter.jsx';
 import { getBuySellOperations } from '../../services/csv/buy-sell-matcher.js';
 import { resolveExpirationLabel } from '../../services/csv/expiration-labels.js';
 import FeeTooltip from './FeeTooltip.jsx';
+import TooltipRepoFees from './TooltipRepoFees.jsx';
 
 const quantityFormatter = typeof Intl !== 'undefined'
   ? new Intl.NumberFormat('es-AR', {
@@ -66,6 +67,223 @@ const formatFee = (value) => {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(value);
+};
+
+const roundAmount = (value, digits = 2) => {
+  if (!Number.isFinite(value)) {
+    return value;
+  }
+  const factor = 10 ** digits;
+  return Math.round((value + Number.EPSILON) * factor) / factor;
+};
+
+const cloneRepoWarning = (warning) => {
+  if (!warning || typeof warning !== 'object') {
+    return warning;
+  }
+  return {
+    ...warning,
+  };
+};
+
+const cloneReconciliation = (reconciliation) => {
+  if (!reconciliation || typeof reconciliation !== 'object') {
+    return reconciliation;
+  }
+  return {
+    ...reconciliation,
+  };
+};
+
+const cloneFeeBreakdown = (breakdown) => {
+  if (!breakdown || typeof breakdown !== 'object') {
+    return breakdown;
+  }
+
+  const cloned = {
+    ...breakdown,
+  };
+
+  if (breakdown.instrument && typeof breakdown.instrument === 'object') {
+    cloned.instrument = { ...breakdown.instrument };
+  }
+  if (Array.isArray(breakdown.warnings)) {
+    cloned.warnings = breakdown.warnings.map(cloneRepoWarning);
+  }
+  if (breakdown.reconciliation && typeof breakdown.reconciliation === 'object') {
+    cloned.reconciliation = cloneReconciliation(breakdown.reconciliation);
+  }
+
+  return cloned;
+};
+
+const REPO_AGGREGATE_NUMERIC_KEYS = [
+  'principalAmount',
+  'baseAmount',
+  'accruedInterest',
+  'arancelAmount',
+  'derechosMercadoAmount',
+  'gastosGarantiaAmount',
+  'ivaAmount',
+];
+
+const REPO_AGGREGATION_TOLERANCE = 0.01;
+
+const createRepoAggregate = (breakdown = {}) => ({
+  principalAmount: 0,
+  baseAmount: 0,
+  accruedInterest: 0,
+  arancelAmount: 0,
+  derechosMercadoAmount: 0,
+  gastosGarantiaAmount: 0,
+  ivaAmount: 0,
+  totalExpenses: 0,
+  netSettlement: 0,
+  currency: breakdown?.currency ?? breakdown?.instrument?.currency ?? null,
+  role: breakdown?.role ?? null,
+  tenorDays: Number.isFinite(breakdown?.tenorDays) ? breakdown.tenorDays : null,
+  instrument: breakdown?.instrument ? { ...breakdown.instrument } : null,
+  warnings: [],
+  blocked: Boolean(breakdown?.blocked),
+  status: breakdown?.status ?? 'pending',
+  errorMessage: breakdown?.errorMessage ?? null,
+  source: 'repo',
+  _meta: {
+    hasError: breakdown?.status === 'error',
+    hasPending: !breakdown?.status || !['ok', 'error'].includes(breakdown.status),
+  },
+});
+
+const accumulateRepoBreakdown = (aggregate, breakdown = {}, netContribution = null) => {
+  if (!aggregate || !breakdown) {
+    return;
+  }
+
+  REPO_AGGREGATE_NUMERIC_KEYS.forEach((key) => {
+    const numeric = Number(breakdown[key]);
+    if (Number.isFinite(numeric)) {
+      aggregate[key] = (aggregate[key] ?? 0) + numeric;
+    }
+  });
+
+  const net = Number.isFinite(netContribution) ? netContribution : Number(breakdown.netSettlement);
+  if (Number.isFinite(net)) {
+    aggregate.netSettlement = (aggregate.netSettlement ?? 0) + net;
+  }
+
+  if (!aggregate.currency && breakdown.currency) {
+    aggregate.currency = breakdown.currency;
+  }
+  if (!aggregate.role && breakdown.role) {
+    aggregate.role = breakdown.role;
+  }
+  if (!aggregate.instrument && breakdown.instrument) {
+    aggregate.instrument = { ...breakdown.instrument };
+  }
+
+  if (!Number.isFinite(aggregate.tenorDays) && Number.isFinite(breakdown.tenorDays)) {
+    aggregate.tenorDays = breakdown.tenorDays;
+  } else if (
+    Number.isFinite(aggregate.tenorDays)
+    && Number.isFinite(breakdown.tenorDays)
+    && aggregate.tenorDays !== breakdown.tenorDays
+  ) {
+    aggregate.tenorDays = null;
+    const hasMismatchWarning = aggregate.warnings.some((warning) => warning?.code === 'REPO_TENOR_MISMATCH');
+    if (!hasMismatchWarning) {
+      aggregate.warnings.push({
+        code: 'REPO_TENOR_MISMATCH',
+        message: 'Las operaciones agrupadas tienen plazos distintos.',
+      });
+    }
+  }
+
+  if (Array.isArray(breakdown.warnings) && breakdown.warnings.length > 0) {
+    aggregate.warnings = [...aggregate.warnings, ...breakdown.warnings];
+  }
+
+  if (breakdown.errorMessage) {
+    aggregate.errorMessage = aggregate.errorMessage
+      ? `${aggregate.errorMessage} | ${breakdown.errorMessage}`
+      : breakdown.errorMessage;
+  }
+
+  aggregate.blocked = aggregate.blocked || Boolean(breakdown.blocked);
+
+  if (breakdown.status === 'error') {
+    aggregate._meta.hasError = true;
+  } else if (breakdown.status !== 'ok') {
+    aggregate._meta.hasPending = true;
+  }
+};
+
+const finalizeRepoAggregate = (aggregate, explicitNet = null) => {
+  if (!aggregate) {
+    return null;
+  }
+
+  const {
+    _meta,
+    warnings = [],
+    instrument,
+    ...rest
+  } = aggregate;
+
+  const totals = {
+    ...rest,
+    warnings: warnings.length > 0 ? [...warnings] : [],
+    instrument: instrument ? { ...instrument } : null,
+  };
+
+  REPO_AGGREGATE_NUMERIC_KEYS.forEach((key) => {
+    if (Number.isFinite(totals[key])) {
+      totals[key] = roundAmount(totals[key]);
+    }
+  });
+
+  const aggregatedNet = Number.isFinite(explicitNet) ? explicitNet : totals.netSettlement;
+  totals.netSettlement = Number.isFinite(aggregatedNet) ? roundAmount(aggregatedNet) : null;
+
+  totals.totalExpenses = (totals.arancelAmount ?? 0)
+    + (totals.derechosMercadoAmount ?? 0)
+    + (totals.gastosGarantiaAmount ?? 0)
+    + (totals.ivaAmount ?? 0);
+  totals.totalExpenses = roundAmount(totals.totalExpenses);
+
+  const expected = (totals.principalAmount ?? 0) + (totals.accruedInterest ?? 0);
+  const actual = totals.baseAmount ?? 0;
+  const diff = actual - expected;
+  totals.reconciliation = {
+    reconciles: Math.abs(diff) <= REPO_AGGREGATION_TOLERANCE,
+    diff,
+    expected,
+    actual,
+    tolerance: REPO_AGGREGATION_TOLERANCE,
+  };
+
+  const hasError = Boolean(_meta?.hasError);
+  const hasPending = Boolean(_meta?.hasPending) && !hasError;
+
+  totals.status = hasError ? 'error' : hasPending ? 'pending' : 'ok';
+  totals.blocked = hasError ? true : totals.blocked;
+  totals.source = 'repo';
+
+  if (totals.netSettlement === null || totals.netSettlement === undefined) {
+    totals.netSettlement = totals.baseAmount ?? null;
+  }
+
+  if (Number.isFinite(totals.baseAmount) && Number.isFinite(totals.totalExpenses)) {
+    const computedNet = totals.role === 'tomadora'
+      ? totals.baseAmount + totals.totalExpenses
+      : totals.baseAmount - totals.totalExpenses;
+    totals.netSettlement = roundAmount(computedNet);
+  } else if (Number.isFinite(totals.netSettlement)) {
+    totals.netSettlement = roundAmount(totals.netSettlement);
+  }
+
+  delete totals._meta;
+
+  return totals;
 };
 
 /**
@@ -192,9 +410,15 @@ const aggregateRows = (rows) => {
         totalWeight: 0,
         feeAmount: 0,
         grossNotional: 0,
-        feeBreakdown: row.feeBreakdown,
+  feeBreakdown: cloneFeeBreakdown(row.feeBreakdown),
         category: row.category,
         side: row.side, // Preserve side from first row in group
+        netSettlement: row?.feeBreakdown?.source?.startsWith('repo')
+          ? 0
+          : Number.isFinite(row.netSettlement)
+            ? row.netSettlement
+            : null,
+        repoAggregatedBreakdown: null,
       });
     }
 
@@ -202,6 +426,23 @@ const aggregateRows = (rows) => {
     entry.quantity += row.quantity;
     entry.feeAmount += (row.feeAmount || 0);
     entry.grossNotional += (row.grossNotional || 0);
+    const isRepoRow = row?.feeBreakdown?.source?.startsWith('repo');
+    if (isRepoRow) {
+      const netCandidate = Number.isFinite(row?.netSettlement)
+        ? row.netSettlement
+        : Number(row?.feeBreakdown?.netSettlement);
+      if (Number.isFinite(netCandidate)) {
+        entry.netSettlement = (entry.netSettlement ?? 0) + netCandidate;
+      }
+      if (!entry.repoAggregatedBreakdown) {
+        entry.repoAggregatedBreakdown = createRepoAggregate(cloneFeeBreakdown(row.feeBreakdown));
+      }
+      accumulateRepoBreakdown(
+        entry.repoAggregatedBreakdown,
+        row.feeBreakdown,
+        Number.isFinite(netCandidate) ? netCandidate : null,
+      );
+    }
     const weight = Number.isFinite(row.weight) && row.weight > 0
       ? row.weight
       : Math.abs(row.quantity);
@@ -212,12 +453,37 @@ const aggregateRows = (rows) => {
   return Array.from(groups.values())
     .map((entry) => {
       // Recalculate fee breakdown for aggregated gross notional
-      const feeBreakdown = entry.feeBreakdown && entry.grossNotional > 0 ? {
-        ...entry.feeBreakdown,
-        commissionAmount: entry.grossNotional * entry.feeBreakdown.commissionPct,
-        rightsAmount: entry.grossNotional * entry.feeBreakdown.rightsPct,
-        vatAmount: entry.grossNotional * (entry.feeBreakdown.commissionPct + entry.feeBreakdown.rightsPct) * entry.feeBreakdown.vatPct,
-      } : entry.feeBreakdown;
+      let feeBreakdown = cloneFeeBreakdown(entry.feeBreakdown);
+      if (entry.feeBreakdown?.source?.startsWith('repo')) {
+        const aggregated = finalizeRepoAggregate(
+          entry.repoAggregatedBreakdown,
+          Number.isFinite(entry.netSettlement) ? entry.netSettlement : null,
+        );
+        feeBreakdown = aggregated || {
+          ...cloneFeeBreakdown(entry.feeBreakdown),
+          netSettlement: Number.isFinite(entry.netSettlement)
+            ? entry.netSettlement
+            : entry.feeBreakdown?.netSettlement,
+        };
+        if (aggregated) {
+          entry.netSettlement = aggregated.netSettlement ?? entry.netSettlement;
+          entry.feeAmount = aggregated.totalExpenses ?? entry.feeAmount;
+        } else if (feeBreakdown) {
+          const roundedExpenses = roundAmount(entry.feeAmount);
+          feeBreakdown.totalExpenses = roundedExpenses;
+          entry.feeAmount = roundedExpenses;
+          if (Number.isFinite(entry.netSettlement)) {
+            entry.netSettlement = roundAmount(entry.netSettlement);
+          }
+        }
+      } else if (entry.feeBreakdown && entry.grossNotional > 0) {
+        feeBreakdown = {
+          ...cloneFeeBreakdown(entry.feeBreakdown),
+          commissionAmount: entry.grossNotional * entry.feeBreakdown.commissionPct,
+          rightsAmount: entry.grossNotional * entry.feeBreakdown.rightsPct,
+          vatAmount: entry.grossNotional * (entry.feeBreakdown.commissionPct + entry.feeBreakdown.rightsPct) * entry.feeBreakdown.vatPct,
+        };
+      }
 
       return {
         key: entry.key,
@@ -230,6 +496,7 @@ const aggregateRows = (rows) => {
         feeBreakdown,
         category: entry.category,
         side: entry.side, // Preserve side in aggregated output
+        netSettlement: Number.isFinite(entry.netSettlement) ? entry.netSettlement : undefined,
       };
     })
     .sort((a, b) => {
@@ -262,7 +529,7 @@ const buildRows = (operations = [], side = 'BUY', { expirationLabels } = {}) => 
       weight: Math.abs(rawQuantity),
       feeAmount: operation.feeAmount || 0,
       grossNotional: operation.grossNotional || 0,
-      feeBreakdown: operation.feeBreakdown,
+      feeBreakdown: cloneFeeBreakdown(operation.feeBreakdown),
       category: operation.category || 'bonds',
       side, // Add side to the row
     };
@@ -372,7 +639,13 @@ const BuySellTable = ({
               </TableRow>
             )}
             {operations.map((row, index) => {
-              const netTotal = calculateNetTotal(row.grossNotional, row.feeAmount, row.side);
+              const explicitNet = Number.isFinite(row?.netSettlement) ? row.netSettlement : null;
+              const repoNet = explicitNet === null && row?.feeBreakdown?.source?.startsWith('repo')
+                ? row?.feeBreakdown?.netSettlement
+                : explicitNet;
+              const netTotal = Number.isFinite(repoNet)
+                ? repoNet
+                : calculateNetTotal(row.grossNotional, row.feeAmount, row.side);
               
               return (
                 <TableRow
@@ -389,17 +662,25 @@ const BuySellTable = ({
                   </TableCell>
                   <TableCell align="right">{formatDecimal(row.price)}</TableCell>
                   <TableCell align="right">
-                    <FeeTooltip
-                      feeBreakdown={row.feeBreakdown}
-                      grossNotional={row.grossNotional}
-                      netTotal={netTotal}
-                      totalQuantity={row.quantity}
-                      strings={strings}
-                    >
-                      <Typography variant="body2" component="span">
-                        {formatFee(netTotal)}
-                      </Typography>
-                    </FeeTooltip>
+                    {row?.feeBreakdown?.source?.startsWith('repo') ? (
+                      <TooltipRepoFees breakdown={row.feeBreakdown} strings={strings}>
+                        <Typography variant="body2" component="span">
+                          {formatFee(netTotal)}
+                        </Typography>
+                      </TooltipRepoFees>
+                    ) : (
+                      <FeeTooltip
+                        feeBreakdown={row.feeBreakdown}
+                        grossNotional={row.grossNotional}
+                        netTotal={netTotal}
+                        totalQuantity={row.quantity}
+                        strings={strings}
+                      >
+                        <Typography variant="body2" component="span">
+                          {formatFee(netTotal)}
+                        </Typography>
+                      </FeeTooltip>
+                    )}
                   </TableCell>
                 </TableRow>
               );
