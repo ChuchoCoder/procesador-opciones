@@ -14,6 +14,7 @@ export const storageKeys = {
   brokerAuth: 'po.brokerAuth',
   operations: 'po.operations',
   brokerFees: 'po.brokerFees.v1',
+  repoFeeConfig: 'po.repoFeeConfig.v1',
 };
 
 /**

@@ -10,19 +10,20 @@ Overview
 
 Phase 1 — Setup tasks (project initialization)
 
-T001: Verify frontend test runner and local dev server
+T001 [X]: Verify frontend test runner and local dev server
 - Verify commands and run smoke checks in `C:\git\procesador-opciones\frontend\`:
   - Confirm `package.json` scripts include `dev` and `test`.
   - Run `npm --prefix C:\git\procesador-opciones\frontend install` then `npm --prefix C:\git\procesador-opciones\frontend run test` to ensure test environment works.
 - Outcome: CI/dev environment for running Vitest is validated.
+- Notes (2025-10-18): Vitest runner executes but current suite has 3 failing unit tests (`dedupe-merge.performance`, `jsrofex client`, `token-security`) and multiple unhandled rejection errors; environment is otherwise operational.
 - Parallel: no
 
-T002: Add BYMA defaults JSON file (setup)
+T002 [X]: Add BYMA defaults JSON file (setup)
 - Create `C:\git\procesador-opciones\frontend\public\byma-defaults.json` with default daily rates shape matching `C:\git\procesador-opciones\specs\005-cauciones-repo-fees\contracts\repo-fee-config.schema.json`.
 - Outcome: Defaults file present and referenced in quickstart.md.
 - Parallel: [P]
 
-T003: Add strings key placeholders for es-AR
+T003 [X]: Add strings key placeholders for es-AR
 - Update `C:\git\procesador-opciones\frontend\src\strings\es-AR.js` adding keys for tooltip labels and settings UI: `repo.tooltip.arancel`, `repo.tooltip.derechos`, `repo.tooltip.gastosGarantia`, `repo.tooltip.iva`, `repo.tooltip.totalExpenses`, `repo.tooltip.accruedInterest`, `repo.tooltip.baseAmount`, `repo.tooltip.netSettlement`.
 - Outcome: UI strings ready for translation and use.
 - Parallel: [P]
@@ -30,7 +31,7 @@ T003: Add strings key placeholders for es-AR
 
 Phase 2 — Foundational tasks (blocking prerequisites)
 
-T004: Create calculation library (pure functions)
+T004 [X]: Create calculation library (pure functions)
 - File: `C:\git\procesador-opciones\frontend\src\services\fees\repo-fees.js`
 - Implement exported pure functions:
   - `parseTenorDays(displayName: string): number` — parse tenor like "1D" or "7d"; accept uppercase/lowercase; return 0 on malformed
@@ -43,9 +44,10 @@ T004: Create calculation library (pure functions)
   - `calculateRepoExpenseBreakdown(repoOperation: object, repoFeeConfig: object): RepoExpenseBreakdown`
 - Follow FR-001..FR-013. Keep internal precision; apply display rounding only for outputs (round half up to 2 decimals).
 - Outcome: Deterministic, tested calculation module.
+- Notes (2025-10-18): Implemented logger injection, rate resolution per currency/role, graceful handling for tenor/base reconciliation, and returns detailed warnings + rounding metadata.
 - Parallel: no (single file)
 
-T005: Unit test skeleton for calculation library
+T005 [X]: Unit test skeleton for calculation library
 - File: `C:\git\procesador-opciones\frontend\tests\unit\repo-fees.spec.js`
 - Tests to include:
   - Happy path lender (colocadora) computation example matching spec acceptance scenario (P=81,700 USD, TNA=0.8%, d=1) — check accrued interest 1.79, Base Amount 81701.79, Arancel 0.45, Derechos 0.41, IVA 0.18, Total 1.04, Net Settlement 81700.75 (rounded display values)
@@ -53,35 +55,37 @@ T005: Unit test skeleton for calculation library
   - Edge case: missing tenor -> tenorDays=0 -> all expenses zero and warning logged (mock logger)
   - Edge case: base amount not reconciling beyond tolerance (simulate B mismatch) -> check reconcile returns diff and warning behavior
 - Outcome: Tests implemented and runnable via Vitest
+- Notes (2025-10-18): Added targeted Vitest suite `repo-fees.spec.js`; executed with `npm --prefix C:\git\procesador-opciones\frontend run test -- repo-fees.spec.js` for red/green cycle.
 - Parallel: [P] (tests can be written while other tasks continue)
 
-T006: Integrate defaults loader and settings persistence
+T006 [X]: Integrate defaults loader and settings persistence
 - File: `C:\git\procesador-opciones\frontend\src\services\storage-settings.js` (use existing API)
 - Task:
   - Implement `loadRepoFeeDefaults()` that reads `frontend/public/byma-defaults.json` at runtime (fetch or import) and returns default rates
   - Implement `getRepoFeeConfig()` and `setRepoFeeConfig()` wrappers that read/write `repoFeeConfig` in localStorage using existing storage API
 - Outcome: Code path to obtain effective rates: localStorage override takes precedence over BYMA defaults
+- Notes (2025-10-18): Added BYMA defaults loader with caching/fallback, storage helpers using `po.repoFeeConfig.v1`, and Vitest coverage in `tests/unit/storage-settings.spec.js`.
 - Parallel: [P]
 
-T024: Implement enforcement for missing/incomplete fee configuration (FR-016 & FR-028)
+T024 [X]: Implement enforcement for missing/incomplete fee configuration (FR-016 & FR-028)
 - Files: `C:\git\procesador-opciones\frontend\src\services\fees\repo-fees.js`, `C:\git\procesador-opciones\frontend\src\components\Processor\TooltipRepoFees.jsx`, `C:\git\procesador-opciones\frontend\src\components\CompraVentaTable.jsx` (or discovered table component)
 - Task: Modify the calculation flow so that before performing calculations it validates the effective fee rates for the operation's currency & role. If rates are missing or incomplete, the calculation must be blocked for that operation and a human-readable error message must be surfaced in the row or tooltip (per FR-016/FR-028). Logging at WARN level should also be emitted. Ensure UI shows a clear actionable hint (e.g., "Fee rates missing for USD - open Settings to configure").
 - Outcome: Calculations are blocked when config incomplete and users see a clear error message; no silent failures.
 - Parallel: no
 
-T025: Discover actual Compra/Venta table component file(s)
+T025 [X]: Discover actual Compra/Venta table component file(s)
 - File: `C:\git\procesador-opciones\specs\005-cauciones-repo-fees\component-discovery.md` (new)
 - Task: Search the frontend for the component(s) that render Compra/Venta rows (possible locations: `frontend/src/components/`, `frontend/src/app/`) and record exact file paths and prop shapes needed to integrate the tooltip and Net Settlement column. Commit `component-discovery.md` with findings.
 - Outcome: Exact file paths confirmed to avoid implementation path mismatches.
 - Parallel: [P]
 
-T026: Popup parity evaluation
+T026 [X]: Popup parity evaluation
 - File: `C:\git\procesador-opciones\specs\005-cauciones-repo-fees\popup-parity.md` (new)
 - Task: Evaluate whether the extension popup (`popup.html` / `popup.js`) needs the same repo expense breakdown feature. Produce a short recommendation: (A) No change needed (frontend only), (B) Copy calculation lib to popup and wire minimal UI, or (C) Defer popup parity. If (B) required, list follow-up tasks.
 - Outcome: Decision documented and follow-up tasks created if necessary.
 - Parallel: [P]
 
-T027: Standardize WARN-level logging wrapper and usage
+T027 [X]: Standardize WARN-level logging wrapper and usage
 - Files: `C:\git\procesador-opciones\frontend\src\services\logging\index.js` (create or reuse existing logging module)
 - Task: Ensure there is a small logging wrapper that the calculation library and UI use for WARN-level logs (used by FR-012, FR-014, FR-029). Implement a consistent interface (e.g., `logger.warn(msg, meta)`) and update `repo-fees.js` to call it. Tests are omitted per instruction; however, manual verification steps should be added to docs.
 - Outcome: Consistent WARN logging across calculation and UI code.
@@ -93,7 +97,7 @@ Phase 3 — User Stories (Priority order)
 User Story 1 (US1) - P1: Calculate and Display Repo Expense Breakdown for Lender
 Independent test: enter a colocadora repo trade and verify displayed amounts match manual calculations
 
-T007 (US1-T1): UI tooltip component wiring for lender rows
+T007 [X] (US1-T1): UI tooltip component wiring for lender rows
 - File: `C:\git\procesador-opciones\frontend\src\components\Processor\TooltipRepoFees.jsx` (new)
 - Task: Create a tooltip component that consumes a RepoOperation object and repo fee config, calls `calculateRepoExpenseBreakdown` and displays the items using `es-AR` strings and currency formatting used by Compra/Venta tables
 - Outcome: Hovering info icon displays breakdown
