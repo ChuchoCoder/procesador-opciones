@@ -80,7 +80,7 @@ describe('Arbitrage de Plazos Integration', () => {
       expect(firstCI.venue).toBe(VENUES.CI);
       expect(firstCI.lado).toBe(LADOS.VENTA);
       expect(firstCI.cantidad).toBe(61);
-      expect(firstCI.precio).toBe(130.7);
+  expect(firstCI.precio).toBeCloseTo(130.7 * 0.01, 6);
 
       // Check first 24hs operation
       const first24hs = operations.find(op => op.id === 'd3c96d7c-27ea-4745-92f2-f8a966836191');
@@ -89,7 +89,7 @@ describe('Arbitrage de Plazos Integration', () => {
       expect(first24hs.venue).toBe(VENUES.H24);
       expect(first24hs.lado).toBe(LADOS.COMPRA);
       expect(first24hs.cantidad).toBe(61);
-      expect(first24hs.precio).toBe(130.91);
+  expect(first24hs.precio).toBeCloseTo(130.91 * 0.01, 6);
     });
 
     it('should extract instrument name correctly from various symbol formats', () => {
@@ -249,7 +249,7 @@ describe('Arbitrage de Plazos Integration', () => {
       expect(ventaCICompra24h).toBeDefined();
       
       // Check matched quantity (min of ventas CI and compras 24h)
-      expect(ventaCICompra24h.matchedQty).toBe(1000061); // Total of both sell operations
+  expect(ventaCICompra24h.matchedQty).toBeCloseTo(999258.2294, 1); // Total matched using price-adjusted notional
       
       // Check P&L trade is calculated (should be negative: buying higher than selling)
       // Sell at 130.7, buy at 130.91 = loss of 0.21 per unit

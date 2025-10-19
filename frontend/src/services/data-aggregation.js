@@ -5,6 +5,7 @@
 
 import { createGrupoInstrumentoPlazo, VENUES, LADOS } from './arbitrage-types.js';
 import { calculateCIto24hsPlazo, calculateCalendarDays } from './business-days.js';
+import { getInstrumentDetails } from './fees/instrument-mapping.js';
 
 /**
  * Aggregate operations and cauciones by instrument and plazo
@@ -230,13 +231,21 @@ export function parseOperations(rawOperations) {
           return null;
         }
         
+    // Fetch instrument metadata to normalize price using PriceConversionFactor
+    const instrumentDetails = raw.instrumentDetails || getInstrumentDetails(symbolStr) || getInstrumentDetails(instrument);
+        const priceConversionFactor = instrumentDetails?.priceConversionFactor ?? 1;
+        const contractMultiplier = instrumentDetails?.contractMultiplier ?? 1;
+
         // Parse quantity and price from various field names
-        const cantidad = parseFloat(
+        const rawCantidad = parseFloat(
           raw.cantidad || raw.quantity || raw.last_qty || 0
         );
-        const precio = parseFloat(
+        const rawPrecio = parseFloat(
           raw.precio || raw.price || raw.last_price || 0
         );
+        // Apply PriceConversionFactor so downstream P&L works with monetary values
+        const precio = rawPrecio * priceConversionFactor;
+        const cantidad = rawCantidad;
         
         // Debug: Log first operation to see raw date fields
         if (parseOperationsFirstLog) {
@@ -261,6 +270,10 @@ export function parseOperations(rawOperations) {
           instrument,
           dateField,
           parsed: parseDate(dateField),
+          feeAmount: raw.feeAmount,
+          comisiones: parseFloat(raw.feeAmount || 0),
+          priceConversionFactor,
+          contractMultiplier,
         });
 
         return {
@@ -272,9 +285,13 @@ export function parseOperations(rawOperations) {
           cantidad,
           precio,
           comisiones: parseFloat(raw.feeAmount || 0), // feeAmount is added by enrichArbitrageOperations
-          total: parseFloat(raw.total || cantidad * precio),
+          total: cantidad * precio,
           venue,
           feeBreakdown: raw.feeBreakdown || null, // Keep fee breakdown for detailed info
+          priceConversionFactor,
+          contractMultiplier,
+          rawPrecio,
+          rawCantidad,
         };
       } catch (error) {
         console.warn('Failed to parse operation:', raw, error);

@@ -65,50 +65,50 @@ function getPnLTradeBreakdown(row) {
 
   return (
     <Box sx={{ p: 1, minWidth: 250 }}>
-      <Typography variant="caption" sx={{ fontWeight: 600, display: 'block', mb: 1 }}>
+      <Typography variant="body2" sx={{ fontWeight: 600, display: 'block', mb: 1 }}>
         Detalle P&L Trade
       </Typography>
       {ventasCI.length > 0 && (
         <>
-          <Typography variant="caption" sx={{ display: 'block' }}>
+          <Typography variant="body2" sx={{ display: 'block' }}>
             Venta CI: {formatCurrency(totalVentasCI)}
           </Typography>
-          <Typography variant="caption" sx={{ display: 'block', color: 'text.secondary', ml: 1 }}>
+          <Typography variant="body2" sx={{ display: 'block', color: 'text.secondary', ml: 1 }}>
             Comisiones: {formatCurrency(feesVentasCI)}
           </Typography>
         </>
       )}
       {compras24h.length > 0 && (
         <>
-          <Typography variant="caption" sx={{ display: 'block' }}>
+          <Typography variant="body2" sx={{ display: 'block' }}>
             Compra 24H: {formatCurrency(totalCompras24h)}
           </Typography>
-          <Typography variant="caption" sx={{ display: 'block', color: 'text.secondary', ml: 1 }}>
+          <Typography variant="body2" sx={{ display: 'block', color: 'text.secondary', ml: 1 }}>
             Comisiones: {formatCurrency(feesCompras24h)}
           </Typography>
         </>
       )}
       {comprasCI.length > 0 && (
         <>
-          <Typography variant="caption" sx={{ display: 'block' }}>
+          <Typography variant="body2" sx={{ display: 'block' }}>
             Compra CI: {formatCurrency(totalComprasCI)}
           </Typography>
-          <Typography variant="caption" sx={{ display: 'block', color: 'text.secondary', ml: 1 }}>
+          <Typography variant="body2" sx={{ display: 'block', color: 'text.secondary', ml: 1 }}>
             Comisiones: {formatCurrency(feesComprasCI)}
           </Typography>
         </>
       )}
       {ventas24h.length > 0 && (
         <>
-          <Typography variant="caption" sx={{ display: 'block' }}>
+          <Typography variant="body2" sx={{ display: 'block' }}>
             Venta 24H: {formatCurrency(totalVentas24h)}
           </Typography>
-          <Typography variant="caption" sx={{ display: 'block', color: 'text.secondary', ml: 1 }}>
+          <Typography variant="body2" sx={{ display: 'block', color: 'text.secondary', ml: 1 }}>
             Comisiones: {formatCurrency(feesVentas24h)}
           </Typography>
         </>
       )}
-      <Typography variant="caption" sx={{ display: 'block', mt: 1, fontWeight: 600, borderTop: '1px solid', borderColor: 'divider', pt: 0.5 }}>
+      <Typography variant="body2" sx={{ display: 'block', mt: 1, fontWeight: 600, borderTop: '1px solid', borderColor: 'divider', pt: 0.5 }}>
         Total: {formatCurrency(row.pnl_trade)}
       </Typography>
     </Box>
@@ -124,19 +124,19 @@ function getPnLCaucionBreakdown(row) {
   if (!row.cauciones || row.cauciones.length === 0) {
     return (
       <Box sx={{ p: 1, minWidth: 200 }}>
-        <Typography variant="caption" sx={{ fontWeight: 600, display: 'block', mb: 1 }}>
+        <Typography variant="body2" sx={{ fontWeight: 600, display: 'block', mb: 1 }}>
           Detalle P&L Caución
         </Typography>
-        <Typography variant="caption" color="text.secondary">
+        <Typography variant="body2" color="text.secondary">
           Sin cauciones - Usando TNA promedio
         </Typography>
-        <Typography variant="caption" sx={{ display: 'block', mt: 1 }}>
+        <Typography variant="body2" sx={{ display: 'block', mt: 1 }}>
           Monto: {formatCurrency(row.cantidad * row.precioPromedio)}
         </Typography>
-        <Typography variant="caption" sx={{ display: 'block' }}>
+        <Typography variant="body2" sx={{ display: 'block' }}>
           Plazo: {row.plazo} días
         </Typography>
-        <Typography variant="caption" sx={{ display: 'block', mt: 1, fontWeight: 600 }}>
+        <Typography variant="body2" sx={{ display: 'block', mt: 1, fontWeight: 600 }}>
           Interés estimado: {formatCurrency(row.pnl_caucion)}
         </Typography>
       </Box>
@@ -148,28 +148,28 @@ function getPnLCaucionBreakdown(row) {
 
   return (
     <Box sx={{ p: 1, minWidth: 250 }}>
-      <Typography variant="caption" sx={{ fontWeight: 600, display: 'block', mb: 1 }}>
+      <Typography variant="body2" sx={{ fontWeight: 600, display: 'block', mb: 1 }}>
         Detalle P&L Caución
       </Typography>
       {row.cauciones.map((c, idx) => (
         <Box key={idx} sx={{ mb: 1 }}>
-          <Typography variant="caption" sx={{ display: 'block' }}>
+          <Typography variant="body2" sx={{ display: 'block' }}>
             {c.tipo}: {formatCurrency(c.monto)}
           </Typography>
-          <Typography variant="caption" sx={{ display: 'block', color: 'text.secondary', ml: 1 }}>
+          <Typography variant="body2" sx={{ display: 'block', color: 'text.secondary', ml: 1 }}>
             Tasa: {c.tasa}% - {c.tenorDias} días
           </Typography>
-          <Typography variant="caption" sx={{ display: 'block', color: 'text.secondary', ml: 1 }}>
+          <Typography variant="body2" sx={{ display: 'block', color: 'text.secondary', ml: 1 }}>
             Interés: {formatCurrency(c.interes)}
           </Typography>
           {c.feeAmount > 0 && (
-            <Typography variant="caption" sx={{ display: 'block', color: 'text.secondary', ml: 1 }}>
+            <Typography variant="body2" sx={{ display: 'block', color: 'text.secondary', ml: 1 }}>
               Comisiones: {formatCurrency(c.feeAmount)}
             </Typography>
           )}
         </Box>
       ))}
-      <Typography variant="caption" sx={{ display: 'block', mt: 1, fontWeight: 600, borderTop: '1px solid', borderColor: 'divider', pt: 0.5 }}>
+      <Typography variant="body2" sx={{ display: 'block', mt: 1, fontWeight: 600, borderTop: '1px solid', borderColor: 'divider', pt: 0.5 }}>
         Total: {formatCurrency(row.pnl_caucion)}
       </Typography>
     </Box>
@@ -184,16 +184,16 @@ function getPnLCaucionBreakdown(row) {
 function getPnLTotalBreakdown(row) {
   return (
     <Box sx={{ p: 1, minWidth: 200 }}>
-      <Typography variant="caption" sx={{ fontWeight: 600, display: 'block', mb: 1 }}>
+      <Typography variant="body2" sx={{ fontWeight: 600, display: 'block', mb: 1 }}>
         Detalle P&L Total
       </Typography>
-      <Typography variant="caption" sx={{ display: 'block' }}>
+      <Typography variant="body2" sx={{ display: 'block' }}>
         P&L Trade: {formatCurrency(row.pnl_trade)}
       </Typography>
-      <Typography variant="caption" sx={{ display: 'block' }}>
+      <Typography variant="body2" sx={{ display: 'block' }}>
         P&L Caución: {formatCurrency(row.pnl_caucion)}
       </Typography>
-      <Typography variant="caption" sx={{ display: 'block', mt: 1, fontWeight: 600, borderTop: '1px solid', borderColor: 'divider', pt: 0.5 }}>
+      <Typography variant="body2" sx={{ display: 'block', mt: 1, fontWeight: 600, borderTop: '1px solid', borderColor: 'divider', pt: 0.5 }}>
         Total: {formatCurrency(row.pnl_total)}
       </Typography>
     </Box>
@@ -282,9 +282,9 @@ function ArbitrageRow({ row, strings, expandedRows, onToggleRow }) {
         <TableCell align="right">{row.cantidad.toLocaleString('es-AR')}</TableCell>
         <TableCell align="right">
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 0.5 }}>
-            <Typography sx={{ color: getPnLColor(row.pnl_trade), fontWeight: 500 }}>
+            <Box component="span" sx={{ color: getPnLColor(row.pnl_trade) }}>
               {formatCurrency(row.pnl_trade)}
-            </Typography>
+            </Box>
             <Tooltip title={getPnLTradeBreakdown(row)} arrow>
               <InfoIcon sx={{ fontSize: 16, color: 'info.main', cursor: 'help' }} />
             </Tooltip>
@@ -292,9 +292,9 @@ function ArbitrageRow({ row, strings, expandedRows, onToggleRow }) {
         </TableCell>
         <TableCell align="right">
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 0.5 }}>
-            <Typography sx={{ color: getPnLColor(row.pnl_caucion), fontWeight: 500 }}>
+            <Box component="span" sx={{ color: getPnLColor(row.pnl_caucion) }}>
               {formatCurrency(row.pnl_caucion)}
-            </Typography>
+            </Box>
             <Tooltip title={getPnLCaucionBreakdown(row)} arrow>
               <InfoIcon sx={{ fontSize: 16, color: 'info.main', cursor: 'help' }} />
             </Tooltip>
@@ -302,9 +302,9 @@ function ArbitrageRow({ row, strings, expandedRows, onToggleRow }) {
         </TableCell>
         <TableCell align="right">
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 0.5 }}>
-            <Typography sx={{ color: getPnLColor(row.pnl_total), fontWeight: 600 }}>
+            <Box component="span" sx={{ color: getPnLColor(row.pnl_total) }}>
               {formatCurrency(row.pnl_total)}
-            </Typography>
+            </Box>
             <Tooltip title={getPnLTotalBreakdown(row)} arrow>
               <InfoIcon sx={{ fontSize: 16, color: 'info.main', cursor: 'help' }} />
             </Tooltip>
@@ -513,16 +513,15 @@ const ArbitrageTable = ({ data = [], strings = {}, onSort }) => {
                 aria-label="ordenar por P&L Trade"
               >
                 <Box>
-                  <Typography variant="caption" display="block" sx={{ fontWeight: 600 }}>
+                  <Typography variant="body2" display="block" sx={{ fontWeight: 600 }}>
                     {columnsStrings.pnlTrade || 'P&L Trade'}
                   </Typography>
                   <Typography 
-                    variant="caption" 
+                    variant="body2" 
                     display="block" 
                     sx={{ 
                       color: getPnLColor(totals.pnlTrade), 
-                      fontWeight: 700,
-                      fontSize: '0.7rem'
+                      fontWeight: 700
                     }}
                   >
                     {formatCurrency(totals.pnlTrade)}
@@ -538,16 +537,15 @@ const ArbitrageTable = ({ data = [], strings = {}, onSort }) => {
                 aria-label="ordenar por P&L Caución"
               >
                 <Box>
-                  <Typography variant="caption" display="block" sx={{ fontWeight: 600 }}>
+                  <Typography variant="body2" display="block" sx={{ fontWeight: 600 }}>
                     {columnsStrings.pnlCaucion || 'P&L Caución'}
                   </Typography>
                   <Typography 
-                    variant="caption" 
+                    variant="body2" 
                     display="block" 
                     sx={{ 
                       color: getPnLColor(totals.pnlCaucion), 
-                      fontWeight: 700,
-                      fontSize: '0.7rem'
+                      fontWeight: 700
                     }}
                   >
                     {formatCurrency(totals.pnlCaucion)}
@@ -563,16 +561,15 @@ const ArbitrageTable = ({ data = [], strings = {}, onSort }) => {
                 aria-label="ordenar por P&L Total"
               >
                 <Box>
-                  <Typography variant="caption" display="block" sx={{ fontWeight: 600 }}>
+                  <Typography variant="body2" display="block" sx={{ fontWeight: 600 }}>
                     {columnsStrings.pnlTotal || 'P&L Total'}
                   </Typography>
                   <Typography 
-                    variant="caption" 
+                    variant="body2" 
                     display="block" 
                     sx={{ 
                       color: getPnLColor(totals.pnlTotal), 
-                      fontWeight: 700,
-                      fontSize: '0.7rem'
+                      fontWeight: 700
                     }}
                   >
                     {formatCurrency(totals.pnlTotal)}
