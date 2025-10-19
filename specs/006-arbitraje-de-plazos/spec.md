@@ -83,10 +83,10 @@ Como trader, quiero ordenar la tabla por P&L Total descendente y ver los totales
 
 - Con posición: patrón 1 asume venta desde inventario (no préstamo de títulos).
 - Parciales: recompras/ventas en 24h en múltiples tickets generan matches parciales; P&L suma los parciales.
-- Sin caución registrada: estado “matched_sin_caucion”; intereses considerados 0 o estimados si la configuración lo habilita [NEEDS CLARIFICATION: ¿Habilitar estimación de interés con TNA por defecto cuando no hay caución?].
-- Moneda distinta entre instrumento y caución: convertir con tipo de cambio del día definido por política de FX antes del P&L de caución [NEEDS CLARIFICATION: Fuente y timestamp del FX a utilizar].
+- Sin caución registrada: estado “matched_sin_caucion”; se estima el interés usando la TNA por defecto configurable y se marca como “estimado”.
+- Moneda: se asume siempre misma moneda entre instrumento y caución. Operaciones con monedas distintas quedan fuera de alcance y no se procesan.
 - Base de días: 360 por defecto; parametrizable en configuración.
-- Ventana temporal: matching dentro del día operativo con tolerancia de minutos para registros contiguos [NEEDS CLARIFICATION: Definir “jornada activa” y zona horaria].
+- Ventana temporal: matching dentro del día operativo con tolerancia de minutos para registros contiguos, según “día activo” de la app (ver Assumptions).
 
 ## Requirements (mandatory)
 
@@ -103,8 +103,8 @@ Como trader, quiero ordenar la tabla por P&L Total descendente y ver los totales
 - FR-009: Debe mostrarse en la parte superior un bloque de totales para el instrumento: suma de P&L Trade, P&L Caución y P&L Total del día.
 - FR-010: Debe ofrecer una vista alternativa compacta por instrumento, con P&L del día y acción “Ver detalles” para abrir el desglose por matches.
 - FR-011: Los siguientes parámetros deben ser configurables: tolerancia de monto (default 0.5%), TNA por defecto (default 30% TNA), base de días (default 360) y tolerancia temporal para matching.
-- FR-012: En ausencia de caución para un plazo/tipo, los intereses se consideran 0; si la opción de estimación está habilitada, se utilizará la TNA por defecto para estimar el interés y se marcará como “estimado”.
-- FR-013: Si existe discrepancia de moneda entre instrumento y caución, debe aplicarse conversión según política de FX definida; si no hay FX disponible, el estado debe indicar “requiere FX” y P&L de caución=0.
+- FR-012: En ausencia de caución para un plazo/tipo, se estimará el interés usando la TNA por defecto configurable y se marcará “estimado”.
+- FR-013: Las operaciones cuyo instrumento y caución no compartan moneda deben excluirse del procesamiento (fuera de alcance de esta vista).
 
 ### Key Entities (data)
 
@@ -118,6 +118,7 @@ Como trader, quiero ordenar la tabla por P&L Total descendente y ver los totales
 ### Assumptions & Constraints
 
 - Periodo fijo 1 día (jornada activa de la app); no hay selector de fecha.
+- Jornada activa y zona horaria: se derivan del “día activo” definido por la app. Todas las operaciones del día activo se consideran dentro de la ventana, con tolerancia configurable para registros contiguos.
 - Patrón 1 asume posición previa (no venta corta ni costos de préstamo de títulos).
 - No se hace matching por ticket; se usan mínimas cantidades con escalamiento por ratio.
 - Sin pruebas automatizadas en esta entrega; validación manual con ejemplos controlados.
