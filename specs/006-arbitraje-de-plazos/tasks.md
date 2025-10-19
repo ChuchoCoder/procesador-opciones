@@ -21,8 +21,8 @@
 
 **Purpose**: Project initialization and basic structure
 
-- [ ] T001 Update Spanish strings for new UI elements in frontend/src/strings/es-AR.js
-- [ ] T002 Ensure Vite build includes new components
+- [X] T001 Update Spanish strings for new UI elements in frontend/src/strings/es-AR.js
+- [X] T002 Ensure Vite build includes new components
 
 ---
 
@@ -32,9 +32,9 @@
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T003 [P] Create TypeScript interfaces for entities in frontend/src/services/types.js
-- [ ] T004 Create P&L calculation service in frontend/src/services/pnl-calculations.js
-- [ ] T005 Create data aggregation service for operations and cauciones in frontend/src/services/data-aggregation.js
+- [X] T003 [P] Create TypeScript interfaces for entities in frontend/src/services/types.js
+- [X] T004 Create P&L calculation service in frontend/src/services/pnl-calculations.js
+- [X] T005 Create data aggregation service for operations and cauciones in frontend/src/services/data-aggregation.js
 
 **Checkpoint**: Foundation ready - user story implementation can now begin
 
@@ -48,10 +48,10 @@
 
 ### Implementation for User Story 1
 
-- [ ] T006 [US1] Create ArbitrageTable component in frontend/src/components/Processor/ArbitrageTable.jsx
-- [ ] T007 [US1] Add instrument filter to arbitrage page in frontend/src/components/Processor/ArbitragePage.jsx
-- [ ] T008 [US1] Integrate table with data services in frontend/src/components/Processor/ArbitragePage.jsx
-- [ ] T009 [US1] Style table with MUI for P&L display in frontend/src/components/Processor/ArbitrageTable.jsx
+- [X] T006 [US1] Create ArbitrageTable component in frontend/src/components/Processor/ArbitrageTable.jsx
+- [X] T007 [US1] Add instrument filter to arbitrage page in frontend/src/components/Processor/ArbitragePage.jsx
+- [X] T008 [US1] Integrate table with data services in frontend/src/components/Processor/ArbitragePage.jsx
+- [X] T009 [US1] Style table with MUI for P&L display in frontend/src/components/Processor/ArbitrageTable.jsx
 
 **Checkpoint**: User Story 1 fully functional - table shows P&L by plazo and pattern
 
@@ -65,9 +65,9 @@
 
 ### Implementation for User Story 2
 
-- [ ] T010 [US2] Add expandable rows to ArbitrageTable component in frontend/src/components/Processor/ArbitrageTable.jsx
-- [ ] T011 [US2] Create detail view component for operations and cauciones in frontend/src/components/Processor/ArbitrageDetails.jsx
-- [ ] T012 [US2] Integrate details with calculation service in frontend/src/components/Processor/ArbitrageTable.jsx
+- [X] T010 [US2] Add expandable rows to ArbitrageTable component in frontend/src/components/Processor/ArbitrageTable.jsx
+- [X] T011 [US2] Create detail view component for operations and cauciones in frontend/src/components/Processor/ArbitrageDetails.jsx
+- [X] T012 [US2] Integrate details with calculation service in frontend/src/components/Processor/ArbitrageTable.jsx
 
 **Checkpoint**: User Stories 1 and 2 functional - details auditable
 
@@ -81,9 +81,9 @@
 
 ### Implementation for User Story 3
 
-- [ ] T013 [US3] Add sorting functionality to ArbitrageTable in frontend/src/components/Processor/ArbitrageTable.jsx
-- [ ] T014 [US3] Add totals display component in frontend/src/components/Processor/ArbitrageTotals.jsx
-- [ ] T015 [US3] Integrate totals calculation in ArbitragePage in frontend/src/components/Processor/ArbitragePage.jsx
+- [X] T013 [US3] Add sorting functionality to ArbitrageTable in frontend/src/components/Processor/ArbitrageTable.jsx
+- [X] T014 [US3] Add totals display component in frontend/src/components/Processor/ArbitrageTotals.jsx
+- [X] T015 [US3] Integrate totals calculation in ArbitragePage in frontend/src/components/Processor/ArbitragePage.jsx
 
 **Checkpoint**: All user stories functional - full feature complete
 
@@ -93,9 +93,9 @@
 
 **Purpose**: Improvements that affect multiple user stories
 
-- [ ] T016 Update quickstart.md with validation steps
-- [ ] T017 Performance optimization for large datasets
-- [ ] T018 Accessibility improvements (ARIA labels in Spanish)
+- [X] T016 Update quickstart.md with validation steps
+- [X] T017 Performance optimization for large datasets
+- [X] T018 Accessibility improvements (ARIA labels in Spanish)
 
 ---
 

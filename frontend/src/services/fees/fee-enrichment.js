@@ -555,21 +555,6 @@ export function enrichOperationWithFee(operation, effectiveRates, options = {}) 
     ? repoBreakdown.netSettlement ?? null
     : operation.netSettlement ?? null;
 
-  // Debug logging
-  // eslint-disable-next-line no-console
-  console.log('PO: fee-enrichment', {
-    symbol,
-    quantity,
-    price,
-    priceConversionFactor,
-    adjustedPrice,
-    contractMultiplier,
-    grossNotional,
-    category: resolvedCategory,
-    cfiCode: resolvedCfiCode,
-    feeAmount,
-  });
-
   return {
     ...operation,
     grossNotional,
