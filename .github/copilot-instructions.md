@@ -1,4 +1,4 @@
-# procesador-opciones Development Guidelines
+﻿# procesador-opciones Development Guidelines
 
 Auto-generated from all feature plans. Last updated: 2025-10-10
 
@@ -14,6 +14,8 @@ Auto-generated from all feature plans. Last updated: 2025-10-10
 - Browser localStorage (existing settings system - `frontend/src/services/storage` and `storage-settings.js`) (005-cauciones-repo-fees)
 - JavaScript ES2020+ + React 18.x, Material UI v5.x, papaparse, Vite 5.x (006-arbitraje-de-plazos)
 - localStorage, chrome.storage (006-arbitraje-de-plazos)
+- JavaScript (ES2020+) running in browser; project uses React 18.x (frontend) and Node tooling for build (Vite). + React 18.x, Vite 5.x, Material UI v5.x (MUI), papaparse (already used for CSV flows), project-specific frontend services under `frontend/src/services`. (007-title-mejorar-la)
+- Browser `localStorage` and `session` in-memory cache for expanded-row data (per spec). No backend storage changes expected for this iteration. (007-title-mejorar-la)
 
 ## Project Structure
 ```
@@ -33,9 +35,9 @@ Use Powershell style (; instead of & or &&) when executing console commands on W
 JavaScript (ES2020+) with React 18.x, JSX transform via bundler: Follow standard conventions
 
 ## Recent Changes
+- 007-title-mejorar-la: Added JavaScript (ES2020+) running in browser; project uses React 18.x (frontend) and Node tooling for build (Vite). + React 18.x, Vite 5.x, Material UI v5.x (MUI), papaparse (already used for CSV flows), project-specific frontend services under `frontend/src/services`.
 - 006-arbitraje-de-plazos: Added JavaScript ES2020+ + React 18.x, Material UI v5.x, papaparse, Vite 5.x
 - 005-cauciones-repo-fees: Added JavaScript / ES2020+ (frontend React 18.x) + React 18.x, Vite (frontend bundler), Material UI (MUI) v5 (existing), papaparse (already used in project for CSV flows)
-- 004-integrate-jsrofex-to: Added JavaScript (ES2020+) (frontend extension + React processor UI) + React 18, Vite bundler (frontend), Material UI v5, papaparse (CSV), jsRofex (NEEDS CLARIFICATION: library availability / API surface), chrome extension APIs (Manifest V3)
 
 <!-- MANUAL ADDITIONS START -->
 <!-- MANUAL ADDITIONS END -->
