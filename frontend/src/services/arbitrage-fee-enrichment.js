@@ -118,25 +118,13 @@ export async function enrichArbitrageOperations(operations) {
     return [];
   }
   
-  console.log('Enriching arbitrage operations with fees', { count: operations.length });
-  
   // Get fee configurations (same as process-operations.js)
   const effectiveRates = getEffectiveRates();
   const repoFeeConfig = await getRepoFeeConfig();
   
-  console.log('PO: arbitrage-fee-rates', {
-    hasEffectiveRates: Boolean(effectiveRates),
-    hasRepoFeeConfig: Boolean(repoFeeConfig),
-  });
-  
   const enriched = operations.map(op => 
     enrichArbitrageOperation(op, effectiveRates)
   );
-  
-  console.log('Arbitrage operations enriched with fees', {
-    count: enriched.length,
-    sampleFee: enriched[0]?.feeAmount,
-  });
   
   return enriched;
 }
@@ -200,16 +188,9 @@ export async function enrichCauciones(cauciones) {
     return [];
   }
   
-  console.log('Enriching cauciones with fees', { count: cauciones.length });
-  
   const enriched = await Promise.all(
     cauciones.map(c => enrichCaucion(c))
   );
-  
-  console.log('Cauciones enriched with fees', {
-    count: enriched.length,
-    sampleFee: enriched[0]?.feeAmount,
-  });
   
   return enriched;
 }

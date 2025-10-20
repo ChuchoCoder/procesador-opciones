@@ -72,20 +72,12 @@ function consolidatePartialFills(operations) {
         });
         consolidated.push(sorted[0]);
         duplicatesRemoved += sorted.length - 1;
-        
-        if (sorted.length > 1) {
-          console.log(`[Consolidation] Removed ${sorted.length - 1} duplicate fill(s) for order ${orderId.slice(0, 12)}... qty=${qty}`);
-        }
       } else {
         // Unique quantity for this order
         consolidated.push(fillsWithSameQty[0]);
       }
     });
   });
-  
-  if (duplicatesRemoved > 0) {
-    console.log(`[Consolidation] Total duplicate fills removed: ${duplicatesRemoved}`);
-  }
   
   return consolidated;
 }
@@ -104,7 +96,6 @@ export function aggregateByInstrumentoPlazo(operations, cauciones, jornada) {
   
   // Consolidate partial fills FIRST before any aggregation
   const consolidatedOperations = consolidatePartialFills(operations);
-  console.log(`[Aggregation] Input operations: ${operations.length}, After consolidation: ${consolidatedOperations.length}`);
   
   // First pass: group operations by instrument and detect plazo
   const instrumentMap = new Map(); // instrumento -> { ciDates: [], h24Dates: [] }
@@ -118,16 +109,6 @@ export function aggregateByInstrumentoPlazo(operations, cauciones, jornada) {
     
     // Store timestamps (not Date objects) for proper Math.min comparison
     const timestamp = op.fechaHora instanceof Date ? op.fechaHora.getTime() : new Date(op.fechaHora).getTime();
-    
-    // Debug: Log first operation to see what date we're getting
-    if (instData.ciDates.length === 0 && instData.h24Dates.length === 0) {
-      console.log(`First ${op.instrumento} operation:`, {
-        fechaHora: op.fechaHora,
-        timestamp,
-        date: new Date(timestamp).toISOString(),
-        venue: op.venue,
-      });
-    }
     
     if (op.venue === VENUES.CI) {
       instData.ciDates.push(timestamp);
@@ -148,28 +129,14 @@ export function aggregateByInstrumentoPlazo(operations, cauciones, jornada) {
       const earliestTimestamp = Math.min(...allTimestamps);
       const earliestDate = new Date(earliestTimestamp);
       plazo = calculateCIto24hsPlazo(earliestDate);
-      console.log(`Plazo calculation for ${instrumento}:`, {
-        earliestDate: earliestDate.toISOString(),
-        plazo,
-        ciDates: dates.ciDates.length,
-        h24Dates: dates.h24Dates.length,
-      });
     } else if (dates.ciDates.length > 0) {
       // Only CI operations
       const earliestDate = new Date(Math.min(...dates.ciDates));
       plazo = calculateCIto24hsPlazo(earliestDate);
-      console.log(`Plazo calculation for ${instrumento} (CI only):`, {
-        earliestDate: earliestDate.toISOString(),
-        plazo,
-      });
     } else if (dates.h24Dates.length > 0) {
       // Only 24hs operations
       const earliestDate = new Date(Math.min(...dates.h24Dates));
       plazo = calculateCIto24hsPlazo(earliestDate);
-      console.log(`Plazo calculation for ${instrumento} (24h only):`, {
-        earliestDate: earliestDate.toISOString(),
-        plazo,
-      });
     }
     
     instrumentPlazos.set(instrumento, plazo);
