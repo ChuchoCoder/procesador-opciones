@@ -8,6 +8,89 @@ import { calculateCIto24hsPlazo, calculateCalendarDays } from './business-days.j
 import { getInstrumentDetails } from './fees/instrument-mapping.js';
 
 /**
+ * Consolidate partial fills by order_id
+ * When an order is partially filled multiple times, the CSV contains multiple rows with the same order_id.
+ * We need to identify the actual fill quantity for each unique fill, not sum them all.
+ * 
+ * Strategy: For orders with duplicate quantities (same qty appearing multiple times),
+ * keep only the first occurrence of each duplicate quantity.
+ * 
+ * @param {Array} operations - Operations that may contain partial fills
+ * @returns {Array} Operations with partial fill duplicates removed
+ */
+function consolidatePartialFills(operations) {
+  // Group operations by order_id
+  const orderGroups = new Map();
+  
+  operations.forEach(op => {
+    const orderId = op.order_id;
+    if (!orderId) {
+      // No order_id, keep as-is
+      if (!orderGroups.has('__no_order_id__')) {
+        orderGroups.set('__no_order_id__', []);
+      }
+      orderGroups.get('__no_order_id__').push(op);
+      return;
+    }
+    
+    if (!orderGroups.has(orderId)) {
+      orderGroups.set(orderId, []);
+    }
+    orderGroups.get(orderId).push(op);
+  });
+  
+  // Process each order group
+  const consolidated = [];
+  let duplicatesRemoved = 0;
+  
+  orderGroups.forEach((fills, orderId) => {
+    if (fills.length === 1) {
+      // Single fill, no consolidation needed
+      consolidated.push(fills[0]);
+      return;
+    }
+    
+    // Multiple fills for this order - check for duplicate quantities
+    // Group by quantity to find duplicates
+    const qtyMap = new Map();
+    fills.forEach(fill => {
+      const qty = fill.cantidad;
+      if (!qtyMap.has(qty)) {
+        qtyMap.set(qty, []);
+      }
+      qtyMap.get(qty).push(fill);
+    });
+    
+    // Keep only first occurrence of each quantity
+    qtyMap.forEach((fillsWithSameQty, qty) => {
+      if (fillsWithSameQty.length > 1) {
+        // Duplicate quantity - keep only the earliest fill
+        const sorted = fillsWithSameQty.sort((a, b) => {
+          const timeA = a.fechaHora instanceof Date ? a.fechaHora.getTime() : new Date(a.fechaHora).getTime();
+          const timeB = b.fechaHora instanceof Date ? b.fechaHora.getTime() : new Date(b.fechaHora).getTime();
+          return timeA - timeB;
+        });
+        consolidated.push(sorted[0]);
+        duplicatesRemoved += sorted.length - 1;
+        
+        if (sorted.length > 1) {
+          console.log(`[Consolidation] Removed ${sorted.length - 1} duplicate fill(s) for order ${orderId.slice(0, 12)}... qty=${qty}`);
+        }
+      } else {
+        // Unique quantity for this order
+        consolidated.push(fillsWithSameQty[0]);
+      }
+    });
+  });
+  
+  if (duplicatesRemoved > 0) {
+    console.log(`[Consolidation] Total duplicate fills removed: ${duplicatesRemoved}`);
+  }
+  
+  return consolidated;
+}
+
+/**
  * Aggregate operations and cauciones by instrument and plazo
  * Calculates plazo based on CI and 24hs settlement dates (accounting for weekends/holidays)
  * 
@@ -19,10 +102,14 @@ import { getInstrumentDetails } from './fees/instrument-mapping.js';
 export function aggregateByInstrumentoPlazo(operations, cauciones, jornada) {
   const grupos = new Map();
   
+  // Consolidate partial fills FIRST before any aggregation
+  const consolidatedOperations = consolidatePartialFills(operations);
+  console.log(`[Aggregation] Input operations: ${operations.length}, After consolidation: ${consolidatedOperations.length}`);
+  
   // First pass: group operations by instrument and detect plazo
   const instrumentMap = new Map(); // instrumento -> { ciDates: [], h24Dates: [] }
   
-  operations.forEach((op) => {
+  consolidatedOperations.forEach((op) => {
     if (!instrumentMap.has(op.instrumento)) {
       instrumentMap.set(op.instrumento, { ciDates: [], h24Dates: [] });
     }
@@ -89,7 +176,7 @@ export function aggregateByInstrumentoPlazo(operations, cauciones, jornada) {
   });
 
   // Group operations by instrument and calculated plazo
-  operations.forEach((op) => {
+  consolidatedOperations.forEach((op) => {
     const plazo = instrumentPlazos.get(op.instrumento) || 0;
     const key = `${op.instrumento}:${plazo}`;
 

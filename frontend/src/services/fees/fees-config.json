@@ -13,7 +13,7 @@
     }
   },
   "broker": {
-    "commission": 0.6,
+    "commission": 0.0,
     "arancelCaucionColocadora": 1.5,
     "arancelCaucionTomadora": 3.0
   }

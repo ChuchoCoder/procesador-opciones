@@ -48,19 +48,27 @@ function calculatePatronVentaCICompra24h(grupo) {
 
   const resultado = createResultadoPatron(PATTERNS.VENTA_CI_COMPRA_24H);
 
-  // Calculate total values (quantity * price) for each side
+  // Calculate total quantities and values for each side
   const totalVentasCI = sumQuantity(ventasCI);
   const totalCompras24h = sumQuantity(compras24h);
-  const totalValueVentasCI = ventasCI.reduce((sum, op) => sum + (op.cantidad * op.precio), 0);
-  const totalValueCompras24h = compras24h.reduce((sum, op) => sum + (op.cantidad * op.precio), 0);
-
-  // Use minimum total VALUE to calculate matched quantity
-  // This prevents inflating P&L when user bought extra for future use
-  const minTotalValue = Math.min(totalValueVentasCI, totalValueCompras24h);
+  
+  // Calculate weighted average prices (normalized)
   const avgPrecioVentasCI = calculateWeightedAverage(ventasCI);
   const avgPrecioCompras24h = calculateWeightedAverage(compras24h);
   const avgPrice = (avgPrecioVentasCI + avgPrecioCompras24h) / 2;
-  const matchedQty = avgPrice > 0 ? minTotalValue / avgPrice : 0;
+  
+  // Calculate matched quantity - use the minimum of sell/buy quantities
+  // This represents the maximum nominals that can be matched between both sides
+  //
+  // NOTE: There is a known discrepancy with the UI for some datasets.
+  // The UI may show a slightly different matched quantity (e.g., 148,996,640 vs 149,080,254)
+  // This could be due to:
+  // 1. Operations being filtered/excluded in the UI (partial fills, cancellations)
+  // 2. Different rounding or price calculation methods
+  // 3. Value-based matching vs quantity-based matching
+  //
+  // For now, we use simple quantity-based matching: min(totalSell, totalBuy)
+  const matchedQty = Math.min(totalVentasCI, totalCompras24h);
 
   resultado.matchedQty = matchedQty;
   resultado.operations = [...ventasCI, ...compras24h];
@@ -128,19 +136,24 @@ function calculatePatronCompraCIVenta24h(grupo) {
 
   const resultado = createResultadoPatron(PATTERNS.COMPRA_CI_VENTA_24H);
 
-  // Calculate total values (quantity * price) for each side
+  // Calculate total quantities and values for each side
   const totalComprasCI = sumQuantity(comprasCI);
   const totalVentas24h = sumQuantity(ventas24h);
-  const totalValueComprasCI = comprasCI.reduce((sum, op) => sum + (op.cantidad * op.precio), 0);
-  const totalValueVentas24h = ventas24h.reduce((sum, op) => sum + (op.cantidad * op.precio), 0);
-
-  // Use minimum total VALUE to calculate matched quantity
-  // This prevents inflating P&L when user bought extra for future use
-  const minTotalValue = Math.min(totalValueComprasCI, totalValueVentas24h);
+  
+  // Calculate weighted average prices (normalized)
   const avgPrecioComprasCI = calculateWeightedAverage(comprasCI);
   const avgPrecioVentas24h = calculateWeightedAverage(ventas24h);
   const avgPrice = (avgPrecioComprasCI + avgPrecioVentas24h) / 2;
-  const matchedQty = avgPrice > 0 ? minTotalValue / avgPrice : 0;
+  
+  // Calculate total values (quantity * price) for matching
+  // Use the weighted average BUY price as the reference for quantity calculation
+  const totalValueComprasCI = totalComprasCI * avgPrecioComprasCI;
+  const totalValueVentas24h = totalVentas24h * avgPrecioVentas24h;
+  
+  // Match based on minimum value, then convert to quantity at buy-side price
+  // This ensures we don't over-match when prices differ
+  const minTotalValue = Math.min(totalValueComprasCI, totalValueVentas24h);
+  const matchedQty = minTotalValue / avgPrecioComprasCI;
 
   resultado.matchedQty = matchedQty;
   resultado.operations = [...comprasCI, ...ventas24h];
