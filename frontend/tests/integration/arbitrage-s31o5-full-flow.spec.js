@@ -31,6 +31,7 @@ function transformToTableRow(grupo, resultado) {
     estado: resultado.estado,
     operations: resultado.operations,
     cauciones: resultado.cauciones,
+    avgTNA: resultado.avgTNA, // Weighted average TNA from all cauciones
   };
 }
 
@@ -307,5 +308,24 @@ describe('S31O5 Arbitrage Full Flow', () => {
     it('ensures caucion monto calculation stays finite', () => {
         const caucionMonto = ventaCICompra24h.matchedQty * ventaCICompra24h.precioPromedio;
         expect(Number.isFinite(caucionMonto)).toBe(true);
+    });
+
+    it('validates avgTNA is present and reasonable', () => {
+        // avgTNA should be calculated from all cauciones in the dataset
+        expect(s31o5Row.avgTNA).toBeDefined();
+        expect(ventaCICompra24h.avgTNA).toBeDefined();
+        
+        // avgTNA should be a positive number (TNA percentage)
+        expect(s31o5Row.avgTNA).toBeGreaterThan(0);
+        expect(s31o5Row.avgTNA).toBeLessThan(200); // Reasonable TNA range (0-200%)
+        
+        // Both should be the same value (from same calculation)
+        expect(s31o5Row.avgTNA).toBe(ventaCICompra24h.avgTNA);
+        
+        console.log('📊 avgTNA Details:', {
+            avgTNA: s31o5Row.avgTNA.toFixed(2) + '%',
+            caucionesCount: enrichedCauciones.length,
+            caucionesInRow: s31o5Row.cauciones.length,
+        });
     });
 });
