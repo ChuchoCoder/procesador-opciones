@@ -562,6 +562,8 @@ const BuySellTable = ({
     return null;
   };
 
+  const chipColor = isBuyTable ? 'success' : isSellTable ? 'error' : 'default';
+
   return (
     <Paper
       elevation={0}
@@ -591,10 +593,13 @@ const BuySellTable = ({
                   <Chip
                     icon={getIcon()}
                     label={title}
+                    color={chipColor}
+                    variant="filled"
                     sx={{
                       fontWeight: 600,
                       fontSize: '0.875rem',
                       letterSpacing: '0.5px',
+                      px: 0.5,
                     }}
                   />
                   {showAveragingControl && hasData && (

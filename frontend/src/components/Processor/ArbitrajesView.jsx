@@ -7,17 +7,13 @@
 import { useState, useEffect } from 'react';
 import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
-import FormControl from '@mui/material/FormControl';
-import InputLabel from '@mui/material/InputLabel';
-import Select from '@mui/material/Select';
-import MenuItem from '@mui/material/MenuItem';
 import CircularProgress from '@mui/material/CircularProgress';
 import Typography from '@mui/material/Typography';
 
 import GroupFilter from './GroupFilter.jsx';
 import ArbitrageTable from './ArbitrageTable.jsx';
 
-import { parseOperations, parseCauciones, aggregateByInstrumentoPlazo, filterGruposByInstrument, getUniqueInstruments } from '../../services/data-aggregation.js';
+import { parseOperations, parseCauciones, aggregateByInstrumentoPlazo } from '../../services/data-aggregation.js';
 import { calculatePnL } from '../../services/pnl-calculations.js';
 import { enrichArbitrageOperations, enrichCauciones } from '../../services/arbitrage-fee-enrichment.js';
 
@@ -57,10 +53,8 @@ const ArbitrajesView = ({
   strings,
   onGroupChange,
 }) => {
-  const [selectedInstrument, setSelectedInstrument] = useState('all');
   const [isCalculating, setIsCalculating] = useState(false);
   const [tableData, setTableData] = useState([]);
-  const [instruments, setInstruments] = useState([]);
 
   const filterStrings = strings?.filters ?? {};
   const arbitrageStrings = strings?.arbitrage ?? {};
@@ -71,7 +65,6 @@ const ArbitrajesView = ({
       if (!operations || operations.length === 0) {
         console.log('ArbitrajesView: No operations available');
         setTableData([]);
-        setInstruments([]);
         setIsCalculating(false);
         return;
       }
@@ -121,7 +114,6 @@ const ArbitrajesView = ({
         if (parsedOperations.length === 0) {
           console.warn('ArbitrajesView: No valid operations after parsing');
           setTableData([]);
-          setInstruments([]);
           return;
         }
 
@@ -141,17 +133,7 @@ const ArbitrajesView = ({
           })),
         });
 
-        // Get unique instruments for filter
-        const uniqueInstruments = getUniqueInstruments(grupos);
-        setInstruments(uniqueInstruments);
-
-        // Filter by selected instrument
-        const filteredGrupos = filterGruposByInstrument(grupos, selectedInstrument);
-
-        console.log('ArbitrajesView: Filtered grupos', {
-          count: filteredGrupos.length,
-          selectedInstrument,
-        });
+        const filteredGrupos = Array.from(grupos.values());
 
         // Calculate P&L for each grupo and flatten to table rows
         const rows = [];
@@ -179,11 +161,7 @@ const ArbitrajesView = ({
     };
 
     processData();
-  }, [operations, cauciones, selectedInstrument]);
-
-  const handleInstrumentChange = (event) => {
-    setSelectedInstrument(event.target.value);
-  };
+  }, [operations, cauciones]);
 
   return (
     <Stack spacing={2} sx={{ flex: 1, minHeight: 0, p: 2 }}>
@@ -197,34 +175,12 @@ const ArbitrajesView = ({
             strings={filterStrings}
           />
         )}
-
-        <FormControl size="small" sx={{ minWidth: 200 }}>
-          <InputLabel id="instrument-filter-label">
-            {arbitrageStrings.filterByInstrument || 'Filtrar por instrumento'}
-          </InputLabel>
-          <Select
-            labelId="instrument-filter-label"
-            id="instrument-filter"
-            value={selectedInstrument}
-            label={arbitrageStrings.filterByInstrument || 'Filtrar por instrumento'}
-            onChange={handleInstrumentChange}
-          >
-            <MenuItem key="all" value="all">
-              {arbitrageStrings.allInstruments || 'Todos los instrumentos'}
-            </MenuItem>
-            {instruments.map((inst) => (
-              <MenuItem key={inst} value={inst}>
-                {inst}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
       </Stack>
 
       {/* Main content area */}
       <Box sx={{ flex: 1, minHeight: 0, display: 'flex' }}>
         {/* Table */}
-        <Box sx={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>
+        <Box sx={{ flex: 1, minHeight: 0 }}>
           {isCalculating ? (
             <Box
               sx={{
