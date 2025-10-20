@@ -116,6 +116,7 @@ function calculatePatronVentaCICompra24h(grupo) {
   const avgTNA = grupo.avgTNA || 0;
   const caucionesFiltradas = filterCaucionesByType(cauciones, CAUCION_TIPOS.COLOCADORA);
   resultado.cauciones = caucionesFiltradas;
+  resultado.avgTNA = avgTNA; // Store avgTNA for display
 
   if (avgTNA > 0 && plazo > 0) {
     // Calculate financing INCOME (positive - you're lending and earning interest)
@@ -222,6 +223,7 @@ function calculatePatronCompraCIVenta24h(grupo) {
   const avgTNA = grupo.avgTNA || 0;
   const caucionesFiltradas = filterCaucionesByType(cauciones, CAUCION_TIPOS.TOMADORA);
   resultado.cauciones = caucionesFiltradas;
+  resultado.avgTNA = avgTNA; // Store avgTNA for display
 
   if (avgTNA > 0 && plazo > 0) {
     // Calculate financing COST (negative - you're borrowing and paying interest)
