@@ -40,7 +40,7 @@
  * @property {Operacion[]} compras24h - Buy operations in 24h venue
  * @property {Operacion[]} comprasCI - Buy operations in CI venue
  * @property {Operacion[]} ventas24h - Sales operations in 24h venue
- * @property {Caucion[]} cauciones - Related cauciones
+ * @property {number} [avgTNA] - Weighted average TNA from all cauciones (day-level, not matched)
  */
 
 /**
@@ -57,16 +57,15 @@
  * @property {number} matchedQty - Matched quantity
  * @property {number} precioPromedio - Average price
  * @property {number} pnl_trade - P&L from trade operations
- * @property {number} pnl_caucion - P&L from cauciones
+ * @property {number} pnl_caucion - P&L from cauciones (calculated from avgTNA)
  * @property {number} pnl_total - Total P&L (pnl_trade + pnl_caucion)
  * @property {'completo'|'sin_caucion'|'cantidades_desbalanceadas'|'sin_contraparte'|'matched_sin_caucion'} estado - Pattern status
  * @property {Operacion[]} operations - Operations involved in the pattern
- * @property {Caucion[]} cauciones - Cauciones involved in the pattern
  * @property {PatronBreakdown} [ventaCI_breakdown] - Breakdown for Venta CI side
  * @property {PatronBreakdown} [compra24h_breakdown] - Breakdown for Compra 24h side
  * @property {PatronBreakdown} [compraCI_breakdown] - Breakdown for Compra CI side
  * @property {PatronBreakdown} [venta24h_breakdown] - Breakdown for Venta 24h side
- * @property {number} [avgTNA] - Weighted average TNA used for caución calculations
+ * @property {number} [avgTNA] - Weighted average TNA used for caución calculations (from grupo.avgTNA)
  */
 
 /**
@@ -128,7 +127,7 @@ export function createGrupoInstrumentoPlazo(instrumento, plazo, jornada) {
     compras24h: [],
     comprasCI: [],
     ventas24h: [],
-    cauciones: [],
+    avgTNA: 0, // Weighted average TNA from all cauciones
   };
 }
 
@@ -147,6 +146,6 @@ export function createResultadoPatron(patron) {
     pnl_total: 0,
     estado: ESTADOS.SIN_CONTRAPARTE,
     operations: [],
-    cauciones: [],
+    avgTNA: 0, // Weighted average TNA from grupo
   };
 }

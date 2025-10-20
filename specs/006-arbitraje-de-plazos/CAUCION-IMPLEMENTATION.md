@@ -2,7 +2,9 @@
 
 ## Overview
 
-This document describes the implementation of caución (repo) P&L calculation for the Arbitrage de Plazos feature.
+This document describes the **simplified** implementation of caución (repo) P&L calculation for the Arbitrage de Plazos feature.
+
+**Key Principle:** Cauciones are **NEVER** matched to specific operations. Instead, a weighted average TNA (Tasa Nominal Anual) is calculated from ALL cauciones of the day and applied uniformly to all arbitrage operations.
 
 ## Current Implementation
 
@@ -31,48 +33,112 @@ Examples:
 5. Calculates monto: quantity × price
 6. Uses price as tasa (simplified - see limitations below)
 
-### Caución-to-Instrument Linking
+### Weighted Average TNA Calculation
 
-**Current Behavior:**
-- Cauciones are parsed with `instrumento = "PESOS"`
-- Linked to grupos by plazo matching
-- ALL cauciones with matching plazo are included in P&L calculation
+**File:** `frontend/src/services/data-aggregation.js`
 
-**Aggregation Logic:**
+**Function:** `calculateWeightedAverageTNA(cauciones)`
+
+**Logic:**
 ```javascript
-// In aggregateByInstrumentoPlazo()
-cauciones.forEach((caucion) => {
-  const plazo = calculatePlazoFromDates(caucion.inicio, caucion.fin);
-  const key = `${caucion.instrumento}:${plazo}`;
-  
-  if (!grupos.has(key)) {
-    grupos.set(key, createGrupoInstrumentoPlazo(caucion.instrumento, plazo, jornada));
+// Calculate weighted average from ALL cauciones
+totalMonto = sum of all caución amounts
+weightedSum = sum of (tasa × monto) for each caución
+avgTNA = weightedSum / totalMonto
+
+// Apply to ALL grupos with operations
+grupos.forEach(grupo => {
+  if (grupo has operations) {
+    grupo.avgTNA = avgTNA;
   }
-  
-  const grupo = grupos.get(key);
-  grupo.cauciones.push(caucion);
 });
 ```
 
-**Consequence:**
-- PESOS cauciones create separate grupos (e.g., "PESOS:3")
-- S31O5 operations create separate grupos (e.g., "S31O5:0")
-- **Cauciones are NOT automatically linked to S31O5 operations**
+**Key Points:**
+- ✅ Single TNA value for the entire day
+- ✅ No caución-to-operation matching
+- ✅ Transparent and consistent calculation
+- ✅ Matches business reality (no 1:1 matching in practice)
+
+### P&L Caución Calculation
+
+**File:** `frontend/src/services/pnl-calculations.js`
+
+**Pattern: VentaCI → Compra24h (Colocadora)**
+```javascript
+// You sell CI (receive cash) and lend it (colocadora)
+// Earning interest → Positive P&L
+const monto = precioPromedio × matchedQty;
+const interestIncome = monto × (avgTNA / 100) × (plazo / 365);
+resultado.pnl_caucion = interestIncome;
+```
+
+**Pattern: CompraCI → Venta24h (Tomadora)**
+```javascript
+// You buy CI (pay cash) and borrow it (tomadora)
+// Paying interest → Negative P&L
+const monto = precioPromedio × matchedQty;
+const interestCost = monto × (avgTNA / 100) × (plazo / 365);
+resultado.pnl_caucion = -interestCost;
+```
+
+**Formula:**
+```
+Interés = Monto × (TNA / 100) × (Plazo / 365)
+```
+
+Where:
+- `Monto` = average price × matched quantity
+- `TNA` = weighted average from all cauciones (percentage)
+- `Plazo` = business days from CI to 24hs settlement
+- Day count convention: actual/365
+
+## Data Structure
+
+**GrupoInstrumentoPlazo:**
+```javascript
+{
+  instrumento: "S31O5",
+  plazo: 3,
+  ventasCI: [...],
+  compras24h: [...],
+  comprasCI: [...],
+  ventas24h: [...],
+  avgTNA: 31.48  // Weighted average from ALL cauciones
+}
+```
+
+**ResultadoPatron:**
+```javascript
+{
+  patron: "VentaCI_Compra24h",
+  matchedQty: 1000061,
+  precioPromedio: 130.805,
+  pnl_trade: -210012.81,
+  pnl_caucion: 325632.47,  // Calculated from avgTNA
+  pnl_total: 115619.66,
+  estado: "completo",
+  operations: [...],
+  avgTNA: 31.48  // Copied from grupo
+}
+```
+
+**Key Changes from Previous Implementation:**
+- ❌ **REMOVED:** `cauciones` array from `GrupoInstrumentoPlazo`
+- ❌ **REMOVED:** `cauciones` array from `ResultadoPatron`
+- ✅ **ADDED:** `avgTNA` property (single number, not array)
+- ✅ **SIMPLIFIED:** No filtering by tipo (colocadora/tomadora)
+- ✅ **SIMPLIFIED:** No fallback logic - always use avgTNA
 
 ## Limitations
 
-### 1. Instrument Linkage
+### 1. No Individual Caución Tracking
 
-**Problem:**
-The CSV does not contain explicit links between PESOS cauciones and the instruments they finance (e.g., S31O5).
+**Consequence:**
+Individual cauciones are not displayed in the UI. Only the aggregated avgTNA is shown.
 
-**Current Workaround:**
-Cauciones are displayed as separate rows in the arbitrage table under instrument "PESOS".
-
-**Proper Solution (Future):**
-- Add `referencia` field to caución operations linking to specific instrument trades
-- Implement intelligent matching based on timing, account, or order_id
-- Allow users to manually link cauciones to operations in the UI
+**Why This Is Acceptable:**
+In practice, cauciones are not matched 1:1 with operations. The weighted average TNA provides a reasonable approximation of financing costs/income for P&L purposes.
 
 ### 2. Tasa Calculation
 
@@ -89,94 +155,38 @@ const interes = monto * (tasa / 100) * (plazo / 365);
 - If price is in decimal form (e.g., 0.3026 for 30.26%), calculation will be wrong
 - Interest calculation assumes 365-day year (may need 360 for some markets)
 
-**Proper Solution (Future):**
-- Clarify price field semantics with data source
-- Add configuration for day-count convention (365 vs 360)
-- Validate tasa values are reasonable (e.g., 0 < tasa < 200%)
+**Mitigation:**
+- Validate tasa values are reasonable (0 < tasa < 200%)
+- Add configuration for day-count convention if needed
 
-### 3. P&L Caución Display
+## User Experience
 
-**Current State:**
-Since cauciones create separate "PESOS" grupos that don't match S31O5 grupos, the **P&L Caución column will be blank** for S31O5 rows.
+### What Users See
 
-**Why:**
-```javascript
-// In calculatePnL() - pnl-calculations.js
-function calculatePatronVentaCICompra24h(grupo) {
-  const { ventasCI, compras24h, cauciones, plazo } = grupo;
-  
-  // cauciones array will be empty for S31O5 grupos
-  // because PESOS cauciones are in a different grupo
-  
-  const pnl_caucion = cauciones.reduce((sum, cau) => {
-    // ... calculation
-  }, 0);
-  
-  // Result: pnl_caucion = 0 for S31O5
-}
-```
+1. **Arbitrage Table:**
+   - Instrument operations with P&L Trade
+   - P&L Caución calculated from day-level avgTNA
+   - Tooltip showing TNA used and calculation formula
 
-**User Impact:**
-- Users see arbitrage P&L (trade) correctly
-- Caución P&L shows as 0.00 or blank
-- PESOS rows show caución data but no trade data
+2. **Expanded Details:**
+   - Operations breakdown (CI vs 24h)
+   - Caución calculation summary showing:
+     - TNA Promedio del día
+     - Plazo (días)
+     - Monto
+     - Interest calculation formula
+     - Total P&L Caución
 
-## Recommended Next Steps
+3. **No Individual Cauciones:**
+   - Users do NOT see individual PESOS cauciones matched to operations
+   - This reflects business reality (no direct matching exists)
 
-### Short-Term (Usable Now)
+### Benefits
 
-1. **Document Expected Behavior:**
-   - Add tooltip/help text explaining caución linkage
-   - Show "PESOS" rows separately in table
-   - Explain that manual calculation may be needed
-
-2. **Add Visual Indicators:**
-   - Mark rows with cauciones (✓ icon)
-   - Mark rows without cauciones (⚠ icon)
-   - Add filter to show/hide PESOS rows
-
-3. **Export Functionality:**
-   - Allow CSV export of both operation rows and caución rows
-   - Users can manually link in Excel/analysis tool
-
-### Medium-Term (Enhanced Matching)
-
-1. **Implement Heuristic Matching:**
-   ```javascript
-   function matchCaucionesToOperations(grupos, cauciones) {
-     // For each S31O5 grupo with plazo > 0
-     //   Find PESOS cauciones with matching plazo
-     //   Calculate proportion to allocate based on operation size
-     //   Add to grupo.cauciones
-   }
-   ```
-
-2. **Add Configuration UI:**
-   - Allow users to specify caución-instrument mappings
-   - Save mappings to localStorage
-   - Apply mappings on data load
-
-3. **Intelligent Plazo Detection:**
-   - Parse settlement dates from operations
-   - Match cauciones by actual settlement period
-   - Handle T+1, T+2, etc. conventions
-
-### Long-Term (Production Ready)
-
-1. **Extended Data Model:**
-   - Add `linked_operations` field to Caución
-   - Support many-to-many relationships
-   - Track allocation percentages
-
-2. **Broker Integration:**
-   - Use order_id or account fields to link operations
-   - Parse settlement details from broker data
-   - Automatic matching based on broker rules
-
-3. **Manual Linking UI:**
-   - Drag-and-drop interface to link cauciones
-   - Split/merge cauciones across operations
-   - Save linkages persistently
+- ✅ **Simpler UX**: No confusion about caución-to-operation relationships
+- ✅ **Accurate**: Reflects actual business logic (weighted average financing cost)
+- ✅ **Transparent**: Formula clearly shown in tooltips
+- ✅ **Consistent**: Same avgTNA applied to all operations of the day
 
 ## Testing
 
@@ -184,13 +194,16 @@ function calculatePatronVentaCICompra24h(grupo) {
 
 **File:** `frontend/tests/integration/arbitrage-plazos.spec.js`
 
-**Caución Tests:**
+**Coverage:**
 - ✅ Parse PESOS operations as cauciones
 - ✅ Extract plazo from symbol (3D, 18D, etc.)
 - ✅ Determine tipo from side (BUY/SELL)
 - ✅ Filter PESOS from regular operations
+- ✅ Calculate weighted average TNA from multiple cauciones
+- ✅ Apply avgTNA to all grupos
+- ✅ Calculate P&L Caución using avgTNA (not individual cauciones)
 
-**Current Coverage:** 12/12 tests passing
+**Current Status:** 16/16 tests passing ✅
 
 ### Manual Testing
 
@@ -198,70 +211,39 @@ function calculatePatronVentaCICompra24h(grupo) {
    - Load ArbitrajePlazos.csv
    - Navigate to Arbitrajes tab
 
-2. **Verify Rows:**
-   - S31O5 rows show trade P&L, caución P&L = 0
-   - PESOS rows show caución data, trade P&L = 0
-   - Both sets of rows displayed
+2. **Verify Calculations:**
+   - S31O5 rows show P&L Trade
+   - S31O5 rows show P&L Caución calculated from avgTNA
+   - Tooltip shows TNA used and formula
 
 3. **Check Totals:**
-   - P&L Trade total includes S31O5 results
-   - P&L Caución total = 0 (since no linking)
-   - P&L Total = P&L Trade
-
-## Data Examples
-
-### S31O5 Operation (Trade)
-```csv
-id,symbol,side,last_qty,last_price,transact_time
-6c9b...,MERV - XMEV - S31O5 - CI,SELL,61,130.7,2025-10-17 14:20:03Z
-```
-
-**Parsed As:**
-- instrumento: "S31O5"
-- venue: "CI"
-- lado: "V" (VENTA)
-- cantidad: 61
-- precio: 130.7
-
-**Grupo Key:** "S31O5:0" (plazo = 0, same-day settlement)
-
-### PESOS Operation (Caución)
-```csv
-id,symbol,side,last_qty,last_price,transact_time
-7cf...,MERV - XMEV - PESOS - 3D,BUY,567616,30.26,2025-10-17 14:14:25Z
-```
-
-**Parsed As:**
-- instrumento: "PESOS"
-- tipo: "colocadora" (BUY = lending)
-- tenorDias: 3
-- monto: 567616 × 30.26 = 17,175,716.16
-- tasa: 30.26% (assumed)
-- interes: 17,175,716.16 × 0.3026 × (3/365) = 42,584.07
-
-**Grupo Key:** "PESOS:3" (plazo = 3 days)
+   - P&L Total = P&L Trade + P&L Caución
+   - Totals row shows sum of all rows
 
 ## Conclusion
 
 The current implementation:
 - ✅ **Correctly parses** PESOS operations as cauciones
-- ✅ **Correctly calculates** caución interest
-- ✅ **Correctly separates** cauciones from operations
-- ⚠️ **Does NOT link** cauciones to specific instruments automatically
-- ⚠️ **Displays caución P&L as 0** for trade rows (S31O5)
+- ✅ **Calculates weighted average TNA** from all cauciones
+- ✅ **Applies avgTNA uniformly** to all arbitrage operations
+- ✅ **Calculates P&L Caución** accurately using the avgTNA formula
+- ✅ **Reflects business reality**: No 1:1 caución-to-operation matching
+
+**Architecture:**
+- Simple, maintainable code (~100 lines removed vs. complex matching logic)
+- Single source of truth for financing cost (avgTNA)
+- Transparent calculation visible to users
 
 **User Experience:**
-Users can see both trade P&L and caución data, but must manually correlate them. Future enhancements will add automatic/manual linking capabilities.
-
-**Trade-offs:**
-- Simple implementation, low complexity
-- Works with current CSV format
-- Provides accurate calculations for each component
-- Requires manual interpretation for full arbitrage P&L
+Users see complete P&L including financing costs, calculated using the weighted average TNA from all cauciones of the day. This provides accurate P&L estimation without requiring artificial 1:1 matching that doesn't exist in practice.
 
 ## References
 
 - Feature Spec: `specs/006-arbitraje-de-plazos/spec.md`
 - Data Model: `specs/006-arbitraje-de-plazos/data-model.md`
 - Integration Tests: `frontend/tests/integration/arbitrage-plazos.spec.js`
-- Service Implementation: `frontend/src/services/data-aggregation.js`
+- Services:
+  - `frontend/src/services/data-aggregation.js` - Parsing & avgTNA calculation
+  - `frontend/src/services/pnl-calculations.js` - P&L calculation using avgTNA
+  - `frontend/src/services/arbitrage-types.js` - Data structures
+- UI: `frontend/src/components/Processor/ArbitrageTable.jsx`

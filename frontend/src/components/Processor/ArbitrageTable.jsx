@@ -131,71 +131,39 @@ function getPnLTradeBreakdown(row) {
 
 /**
  * Generate P&L Caucion breakdown tooltip
- * @param {Object} row - Row data with cauciones
+ * Shows calculation details using avgTNA (day-level weighted average)
+ * @param {Object} row - Row data with avgTNA
  * @returns {JSX.Element}
  */
 function getPnLCaucionBreakdown(row) {
-  if (!row.cauciones || row.cauciones.length === 0) {
-    return (
-      <Box sx={{ p: 1, minWidth: 200 }}>
-        <Typography variant="body2" sx={{ fontWeight: 600, display: 'block', mb: 1, color: 'grey.100' }}>
-          Detalle P&L Caución
-        </Typography>
-        <Typography variant="body2" sx={{ color: 'grey.400' }}>
-          Sin cauciones - Usando TNA promedio
-        </Typography>
-        {row.avgTNA > 0 && (
-          <Typography variant="body2" sx={{ display: 'block', mt: 1, color: 'primary.light', fontWeight: 500 }}>
-            TNA Promedio: {row.avgTNA.toFixed(2)}%
-          </Typography>
-        )}
-        <Typography variant="body2" sx={{ display: 'block', mt: 1, color: 'grey.100' }}>
-          Monto: {formatCurrency(row.cantidad * row.precioPromedio)}
-        </Typography>
-        <Typography variant="body2" sx={{ display: 'block', color: 'grey.100' }}>
-          Plazo: {row.plazo} días
-        </Typography>
-        <Typography variant="body2" sx={{ display: 'block', mt: 1, fontWeight: 600, color: 'grey.100' }}>
-          Interés estimado: {formatCurrency(row.pnl_caucion)}
-        </Typography>
-      </Box>
-    );
-  }
-
-  const totalInteres = row.cauciones.reduce((sum, c) => sum + (c.interes || 0), 0);
-  const totalFees = row.cauciones.reduce((sum, c) => sum + (c.feeAmount || 0), 0);
-
   return (
-    <Box sx={{ p: 1, minWidth: 250 }}>
+    <Box sx={{ p: 1, minWidth: 200 }}>
       <Typography variant="body2" sx={{ fontWeight: 600, display: 'block', mb: 1, color: 'grey.100' }}>
         Detalle P&L Caución
       </Typography>
-      {row.avgTNA > 0 && (
-        <Typography variant="body2" sx={{ display: 'block', mb: 1, color: 'primary.light', fontWeight: 500 }}>
-          TNA Promedio: {row.avgTNA.toFixed(2)}%
+      {row.avgTNA > 0 ? (
+        <>
+          <Typography variant="body2" sx={{ display: 'block', mb: 1, color: 'primary.light', fontWeight: 500 }}>
+            TNA Promedio (día): {row.avgTNA.toFixed(2)}%
+          </Typography>
+          <Typography variant="body2" sx={{ display: 'block', color: 'grey.100' }}>
+            Monto: {formatCurrency(row.cantidad * row.precioPromedio)}
+          </Typography>
+          <Typography variant="body2" sx={{ display: 'block', color: 'grey.100' }}>
+            Plazo: {row.plazo} días
+          </Typography>
+          <Typography variant="caption" sx={{ display: 'block', mt: 1, color: 'grey.400', fontStyle: 'italic' }}>
+            Interés = Monto × (TNA / 100) × (Plazo / 365)
+          </Typography>
+          <Typography variant="body2" sx={{ display: 'block', mt: 1, fontWeight: 600, borderTop: '1px solid', borderColor: 'grey.700', pt: 0.5, color: 'grey.100' }}>
+            {row.patron === PATTERNS.VENTA_CI_COMPRA_24H ? 'Ingreso por financiación' : 'Costo de financiación'}: {formatCurrency(row.pnl_caucion)}
+          </Typography>
+        </>
+      ) : (
+        <Typography variant="body2" sx={{ color: 'grey.400' }}>
+          Sin cauciones disponibles - P&L = 0
         </Typography>
       )}
-      {row.cauciones.map((c, idx) => (
-        <Box key={idx} sx={{ mb: 1 }}>
-          <Typography variant="body2" sx={{ display: 'block', color: 'grey.100' }}>
-            {c.tipo}: {formatCurrency(c.monto)}
-          </Typography>
-          <Typography variant="body2" sx={{ display: 'block', color: 'grey.400', ml: 1 }}>
-            Tasa: {c.tasa}% - {c.tenorDias} días
-          </Typography>
-          <Typography variant="body2" sx={{ display: 'block', color: 'grey.400', ml: 1 }}>
-            Interés: {formatCurrency(c.interes)}
-          </Typography>
-          {c.feeAmount > 0 && (
-            <Typography variant="body2" sx={{ display: 'block', color: 'grey.400', ml: 1 }}>
-              Comisiones: {formatCurrency(c.feeAmount)}
-            </Typography>
-          )}
-        </Box>
-      ))}
-      <Typography variant="body2" sx={{ display: 'block', mt: 1, fontWeight: 600, borderTop: '1px solid', borderColor: 'grey.700', pt: 0.5, color: 'grey.100' }}>
-        Total: {formatCurrency(row.pnl_caucion)}
-      </Typography>
     </Box>
   );
 }
@@ -375,45 +343,35 @@ function ArbitrageRow({ row, strings, expandedRows, onToggleRow }) {
                 </Box>
               )}
 
-              {/* Cauciones table */}
-              {row.cauciones && row.cauciones.length > 0 && (
-                <Box>
-                  <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>
-                    {detailsStrings.cauciones || 'Cauciones'}
+              {/* Caución calculation summary */}
+              {row.avgTNA > 0 && row.plazo > 0 && (
+                <Box sx={{ mt: 2, p: 2, bgcolor: 'background.paper', borderRadius: 1, border: '1px solid', borderColor: 'divider' }}>
+                  <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, display: 'block', mb: 1 }}>
+                    {detailsStrings.caucionCalculation || 'Cálculo de Caución'}
                   </Typography>
-                  <Table size="small" sx={{ mt: 1 }} aria-label="tabla de cauciones detalladas">
-                    <TableHead>
-                      <TableRow>
-                        <TableCell>{detailsStrings.operationId || 'ID'}</TableCell>
-                        <TableCell>{detailsStrings.caucionTipo || 'Tipo'}</TableCell>
-                        <TableCell align="right">{detailsStrings.caucionMonto || 'Monto'}</TableCell>
-                        <TableCell align="right">{detailsStrings.caucionTasa || 'Tasa'}</TableCell>
-                        <TableCell align="right">{detailsStrings.caucionTenor || 'Tenor (días)'}</TableCell>
-                        <TableCell align="right">{detailsStrings.caucionInteres || 'Interés'}</TableCell>
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {row.cauciones.map((cau, index) => (
-                        <TableRow key={`${cau.id}-${index}`}>
-                          <TableCell>{cau.id}</TableCell>
-                          <TableCell>{cau.tipo}</TableCell>
-                          <TableCell align="right">{formatCurrency(cau.monto)}</TableCell>
-                          <TableCell align="right">{cau.tasa}%</TableCell>
-                          <TableCell align="right">{cau.tenorDias}</TableCell>
-                          <TableCell align="right">{formatCurrency(cau.interes)}</TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                  <Typography variant="body2" color="text.primary">
+                    TNA Promedio del día: <strong>{row.avgTNA.toFixed(2)}%</strong>
+                  </Typography>
+                  <Typography variant="body2" color="text.primary">
+                    Plazo: <strong>{row.plazo} días</strong>
+                  </Typography>
+                  <Typography variant="body2" color="text.primary">
+                    Monto: <strong>{formatCurrency(row.cantidad * row.precioPromedio)}</strong>
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1, fontStyle: 'italic' }}>
+                    Interés = Monto × (TNA / 100) × (Plazo / 365)
+                  </Typography>
+                  <Typography variant="body2" color={getPnLColor(row.pnl_caucion)} sx={{ mt: 1, fontWeight: 600 }}>
+                    {row.patron === PATTERNS.VENTA_CI_COMPRA_24H ? 'Ingreso' : 'Costo'}: {formatCurrency(row.pnl_caucion)}
+                  </Typography>
                 </Box>
               )}
 
-              {(!row.operations || row.operations.length === 0) &&
-                (!row.cauciones || row.cauciones.length === 0) && (
-                  <Typography variant="body2" color="text.secondary">
-                    {detailsStrings.noOperations || 'Sin operaciones'}
-                  </Typography>
-                )}
+              {(!row.operations || row.operations.length === 0) && (
+                <Typography variant="body2" color="text.secondary">
+                  {detailsStrings.noOperations || 'Sin operaciones'}
+                </Typography>
+              )}
             </Box>
           </Collapse>
         </TableCell>
