@@ -66,6 +66,7 @@
  * @property {PatronBreakdown} [compra24h_breakdown] - Breakdown for Compra 24h side
  * @property {PatronBreakdown} [compraCI_breakdown] - Breakdown for Compra CI side
  * @property {PatronBreakdown} [venta24h_breakdown] - Breakdown for Venta 24h side
+ * @property {number} [avgTNA] - Weighted average TNA used for caución calculations
  */
 
 /**
