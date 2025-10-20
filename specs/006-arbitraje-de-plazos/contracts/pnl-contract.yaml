@@ -1,0 +1,98 @@
+openapi: 3.0.0
+info:
+  title: P&L Calculation Contract
+  version: 1.0.0
+  description: Contract for calculating P&L for arbitrage patterns
+
+paths:
+  /calculate-pnl:
+    post:
+      summary: Calculate P&L for a group
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GrupoInput'
+      responses:
+        '200':
+          description: Successful calculation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultadoOutput'
+
+components:
+  schemas:
+    GrupoInput:
+      type: object
+      properties:
+        instrumento:
+          type: string
+        plazo:
+          type: integer
+        ventasCI:
+          type: array
+          items:
+            $ref: '#/components/schemas/Operacion'
+        compras24h:
+          type: array
+          items:
+            $ref: '#/components/schemas/Operacion'
+        comprasCI:
+          type: array
+          items:
+            $ref: '#/components/schemas/Operacion'
+        ventas24h:
+          type: array
+          items:
+            $ref: '#/components/schemas/Operacion'
+        cauciones:
+          type: array
+          items:
+            $ref: '#/components/schemas/Caucion'
+    Operacion:
+      type: object
+      properties:
+        id:
+          type: string
+        cantidad:
+          type: number
+        precio:
+          type: number
+        comisiones:
+          type: number
+    Caución:
+      type: object
+      properties:
+        tipo:
+          type: string
+          enum: [colocadora, tomadora]
+        monto:
+          type: number
+        tasa:
+          type: number
+        tenorDias:
+          type: integer
+    ResultadoOutput:
+      type: object
+      properties:
+        patrones:
+          type: array
+          items:
+            $ref: '#/components/schemas/PatronResultado'
+    PatronResultado:
+      type: object
+      properties:
+        patron:
+          type: string
+        matchedQty:
+          type: number
+        pnl_trade:
+          type: number
+        pnl_caucion:
+          type: number
+        pnl_total:
+          type: number
+        estado:
+          type: string

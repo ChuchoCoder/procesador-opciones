@@ -536,17 +536,21 @@ export function enrichOperationWithFee(operation, effectiveRates, options = {}) 
   const priceConversionFactor = instrumentDetails?.priceConversionFactor ?? 1;
   const contractMultiplier = instrumentDetails?.contractMultiplier ?? (category === 'option' ? 100 : 1);
   
-  // Calculate gross notional: quantity × contractMultiplier × (price × priceConversionFactor)
-  const adjustedPrice = price * priceConversionFactor;
-  const grossNotional = Math.abs(quantity) * contractMultiplier * adjustedPrice;
+  // Calculate gross notional: quantity × contractMultiplier × price
+  // Note: price here is the raw CSV price (monetary value before normalization)
+  // Fee is calculated on monetary notional, then normalized later
+  const grossNotional = Math.abs(quantity) * contractMultiplier * price;
 
-  // Calculate fee using pure calculator
+  // Calculate fee using pure calculator (fee is in monetary units)
   const feeResult = calculateFee({ grossNotional, category }, effectiveRates);
+  
+  // Normalize the fee amount to match normalized price scale
+  const normalizedFeeAmount = feeResult.feeAmount * priceConversionFactor;
 
   const repoBreakdown = maybeCalculateRepoBreakdown(operation, instrumentDetails, repoFeeConfig);
   const useRepoBreakdown = isRepoBreakdown(repoBreakdown);
   const feeBreakdown = useRepoBreakdown ? repoBreakdown : feeResult.feeBreakdown;
-  const feeAmount = useRepoBreakdown ? (repoBreakdown.totalExpenses ?? 0) : feeResult.feeAmount;
+  const feeAmount = useRepoBreakdown ? (repoBreakdown.totalExpenses ?? 0) : normalizedFeeAmount;
   const resolvedCategory = useRepoBreakdown ? 'caucion' : category;
   const resolvedCfiCode = useRepoBreakdown && repoBreakdown?.instrument?.cfiCode
     ? repoBreakdown.instrument.cfiCode
@@ -554,21 +558,6 @@ export function enrichOperationWithFee(operation, effectiveRates, options = {}) 
   const netSettlement = useRepoBreakdown
     ? repoBreakdown.netSettlement ?? null
     : operation.netSettlement ?? null;
-
-  // Debug logging
-  // eslint-disable-next-line no-console
-  console.log('PO: fee-enrichment', {
-    symbol,
-    quantity,
-    price,
-    priceConversionFactor,
-    adjustedPrice,
-    contractMultiplier,
-    grossNotional,
-    category: resolvedCategory,
-    cfiCode: resolvedCfiCode,
-    feeAmount,
-  });
 
   return {
     ...operation,

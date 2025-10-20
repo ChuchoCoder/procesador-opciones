@@ -37,6 +37,8 @@ const Sidebar = ({ strings, routes, brokerStatus, onBrokerLogout }) => {
   const [open, setOpen] = useState(true);
   const [brokerPopoverAnchor, setBrokerPopoverAnchor] = useState(null);
   const [expandedMenus, setExpandedMenus] = useState({});
+  const [submenuPopoverAnchor, setSubmenuPopoverAnchor] = useState(null);
+  const [submenuPopoverItems, setSubmenuPopoverItems] = useState([]);
 
   const isActive = useCallback(
     (path, options = {}) => {
@@ -138,6 +140,16 @@ const Sidebar = ({ strings, routes, brokerStatus, onBrokerLogout }) => {
     }));
   };
 
+  const handleSubmenuPopoverOpen = (event, children) => {
+    setSubmenuPopoverAnchor(event.currentTarget);
+    setSubmenuPopoverItems(children);
+  };
+
+  const handleSubmenuPopoverClose = () => {
+    setSubmenuPopoverAnchor(null);
+    setSubmenuPopoverItems([]);
+  };
+
   return (
     <Drawer
       variant="permanent"
@@ -212,8 +224,14 @@ const Sidebar = ({ strings, routes, brokerStatus, onBrokerLogout }) => {
             const itemActive = isActive(item.path);
             const childActive = hasChildren && item.children.some((child) => isActive(child.path, { exact: child.exact }));
             const isExpanded = hasChildren ? expandedMenus[item.key] || childActive : false;
+            
+            // When collapsed and has children, show popover on click
             const buttonProps = hasChildren
-              ? { onClick: () => handleSubmenuToggle(item.key) }
+              ? { 
+                  onClick: open 
+                    ? () => handleSubmenuToggle(item.key)
+                    : (event) => handleSubmenuPopoverOpen(event, item.children)
+                }
               : { component: NavLink, to: item.path };
 
             return (
@@ -474,6 +492,65 @@ const Sidebar = ({ strings, routes, brokerStatus, onBrokerLogout }) => {
           </Box>
         </>
       )}
+
+      {/* Submenu Popover (when sidebar is collapsed) */}
+      <Popover
+        open={Boolean(submenuPopoverAnchor)}
+        anchorEl={submenuPopoverAnchor}
+        onClose={handleSubmenuPopoverClose}
+        anchorOrigin={{
+          vertical: 'top',
+          horizontal: 'right',
+        }}
+        transformOrigin={{
+          vertical: 'top',
+          horizontal: 'left',
+        }}
+        slotProps={{
+          paper: {
+            sx: {
+              ml: 1,
+              minWidth: 200,
+            },
+          },
+        }}
+      >
+        <List sx={{ py: 1 }}>
+          {submenuPopoverItems.map((child) => {
+            const childIsActive = isActive(child.path, { exact: child.exact });
+            return (
+              <ListItem key={child.key} disablePadding>
+                <ListItemButton
+                  component={NavLink}
+                  to={child.path}
+                  selected={childIsActive}
+                  onClick={handleSubmenuPopoverClose}
+                  sx={(theme) => ({
+                    minHeight: 40,
+                    px: 2,
+                    color: childIsActive
+                      ? theme.palette.primary.main
+                      : theme.palette.text.primary,
+                    '&.Mui-selected': {
+                      backgroundColor: theme.palette.action.selected,
+                      '&:hover': {
+                        backgroundColor: theme.palette.action.hover,
+                      },
+                    },
+                  })}
+                >
+                  <ListItemText 
+                    primary={child.label}
+                    primaryTypographyProps={{
+                      fontWeight: childIsActive ? 600 : 400,
+                    }}
+                  />
+                </ListItemButton>
+              </ListItem>
+            );
+          })}
+        </List>
+      </Popover>
     </Drawer>
   );
 };
