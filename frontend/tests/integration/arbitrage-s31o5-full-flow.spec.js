@@ -98,7 +98,7 @@ describe('S31O5 Arbitrage Full Flow', () => {
         console.log('[Test Setup] Filtered to S31O5 grupo:', {
             ventasCI: grupo.ventasCI.length,
             compras24h: grupo.compras24h.length,
-            cauciones: grupo.cauciones.length,
+            avgTNA: grupo.avgTNA,
         });
 
         // Step 7: Calculate P&L (same as ArbitrajesView)
@@ -325,7 +325,6 @@ describe('S31O5 Arbitrage Full Flow', () => {
         console.log('📊 avgTNA Details:', {
             avgTNA: s31o5Row.avgTNA.toFixed(2) + '%',
             caucionesCount: enrichedCauciones.length,
-            caucionesInRow: s31o5Row.cauciones.length,
         });
     });
 });

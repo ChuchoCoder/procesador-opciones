@@ -11,54 +11,73 @@ import { enrichArbitrageOperations, enrichCauciones } from '../../src/services/a
 
 describe('Arbitrage P&L Calculation Integration', () => {
   let mockOperations;
+  let mockCauciones;
   let mockJornada;
 
   beforeAll(() => {
     mockJornada = new Date('2025-10-19');
+
+    // Mock cauciones for the same day
+    mockCauciones = [
+      {
+        symbol: 'MERV - XMEV - PESOS - 3D',
+        side: 'BUY',
+        quantity: 500000,
+        price: 30.50,
+        raw: {
+          transact_time: '2025-10-17 14:00:00.000000Z'
+        }
+      },
+      {
+        symbol: 'MERV - XMEV - PESOS - 3D',
+        side: 'SELL',
+        quantity: 600000,
+        price: 31.00,
+        raw: {
+          transact_time: '2025-10-17 14:30:00.000000Z'
+        }
+      },
+    ];
 
     // Mock operations matching the user's CSV structure
     // S31O5 with VentaCI → Compra24h pattern
     mockOperations = [
       // Venta CI operations (sell in CI market)
       {
-        symbol: 'S31O5',
+        symbol: 'MERV - XMEV - S31O5 - CI',
         side: 'SELL',
         quantity: 61,
         price: 130.70,
-        venue: 'CI',
         order_id: 'order-1',
         raw: {
           transact_time: '2025-10-17 13:36:13.415000Z'
         }
       },
       {
-        symbol: 'S31O5',
+        symbol: 'MERV - XMEV - S31O5 - CI',
         side: 'SELL',
         quantity: 1000000,
         price: 130.70,
-        venue: 'CI',
         order_id: 'order-2',
         raw: {
           transact_time: '2025-10-17 13:36:13.415000Z'
         }
       },
       {
-        symbol: 'S31O5',
+        symbol: 'MERV - XMEV - S31O5 - CI',
         side: 'SELL',
         quantity: 724242,
         price: 130.70,
-        venue: 'CI',
         order_id: 'order-3',
         raw: {
           transact_time: '2025-10-17 13:36:13.415000Z'
         }
       },
       {
-        symbol: 'S31O5',
+        symbol: 'MERV - XMEV - S31O5 - CI',
         side: 'SELL',
         quantity: 1000000,
         price: 130.701,
-        venue: 'CI',
         order_id: 'order-4',
         raw: {
           transact_time: '2025-10-17 13:36:13.415000Z'
@@ -67,44 +86,40 @@ describe('Arbitrage P&L Calculation Integration', () => {
       
       // Compra 24h operations (buy in 24h market)
       {
-        symbol: 'S31O5',
+        symbol: 'MERV - XMEV - S31O5 - 24hs',
         side: 'BUY',
         quantity: 61,
         price: 130.91,
-        venue: '24h',
         order_id: 'order-100',
         raw: {
           transact_time: '2025-10-17 13:36:13.415000Z'
         }
       },
       {
-        symbol: 'S31O5',
+        symbol: 'MERV - XMEV - S31O5 - 24hs',
         side: 'BUY',
         quantity: 1000000,
         price: 130.91,
-        venue: '24h',
         order_id: 'order-101',
         raw: {
           transact_time: '2025-10-17 13:36:13.415000Z'
         }
       },
       {
-        symbol: 'S31O5',
+        symbol: 'MERV - XMEV - S31O5 - 24hs',
         side: 'BUY',
         quantity: 724242,
         price: 130.91,
-        venue: '24h',
         order_id: 'order-102',
         raw: {
           transact_time: '2025-10-17 13:36:13.415000Z'
         }
       },
       {
-        symbol: 'S31O5',
+        symbol: 'MERV - XMEV - S31O5 - 24hs',
         side: 'BUY',
         quantity: 1000000,
         price: 130.91,
-        venue: '24h',
         order_id: 'order-103',
         raw: {
           transact_time: '2025-10-17 13:36:13.415000Z'
@@ -142,7 +157,8 @@ describe('Arbitrage P&L Calculation Integration', () => {
   it('should aggregate operations by instrument and plazo', async () => {
     const enriched = await enrichArbitrageOperations(mockOperations);
     const parsed = parseOperations(enriched);
-    const grupos = aggregateByInstrumentoPlazo(parsed, [], mockJornada);
+    const parsedCauciones = parseCauciones(mockCauciones);
+    const grupos = aggregateByInstrumentoPlazo(parsed, parsedCauciones, mockJornada);
     
     expect(grupos.size).toBeGreaterThan(0);
     
@@ -165,7 +181,8 @@ describe('Arbitrage P&L Calculation Integration', () => {
   it('should calculate P&L correctly for VentaCI → Compra24h pattern', async () => {
     const enriched = await enrichArbitrageOperations(mockOperations);
     const parsed = parseOperations(enriched);
-    const grupos = aggregateByInstrumentoPlazo(parsed, [], mockJornada);
+    const parsedCauciones = parseCauciones(mockCauciones);
+    const grupos = aggregateByInstrumentoPlazo(parsed, parsedCauciones, mockJornada);
     
     // Find the S31O5 grupo
     const s31o5Grupos = Array.from(grupos.entries()).filter(([key]) => key.startsWith('S31O5:'));
@@ -197,7 +214,8 @@ describe('Arbitrage P&L Calculation Integration', () => {
   it('should calculate correct totals matching expected ~100k P&L', async () => {
     const enriched = await enrichArbitrageOperations(mockOperations);
     const parsed = parseOperations(enriched);
-    const grupos = aggregateByInstrumentoPlazo(parsed, [], mockJornada);
+    const parsedCauciones = parseCauciones(mockCauciones);
+    const grupos = aggregateByInstrumentoPlazo(parsed, parsedCauciones, mockJornada);
     
     let totalPnL = 0;
     let totalPnLTrade = 0;
@@ -225,48 +243,40 @@ describe('Arbitrage P&L Calculation Integration', () => {
     expect(totalPnLCaucion).toBeDefined();
   });
 
-  it('should use minimum total value for unbalanced quantities', async () => {
+  it('should use minimum quantity for unbalanced quantities', async () => {
     // Create unbalanced operations
     const unbalancedOps = [
       {
-        symbol: 'TEST',
+        symbol: 'MERV - XMEV - TEST - CI',
         side: 'SELL',
         quantity: 100,
         price: 100,
-        venue: 'CI',
         raw: { transact_time: '2025-10-17 13:36:13.415000Z' }
       },
       {
-        symbol: 'TEST',
+        symbol: 'MERV - XMEV - TEST - 24hs',
         side: 'BUY',
         quantity: 200, // Double quantity - user bought extra for future use
         price: 90,
-        venue: '24h',
         raw: { transact_time: '2025-10-17 13:36:13.415000Z' }
       },
     ];
     
     const enriched = await enrichArbitrageOperations(unbalancedOps);
     const parsed = parseOperations(enriched);
-    const grupos = aggregateByInstrumentoPlazo(parsed, [], mockJornada);
+    const parsedCauciones = parseCauciones(mockCauciones);
+    const grupos = aggregateByInstrumentoPlazo(parsed, parsedCauciones, mockJornada);
     
     const grupo = Array.from(grupos.values())[0];
     const resultados = calculatePnL(grupo);
     const resultado = resultados[0];
     
-    // Expected: matched by minimum TOTAL VALUE
-    // Sell: 100 * 100 = 10,000
-    // Buy: 200 * 90 = 18,000
-    // Min = 10,000
-    // Matched qty should be based on this min total, not min quantity
+    // Expected: matched by minimum QUANTITY
+    // Sell qty: 100
+    // Buy qty: 200
+    // Matched qty = min(100, 200) = 100
     
-    const sellTotal = 100 * 100; // 10,000
-    const buyTotal = 200 * 90; // 18,000
-    const minTotal = Math.min(sellTotal, buyTotal); // 10,000
-    const avgPrice = (100 + 90) / 2; // 95
-    const expectedMatchedQty = minTotal / avgPrice; // ~105.26
-    
-    expect(resultado.matchedQty).toBeCloseTo(expectedMatchedQty, 1);
+    expect(resultado.matchedQty).toBe(100); // Min quantity
     expect(resultado.matchedQty).toBeLessThan(200); // Should not use full buy quantity
   });
 });

@@ -113,28 +113,23 @@ function calculatePatronVentaCICompra24h(grupo) {
   // Calculate caución P&L using weighted average TNA from all cauciones
   // VentaCI_Compra24h: You sell CI (receive cash) and lend it (colocadora)
   // This means you EARN interest → Positive P&L
+  // NOTE: avgTNA is calculated from ALL cauciones of the day, not matched to specific operations
   const avgTNA = grupo.avgTNA || 0;
-  const caucionesFiltradas = filterCaucionesByType(cauciones, CAUCION_TIPOS.COLOCADORA);
-  resultado.cauciones = caucionesFiltradas;
   resultado.avgTNA = avgTNA; // Store avgTNA for display
 
   if (avgTNA > 0 && plazo > 0) {
     // Calculate financing INCOME (positive - you're lending and earning interest)
-    // P&L Caución = +monto * (TNA / 100) * (plazo / 365) - fees
+    // P&L Caución = +monto * (TNA / 100) * (plazo / 365)
     const monto = resultado.precioPromedio * matchedQty;
     const interestIncome = monto * (avgTNA / 100) * (plazo / 365);
     
-    // Subtract caución fees
-    const caucionFees = caucionesFiltradas.reduce((sum, c) => sum + (c.feeAmount || 0), 0);
-    resultado.pnl_caucion = interestIncome - caucionFees;
-    resultado.estado = totalVentasCI === totalCompras24h ? ESTADOS.COMPLETO : ESTADOS.CANTIDADES_DESBALANCEADAS;
-  } else if (caucionesFiltradas.length > 0) {
-    // Fallback: use actual cauciones if avgTNA not available
-    resultado.pnl_caucion = calculateCaucionPnL(caucionesFiltradas, matchedQty, plazo);
+    resultado.pnl_caucion = interestIncome;
     resultado.estado = totalVentasCI === totalCompras24h ? ESTADOS.COMPLETO : ESTADOS.CANTIDADES_DESBALANCEADAS;
   } else {
+    // No TNA available or plazo = 0 (same-day settlement)
     resultado.pnl_caucion = 0;
-    resultado.estado = ESTADOS.MATCHED_SIN_CAUCION;
+    resultado.estado = avgTNA === 0 ? ESTADOS.MATCHED_SIN_CAUCION : 
+                      (totalVentasCI === totalCompras24h ? ESTADOS.COMPLETO : ESTADOS.CANTIDADES_DESBALANCEADAS);
   }
 
   // Total P&L
@@ -220,28 +215,23 @@ function calculatePatronCompraCIVenta24h(grupo) {
   // Calculate caución P&L using weighted average TNA from all cauciones
   // CompraCIVenta24h: You buy CI (pay cash) and borrow it (tomadora)
   // This means you PAY interest → Negative P&L
+  // NOTE: avgTNA is calculated from ALL cauciones of the day, not matched to specific operations
   const avgTNA = grupo.avgTNA || 0;
-  const caucionesFiltradas = filterCaucionesByType(cauciones, CAUCION_TIPOS.TOMADORA);
-  resultado.cauciones = caucionesFiltradas;
   resultado.avgTNA = avgTNA; // Store avgTNA for display
 
   if (avgTNA > 0 && plazo > 0) {
     // Calculate financing COST (negative - you're borrowing and paying interest)
-    // P&L Caución = -monto * (TNA / 100) * (plazo / 365) - fees
+    // P&L Caución = -monto * (TNA / 100) * (plazo / 365)
     const monto = resultado.precioPromedio * matchedQty;
     const interestCost = monto * (avgTNA / 100) * (plazo / 365);
     
-    // Add caución fees (both interest cost and fees are negative)
-    const caucionFees = caucionesFiltradas.reduce((sum, c) => sum + (c.feeAmount || 0), 0);
-    resultado.pnl_caucion = -(interestCost + caucionFees);
-    resultado.estado = totalComprasCI === totalVentas24h ? ESTADOS.COMPLETO : ESTADOS.CANTIDADES_DESBALANCEADAS;
-  } else if (caucionesFiltradas.length > 0) {
-    // Fallback: use actual cauciones if avgTNA not available
-    resultado.pnl_caucion = calculateCaucionPnL(caucionesFiltradas, matchedQty, plazo);
+    resultado.pnl_caucion = -interestCost;
     resultado.estado = totalComprasCI === totalVentas24h ? ESTADOS.COMPLETO : ESTADOS.CANTIDADES_DESBALANCEADAS;
   } else {
+    // No TNA available or plazo = 0 (same-day settlement)
     resultado.pnl_caucion = 0;
-    resultado.estado = ESTADOS.MATCHED_SIN_CAUCION;
+    resultado.estado = avgTNA === 0 ? ESTADOS.MATCHED_SIN_CAUCION : 
+                      (totalComprasCI === totalVentas24h ? ESTADOS.COMPLETO : ESTADOS.CANTIDADES_DESBALANCEADAS);
   }
 
   // Total P&L
@@ -315,44 +305,6 @@ function calculateWeightedAverageCommissions(operations) {
 
   const totalCommissions = operations.reduce((sum, op) => sum + op.comisiones, 0);
   return totalCommissions / totalQuantity;
-}
-
-/**
- * Filter cauciones by type
- * @param {import('./arbitrage-types.js').Caucion[]} cauciones
- * @param {string} tipo - 'colocadora' or 'tomadora'
- * @returns {import('./arbitrage-types.js').Caucion[]}
- */
-function filterCaucionesByType(cauciones, tipo) {
-  return cauciones.filter((c) => c.tipo === tipo);
-}
-
-/**
- * Calculate P&L from cauciones
- * For colocadora (lending): P&L = +interest earned
- * For tomadora (borrowing): P&L = -interest paid
- * 
- * @param {import('./arbitrage-types.js').Caucion[]} cauciones
- * @param {number} matchedQty - Matched quantity
- * @param {number} plazo - Settlement days
- * @returns {number}
- */
-function calculateCaucionPnL(cauciones, matchedQty, plazo) {
-  if (cauciones.length === 0) return 0;
-
-  // Use the first caución as representative (or could average)
-  // In practice, there should typically be one matching caución per pattern
-  const caucion = cauciones[0];
-
-  // Interest is already calculated in the Caución object
-  // For colocadora: positive (earning interest)
-  // For tomadora: negative (paying interest)
-  const interest = caucion.interes;
-
-  // Normalize by matched quantity if caución monto differs
-  const normalizedInterest = (interest * matchedQty) / caucion.monto;
-
-  return caucion.tipo === CAUCION_TIPOS.COLOCADORA ? normalizedInterest : -normalizedInterest;
 }
 
 /**

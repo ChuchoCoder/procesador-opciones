@@ -249,7 +249,8 @@ describe('Arbitrage de Plazos Integration', () => {
       expect(ventaCICompra24h).toBeDefined();
       
       // Check matched quantity (min of ventas CI and compras 24h)
-  expect(ventaCICompra24h.matchedQty).toBeCloseTo(999258.2294, 1); // Total matched using price-adjusted notional
+      // Total quantity is sum of 61 + 1,000,000 = 1,000,061
+      expect(ventaCICompra24h.matchedQty).toBe(1000061);
       
       // Check P&L trade is calculated (should be negative: buying higher than selling)
       // Sell at 130.7, buy at 130.91 = loss of 0.21 per unit
@@ -269,8 +270,41 @@ describe('Arbitrage de Plazos Integration', () => {
       const resultados = calculatePnL(s31o5Grupo);
       const ventaCICompra24h = resultados.find(r => r.patron === 'VentaCI_Compra24h');
 
+      // Without cauciones, avgTNA should be 0 and P&L Caución should be 0
+      expect(ventaCICompra24h.avgTNA).toBe(0);
       expect(ventaCICompra24h.pnl_caucion).toBe(0);
       expect(ventaCICompra24h.estado).toMatch(/matched_sin_caucion|sin_caucion/);
+    });
+
+    it('should calculate P&L Caución using weighted average TNA when cauciones are present', () => {
+      const operations = parseOperations(rawOperations);
+      const cauciones = parseCauciones(rawCauciones);
+      const jornada = new Date('2025-10-17');
+      
+      // Aggregate with cauciones - avgTNA will be calculated from all cauciones
+      const grupos = aggregateByInstrumentoPlazo(operations, cauciones, jornada);
+      const s31o5Grupo = Array.from(grupos.values()).find(g => g.instrumento === 'S31O5');
+
+      expect(s31o5Grupo).toBeDefined();
+      
+      // avgTNA should be set from weighted average of all cauciones
+      expect(s31o5Grupo.avgTNA).toBeGreaterThan(0);
+      expect(s31o5Grupo.avgTNA).toBeCloseTo(31.48, 1); // Weighted avg of 30.26 and 31.51
+
+      const resultados = calculatePnL(s31o5Grupo);
+      const ventaCICompra24h = resultados.find(r => r.patron === 'VentaCI_Compra24h');
+
+      expect(ventaCICompra24h).toBeDefined();
+      
+      // P&L Caución should be calculated using avgTNA
+      // For VentaCI_Compra24h: you're lending (colocadora) → positive income
+      expect(ventaCICompra24h.pnl_caucion).toBeGreaterThan(0);
+      expect(ventaCICompra24h.avgTNA).toBe(s31o5Grupo.avgTNA);
+      
+      // Total P&L should include both trade and caución
+      expect(ventaCICompra24h.pnl_total).toBe(
+        ventaCICompra24h.pnl_trade + ventaCICompra24h.pnl_caucion
+      );
     });
   });
 

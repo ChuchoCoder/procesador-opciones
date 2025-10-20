@@ -165,25 +165,13 @@ export function aggregateByInstrumentoPlazo(operations, cauciones, jornada) {
     }
   });
 
-  // Add cauciones to matching grupos
-  // Note: PESOS cauciones create separate grupos and won't be automatically
-  // linked to instrument operations without additional correlation data
-  cauciones.forEach((caucion) => {
-    const plazo = calculatePlazoFromDates(caucion.inicio, caucion.fin);
-    const key = `${caucion.instrumento}:${plazo}`;
-
-    if (!grupos.has(key)) {
-      grupos.set(key, createGrupoInstrumentoPlazo(caucion.instrumento, plazo, jornada));
-    }
-
-    const grupo = grupos.get(key);
-    grupo.cauciones.push(caucion);
-  });
-  
   // Calculate weighted average TNA from ALL cauciones for use in P&L calculations
+  // NOTE: Cauciones are NEVER matched to specific operations. They are only used
+  // to calculate a single avgTNA that applies to all arbitrage operations of the day.
   const avgTNA = calculateWeightedAverageTNA(cauciones);
   
-  // Add avgTNA to all grupos that have operations (not just PESOS grupos)
+  // Add avgTNA to all grupos that have operations
+  // This is the ONLY way cauciones affect P&L calculations - via avgTNA
   grupos.forEach((grupo) => {
     if (grupo.ventasCI.length > 0 || grupo.compras24h.length > 0 ||
         grupo.comprasCI.length > 0 || grupo.ventas24h.length > 0) {
