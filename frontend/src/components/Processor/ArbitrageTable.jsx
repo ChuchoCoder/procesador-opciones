@@ -144,6 +144,11 @@ function getPnLCaucionBreakdown(row) {
         <Typography variant="body2" sx={{ color: 'grey.400' }}>
           Sin cauciones - Usando TNA promedio
         </Typography>
+        {row.avgTNA > 0 && (
+          <Typography variant="body2" sx={{ display: 'block', mt: 1, color: 'primary.light', fontWeight: 500 }}>
+            TNA Promedio: {row.avgTNA.toFixed(2)}%
+          </Typography>
+        )}
         <Typography variant="body2" sx={{ display: 'block', mt: 1, color: 'grey.100' }}>
           Monto: {formatCurrency(row.cantidad * row.precioPromedio)}
         </Typography>
@@ -165,6 +170,11 @@ function getPnLCaucionBreakdown(row) {
       <Typography variant="body2" sx={{ fontWeight: 600, display: 'block', mb: 1, color: 'grey.100' }}>
         Detalle P&L Caución
       </Typography>
+      {row.avgTNA > 0 && (
+        <Typography variant="body2" sx={{ display: 'block', mb: 1, color: 'primary.light', fontWeight: 500 }}>
+          TNA Promedio: {row.avgTNA.toFixed(2)}%
+        </Typography>
+      )}
       {row.cauciones.map((c, idx) => (
         <Box key={idx} sx={{ mb: 1 }}>
           <Typography variant="body2" sx={{ display: 'block', color: 'grey.100' }}>

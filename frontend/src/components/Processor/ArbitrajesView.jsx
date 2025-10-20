@@ -34,6 +34,7 @@ function transformToTableRow(grupo, resultado) {
     estado: resultado.estado,
     operations: resultado.operations,
     cauciones: resultado.cauciones,
+    avgTNA: resultado.avgTNA, // Weighted average TNA from all cauciones
     // Copy breakdown fields for tooltip display
     ventaCI_breakdown: resultado.ventaCI_breakdown,
     compra24h_breakdown: resultado.compra24h_breakdown,
