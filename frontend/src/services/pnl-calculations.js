@@ -59,15 +59,6 @@ function calculatePatronVentaCICompra24h(grupo) {
   
   // Calculate matched quantity - use the minimum of sell/buy quantities
   // This represents the maximum nominals that can be matched between both sides
-  //
-  // NOTE: There is a known discrepancy with the UI for some datasets.
-  // The UI may show a slightly different matched quantity (e.g., 148,996,640 vs 149,080,254)
-  // This could be due to:
-  // 1. Operations being filtered/excluded in the UI (partial fills, cancellations)
-  // 2. Different rounding or price calculation methods
-  // 3. Value-based matching vs quantity-based matching
-  //
-  // For now, we use simple quantity-based matching: min(totalSell, totalBuy)
   const matchedQty = Math.min(totalVentasCI, totalCompras24h);
 
   resultado.matchedQty = matchedQty;
@@ -80,15 +71,44 @@ function calculatePatronVentaCICompra24h(grupo) {
   }
 
   // Calculate trade P&L
+  // When quantities are unbalanced, only use proportional fees/commissions for matched quantity
   const avgComisionesVentas = calculateWeightedAverageCommissions(ventasCI);
   const avgComisionesCompras = calculateWeightedAverageCommissions(compras24h);
 
   resultado.precioPromedio = avgPrice;
 
   // P&L Trade = (Venta CI - Compra 24h) * matchedQty - comisiones
+  // Commissions are calculated per unit, then multiplied by matched quantity
   const pnlTradeGross = (avgPrecioVentasCI - avgPrecioCompras24h) * matchedQty;
-  const comisionesTotales = (avgComisionesVentas + avgComisionesCompras) * matchedQty;
+  
+  // Calculate proportional commissions based on matched quantity
+  // If unbalanced, use only the proportion that was actually matched
+  const proportionVentas = totalVentasCI > 0 ? matchedQty / totalVentasCI : 0;
+  const proportionCompras = totalCompras24h > 0 ? matchedQty / totalCompras24h : 0;
+  
+  const totalComisionesVentas = sumCommissions(ventasCI) * proportionVentas;
+  const totalComisionesCompras = sumCommissions(compras24h) * proportionCompras;
+  const comisionesTotales = totalComisionesVentas + totalComisionesCompras;
+  
   resultado.pnl_trade = pnlTradeGross - comisionesTotales;
+
+  // Add breakdown information for UI display
+  // Use raw prices for display (original values from CSV)
+  const avgRawPriceVentasCI = calculateWeightedAverageRawPrice(ventasCI);
+  const avgRawPriceCompras24h = calculateWeightedAverageRawPrice(compras24h);
+  
+  resultado.ventaCI_breakdown = {
+    totalValue: Math.round(avgPrecioVentasCI * matchedQty * 100) / 100,
+    avgPrice: Math.round(avgRawPriceVentasCI * 100) / 100, // Display original price from CSV
+    totalFees: Math.round(totalComisionesVentas * 100) / 100,
+    quantity: totalVentasCI,
+  };
+  resultado.compra24h_breakdown = {
+    totalValue: Math.round(avgPrecioCompras24h * matchedQty * 100) / 100,
+    avgPrice: Math.round(avgRawPriceCompras24h * 100) / 100, // Display original price from CSV
+    totalFees: Math.round(totalComisionesCompras * 100) / 100,
+    quantity: totalCompras24h,
+  };
 
   // Calculate caución P&L using weighted average TNA from all cauciones
   // VentaCI_Compra24h: You sell CI (receive cash) and lend it (colocadora)
@@ -145,15 +165,8 @@ function calculatePatronCompraCIVenta24h(grupo) {
   const avgPrecioVentas24h = calculateWeightedAverage(ventas24h);
   const avgPrice = (avgPrecioComprasCI + avgPrecioVentas24h) / 2;
   
-  // Calculate total values (quantity * price) for matching
-  // Use the weighted average BUY price as the reference for quantity calculation
-  const totalValueComprasCI = totalComprasCI * avgPrecioComprasCI;
-  const totalValueVentas24h = totalVentas24h * avgPrecioVentas24h;
-  
-  // Match based on minimum value, then convert to quantity at buy-side price
-  // This ensures we don't over-match when prices differ
-  const minTotalValue = Math.min(totalValueComprasCI, totalValueVentas24h);
-  const matchedQty = minTotalValue / avgPrecioComprasCI;
+  // Calculate matched quantity - use the minimum of buy/sell quantities
+  const matchedQty = Math.min(totalComprasCI, totalVentas24h);
 
   resultado.matchedQty = matchedQty;
   resultado.operations = [...comprasCI, ...ventas24h];
@@ -165,6 +178,7 @@ function calculatePatronCompraCIVenta24h(grupo) {
   }
 
   // Calculate trade P&L
+  // When quantities are unbalanced, only use proportional fees/commissions for matched quantity
   const avgComisionesCompras = calculateWeightedAverageCommissions(comprasCI);
   const avgComisionesVentas = calculateWeightedAverageCommissions(ventas24h);
 
@@ -172,8 +186,35 @@ function calculatePatronCompraCIVenta24h(grupo) {
 
   // P&L Trade = (Venta 24h - Compra CI) * matchedQty - comisiones
   const pnlTradeGross = (avgPrecioVentas24h - avgPrecioComprasCI) * matchedQty;
-  const comisionesTotales = (avgComisionesCompras + avgComisionesVentas) * matchedQty;
+  
+  // Calculate proportional commissions based on matched quantity
+  // If unbalanced, use only the proportion that was actually matched
+  const proportionCompras = totalComprasCI > 0 ? matchedQty / totalComprasCI : 0;
+  const proportionVentas = totalVentas24h > 0 ? matchedQty / totalVentas24h : 0;
+  
+  const totalComisionesCompras = sumCommissions(comprasCI) * proportionCompras;
+  const totalComisionesVentas = sumCommissions(ventas24h) * proportionVentas;
+  const comisionesTotales = totalComisionesCompras + totalComisionesVentas;
+  
   resultado.pnl_trade = pnlTradeGross - comisionesTotales;
+
+  // Add breakdown information for UI display
+  // Use raw prices for display (original values from CSV)
+  const avgRawPriceComprasCI = calculateWeightedAverageRawPrice(comprasCI);
+  const avgRawPriceVentas24h = calculateWeightedAverageRawPrice(ventas24h);
+  
+  resultado.compraCI_breakdown = {
+    totalValue: Math.round(avgPrecioComprasCI * matchedQty * 100) / 100,
+    avgPrice: Math.round(avgRawPriceComprasCI * 100) / 100, // Display original price from CSV
+    totalFees: Math.round(totalComisionesCompras * 100) / 100,
+    quantity: totalComprasCI,
+  };
+  resultado.venta24h_breakdown = {
+    totalValue: Math.round(avgPrecioVentas24h * matchedQty * 100) / 100,
+    avgPrice: Math.round(avgRawPriceVentas24h * 100) / 100, // Display original price from CSV
+    totalFees: Math.round(totalComisionesVentas * 100) / 100,
+    quantity: totalVentas24h,
+  };
 
   // Calculate caución P&L using weighted average TNA from all cauciones
   // CompraCIVenta24h: You buy CI (pay cash) and borrow it (tomadora)
@@ -217,7 +258,16 @@ function sumQuantity(operations) {
 }
 
 /**
- * Calculate weighted average price
+ * Sum total commissions from operations
+ * @param {import('./arbitrage-types.js').Operacion[]} operations
+ * @returns {number}
+ */
+function sumCommissions(operations) {
+  return operations.reduce((sum, op) => sum + op.comisiones, 0);
+}
+
+/**
+ * Calculate weighted average price (normalized)
  * @param {import('./arbitrage-types.js').Operacion[]} operations
  * @returns {number}
  */
@@ -228,6 +278,25 @@ function calculateWeightedAverage(operations) {
   if (totalQuantity === 0) return 0;
 
   const weightedSum = operations.reduce((sum, op) => sum + op.precio * op.cantidad, 0);
+  return weightedSum / totalQuantity;
+}
+
+/**
+ * Calculate weighted average raw price (original price from CSV)
+ * @param {import('./arbitrage-types.js').Operacion[]} operations
+ * @returns {number}
+ */
+function calculateWeightedAverageRawPrice(operations) {
+  if (operations.length === 0) return 0;
+
+  const totalQuantity = operations.reduce((sum, op) => sum + (op.rawCantidad || op.cantidad), 0);
+  if (totalQuantity === 0) return 0;
+
+  const weightedSum = operations.reduce((sum, op) => {
+    const qty = op.rawCantidad || op.cantidad;
+    const price = op.rawPrecio || op.precio;
+    return sum + (price * qty);
+  }, 0);
   return weightedSum / totalQuantity;
 }
 

@@ -39,72 +39,80 @@ function getPnLColor(value) {
 
 /**
  * Generate P&L Trade breakdown tooltip
- * @param {Object} row - Row data with operations
+ * Uses pre-calculated breakdown values from P&L service to ensure consistency
+ * @param {Object} row - Row data with operations and breakdown
  * @returns {JSX.Element}
  */
 function getPnLTradeBreakdown(row) {
+  console.log('getPnLTradeBreakdown called with:', {
+    hasOperations: !!row.operations,
+    operationsCount: row.operations?.length,
+    hasVentaCI: !!row.ventaCI_breakdown,
+    hasCompra24h: !!row.compra24h_breakdown,
+    hasCompraCI: !!row.compraCI_breakdown,
+    hasVenta24h: !!row.venta24h_breakdown,
+    ventaCI_breakdown: row.ventaCI_breakdown,
+    compra24h_breakdown: row.compra24h_breakdown,
+  });
+
   if (!row.operations || row.operations.length === 0) {
     return <Typography variant="caption">Sin operaciones</Typography>;
   }
 
-  // Separate operations by venue and side
-  const ventasCI = row.operations.filter(op => op.venue === 'CI' && (op.lado === 'VENTA' || op.lado === 'V'));
-  const compras24h = row.operations.filter(op => op.venue === '24h' && (op.lado === 'COMPRA' || op.lado === 'C'));
-  const comprasCI = row.operations.filter(op => op.venue === 'CI' && (op.lado === 'COMPRA' || op.lado === 'C'));
-  const ventas24h = row.operations.filter(op => op.venue === '24h' && (op.lado === 'VENTA' || op.lado === 'V'));
-
-  // Calculate totals
-  const totalVentasCI = ventasCI.reduce((sum, op) => sum + (op.cantidad * op.precio), 0);
-  const feesVentasCI = ventasCI.reduce((sum, op) => sum + op.comisiones, 0);
-  const totalCompras24h = compras24h.reduce((sum, op) => sum + (op.cantidad * op.precio), 0);
-  const feesCompras24h = compras24h.reduce((sum, op) => sum + op.comisiones, 0);
-  const totalComprasCI = comprasCI.reduce((sum, op) => sum + (op.cantidad * op.precio), 0);
-  const feesComprasCI = comprasCI.reduce((sum, op) => sum + op.comisiones, 0);
-  const totalVentas24h = ventas24h.reduce((sum, op) => sum + (op.cantidad * op.precio), 0);
-  const feesVentas24h = ventas24h.reduce((sum, op) => sum + op.comisiones, 0);
-
   return (
-    <Box sx={{ p: 1, minWidth: 250 }}>
+    <Box sx={{ p: 1, minWidth: 300 }}>
       <Typography variant="body2" sx={{ fontWeight: 600, display: 'block', mb: 1 }}>
         Detalle P&L Trade
       </Typography>
-      {ventasCI.length > 0 && (
+      {row.ventaCI_breakdown && (
         <>
           <Typography variant="body2" sx={{ display: 'block' }}>
-            Venta CI: {formatCurrency(totalVentasCI)}
+            Venta CI: {formatCurrency(row.ventaCI_breakdown.totalValue)}
+          </Typography>
+          <Typography variant="body2" sx={{ display: 'block', color: 'text.secondary', ml: 1, fontSize: '0.75rem' }}>
+            Precio promedio: {formatCurrency(row.ventaCI_breakdown.avgPrice)}
           </Typography>
           <Typography variant="body2" sx={{ display: 'block', color: 'text.secondary', ml: 1 }}>
-            Comisiones: {formatCurrency(feesVentasCI)}
+            Comisiones: {formatCurrency(row.ventaCI_breakdown.totalFees)}
           </Typography>
         </>
       )}
-      {compras24h.length > 0 && (
+      {row.compra24h_breakdown && (
         <>
-          <Typography variant="body2" sx={{ display: 'block' }}>
-            Compra 24H: {formatCurrency(totalCompras24h)}
+          <Typography variant="body2" sx={{ display: 'block', mt: 0.5 }}>
+            Compra 24H: {formatCurrency(row.compra24h_breakdown.totalValue)}
+          </Typography>
+          <Typography variant="body2" sx={{ display: 'block', color: 'text.secondary', ml: 1, fontSize: '0.75rem' }}>
+            Precio promedio: {formatCurrency(row.compra24h_breakdown.avgPrice)}
           </Typography>
           <Typography variant="body2" sx={{ display: 'block', color: 'text.secondary', ml: 1 }}>
-            Comisiones: {formatCurrency(feesCompras24h)}
+            Comisiones: {formatCurrency(row.compra24h_breakdown.totalFees)}
           </Typography>
         </>
       )}
-      {comprasCI.length > 0 && (
+      {row.compraCI_breakdown && (
         <>
-          <Typography variant="body2" sx={{ display: 'block' }}>
-            Compra CI: {formatCurrency(totalComprasCI)}
+          <Typography variant="body2" sx={{ display: 'block', mt: 0.5 }}>
+            Compra CI: {formatCurrency(row.compraCI_breakdown.totalValue)}
+          </Typography>
+          <Typography variant="body2" sx={{ display: 'block', color: 'text.secondary', ml: 1, fontSize: '0.75rem' }}>
+            Precio promedio: {formatCurrency(row.compraCI_breakdown.avgPrice)}
           </Typography>
           <Typography variant="body2" sx={{ display: 'block', color: 'text.secondary', ml: 1 }}>
-            Comisiones: {formatCurrency(feesComprasCI)}
+            Comisiones: {formatCurrency(row.compraCI_breakdown.totalFees)}
           </Typography>
         </>
       )}
-      {ventas24h.length > 0 && (
+      {row.venta24h_breakdown && (
         <>
-          <Typography variant="body2" sx={{ display: 'block' }}>
-            Venta 24H: {formatCurrency(totalVentas24h)}
+          <Typography variant="body2" sx={{ display: 'block', mt: 0.5 }}>
+            Venta 24H: {formatCurrency(row.venta24h_breakdown.totalValue)}
+          </Typography>
+          <Typography variant="body2" sx={{ display: 'block', color: 'text.secondary', ml: 1, fontSize: '0.75rem' }}>
+            Precio promedio: {formatCurrency(row.venta24h_breakdown.avgPrice)}
           </Typography>
           <Typography variant="body2" sx={{ display: 'block', color: 'text.secondary', ml: 1 }}>
-            Comisiones: {formatCurrency(feesVentas24h)}
+            Comisiones: {formatCurrency(row.venta24h_breakdown.totalFees)}
           </Typography>
         </>
       )}

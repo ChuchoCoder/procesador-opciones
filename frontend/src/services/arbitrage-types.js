@@ -44,6 +44,14 @@
  */
 
 /**
+ * @typedef {Object} PatronBreakdown
+ * @property {number} totalValue - Total value of operations
+ * @property {number} avgPrice - Average price
+ * @property {number} totalFees - Total fees (proportional to matched qty)
+ * @property {number} quantity - Total quantity
+ */
+
+/**
  * @typedef {Object} ResultadoPatron
  * @property {string} patron - Pattern identifier (e.g., 'VentaCI_Compra24h')
  * @property {number} matchedQty - Matched quantity
@@ -54,6 +62,10 @@
  * @property {'completo'|'sin_caucion'|'cantidades_desbalanceadas'|'sin_contraparte'|'matched_sin_caucion'} estado - Pattern status
  * @property {Operacion[]} operations - Operations involved in the pattern
  * @property {Caucion[]} cauciones - Cauciones involved in the pattern
+ * @property {PatronBreakdown} [ventaCI_breakdown] - Breakdown for Venta CI side
+ * @property {PatronBreakdown} [compra24h_breakdown] - Breakdown for Compra 24h side
+ * @property {PatronBreakdown} [compraCI_breakdown] - Breakdown for Compra CI side
+ * @property {PatronBreakdown} [venta24h_breakdown] - Breakdown for Venta 24h side
  */
 
 /**
