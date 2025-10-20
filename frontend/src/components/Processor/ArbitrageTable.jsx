@@ -61,17 +61,6 @@ function getPnLColor(value) {
  * @returns {JSX.Element}
  */
 function getPnLTradeBreakdown(row) {
-  console.log('getPnLTradeBreakdown called with:', {
-    hasOperations: !!row.operations,
-    operationsCount: row.operations?.length,
-    hasVentaCI: !!row.ventaCI_breakdown,
-    hasCompra24h: !!row.compra24h_breakdown,
-    hasCompraCI: !!row.compraCI_breakdown,
-    hasVenta24h: !!row.venta24h_breakdown,
-    ventaCI_breakdown: row.ventaCI_breakdown,
-    compra24h_breakdown: row.compra24h_breakdown,
-  });
-
   if (!row.operations || row.operations.length === 0) {
     return <Typography variant="caption" sx={{ color: 'grey.300' }}>Sin operaciones</Typography>;
   }
