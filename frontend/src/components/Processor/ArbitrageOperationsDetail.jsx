@@ -116,11 +116,11 @@ const OperationsTable = ({ title, operations, sideLabel, isSell }) => {
         display: 'flex',
         flexDirection: 'column',
         minHeight: 0,
-        overflow: 'hidden',
+        overflow: 'visible',
         borderRadius: 0,
       }}
     >
-      <TableContainer sx={{ flex: 1, overflow: 'auto', maxHeight: 400 }}>
+  <TableContainer sx={{ flex: 1, overflowX: 'auto', overflowY: 'visible' }}>
         <Table size="small" stickyHeader>
           <TableHead>
             {/* Title row with side label */}
