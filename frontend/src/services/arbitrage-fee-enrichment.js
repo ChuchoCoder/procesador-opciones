@@ -49,29 +49,41 @@ function resolveInstrumentDetails(operation) {
  */
 function enrichArbitrageOperation(operation, effectiveRates) {
   try {
+    // Skip re-enrichment if operation already has feeAmount calculated
+    if (operation.feeAmount !== undefined && operation.feeAmount !== null) {
+      return operation;
+    }
+    
   // Get instrument details for categorization (synchronous)
   const instrumentDetails = resolveInstrumentDetails(operation);
     
     // Build operation object in expected format for fee calculator
     // Note: Arbitrage operations are CI/24h trades, NOT repos, so we don't pass repoFeeConfig
+    // CRITICAL: enrichOperationWithFee expects RAW price and will normalize it
+    // If rawPrecio exists, use it directly (it's the original CSV price)
+    // If not, we need to un-normalize precio by dividing by priceConversionFactor
+    let rawPrice;
+    const priceConversionFactor = instrumentDetails?.priceConversionFactor ?? 1;
+    
+    if (operation.rawPrecio) {
+      // Use raw price directly
+      rawPrice = operation.rawPrecio;
+    } else if (operation.precio && priceConversionFactor !== 1) {
+      // precio is normalized, un-normalize it: precio / priceConversionFactor
+      rawPrice = operation.precio / priceConversionFactor;
+    } else {
+      // Fallback to any available price field
+      rawPrice = operation.last_price || operation.price || operation.precio || 0;
+    }
+    
     const feeOperation = {
       symbol: operation.symbol || operation.instrumento,
       side: operation.side || operation.lado,
       quantity: operation.last_qty || operation.quantity || operation.cantidad,
-      price: operation.last_price || operation.price || operation.precio,
+      price: rawPrice,
       originalSymbol: operation.symbol || operation.instrumento,
       instrument: instrumentDetails,
     };
-    
-    // Debug: Log first operation to see structure
-    if (!enrichArbitrageOperation._logged) {
-      console.log('PO: arbitrage-fee-enrichment sample operation', {
-        original: operation,
-        feeOperation,
-        instrumentDetails,
-      });
-      enrichArbitrageOperation._logged = true;
-    }
     
     // Enrich with fees (no repoFeeConfig for regular trades)
     const enriched = enrichOperationWithFee(feeOperation, effectiveRates, { 

@@ -31,12 +31,18 @@ function transformToTableRow(grupo, resultado) {
     plazo: grupo.plazo,
     patron: resultado.patron,
     cantidad: resultado.matchedQty,
+    precioPromedio: resultado.precioPromedio,
     pnl_trade: resultado.pnl_trade,
     pnl_caucion: resultado.pnl_caucion,
     pnl_total: resultado.pnl_total,
     estado: resultado.estado,
     operations: resultado.operations,
     cauciones: resultado.cauciones,
+    // Copy breakdown fields for tooltip display
+    ventaCI_breakdown: resultado.ventaCI_breakdown,
+    compra24h_breakdown: resultado.compra24h_breakdown,
+    compraCI_breakdown: resultado.compraCI_breakdown,
+    venta24h_breakdown: resultado.venta24h_breakdown,
   };
   
   console.log('transformToTableRow:', {
@@ -44,6 +50,8 @@ function transformToTableRow(grupo, resultado) {
     plazo: grupo.plazo,
     patron: resultado.patron,
     rowPlazo: row.plazo,
+    hasVentaCI: !!resultado.ventaCI_breakdown,
+    hasCompra24h: !!resultado.compra24h_breakdown,
   });
   
   return row;

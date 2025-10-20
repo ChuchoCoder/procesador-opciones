@@ -334,34 +334,9 @@ export function parseOperations(rawOperations) {
         const precio = rawPrecio * priceConversionFactor;
         const cantidad = rawCantidad;
         
-        // Debug: Log first operation to see raw date fields
-        if (parseOperationsFirstLog) {
-          console.log('parseOperations - First operation raw data:', {
-            symbol: raw.symbol,
-            fechaHora: raw.fechaHora,
-            date: raw.date,
-            transact_time: raw.transact_time,
-            allRawKeys: Object.keys(raw),
-            rawDataSample: raw,
-            rawRaw: raw.raw,
-            rawRawKeys: raw.raw ? Object.keys(raw.raw) : [],
-          });
-          parseOperationsFirstLog = false;
-        }
-
         // Extract date/time from nested raw object if available
         const rawData = raw.raw || raw;
         const dateField = rawData.transact_time || rawData.fechaHora || rawData.date || raw.transact_time || raw.fechaHora || raw.date;
-        
-        console.log('parseOperations - Date extraction:', {
-          instrument,
-          dateField,
-          parsed: parseDate(dateField),
-          feeAmount: raw.feeAmount,
-          comisiones: parseFloat(raw.feeAmount || 0),
-          priceConversionFactor,
-          contractMultiplier,
-        });
 
         return {
           id: raw.id || `op-${Date.now()}-${Math.random()}`,
@@ -406,7 +381,15 @@ export function parseCauciones(rawCauciones) {
         
         if (isCaucion && plazo) {
           // This is a PESOS operation - convert to caución format
-          const fechaOperacion = parseDate(raw.transact_time || raw.fechaHora || raw.date);
+          // Check both top level and nested raw object for date
+          const rawData = raw.raw || raw;
+          const dateValue = raw.transact_time || raw.fechaHora || raw.date || 
+                           rawData.transact_time || rawData.fechaHora || rawData.date;
+          if (!dateValue) {
+            // No date information - skip this PESOS caución
+            return null;
+          }
+          const fechaOperacion = parseDate(dateValue);
           const inicio = fechaOperacion;
           const fin = new Date(inicio);
           fin.setDate(fin.getDate() + plazo);
@@ -446,8 +429,17 @@ export function parseCauciones(rawCauciones) {
         }
         
         // Handle dedicated caución data format
-        const inicio = parseDate(raw.inicio || raw.startDate);
-        const fin = parseDate(raw.fin || raw.endDate);
+        // Skip if no date information available
+        const inicioValue = raw.inicio || raw.startDate || raw.transact_time || raw.fechaHora || raw.date;
+        const finValue = raw.fin || raw.endDate;
+        
+        if (!inicioValue) {
+          // No date information - skip this caución
+          return null;
+        }
+        
+        const inicio = parseDate(inicioValue);
+        const fin = finValue ? parseDate(finValue) : new Date(inicio);
         const tenorDias = calculatePlazoFromDates(inicio, fin);
 
         return {
