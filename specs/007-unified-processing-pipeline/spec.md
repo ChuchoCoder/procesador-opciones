@@ -5,6 +5,12 @@
 **Status**: Draft  
 **Input**: User description: "Unified Processing Pipeline for CSV and Broker Operations Goal - Provide a single, predictable pipeline to process operations coming from two sources: CSV imports and Broker API sync. The pipeline should minimize duplicated logic, preserve the currently-working CSV behavior, and fix/replace the broken or partial Broker sync path. - Keep the output data shape identical for downstream services (aggregation, fees, views) so minimal UI changes are required."
 
+## Clarifications
+
+### Session 2025-10-20
+
+- Q: How should the system identify the same operation when it appears from CSV and Broker sources? → A: A (Use broker-provided unique operation ID as the canonical identifier; if missing, fall back to a composite key: instrument + date/time + quantity + type + price)
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Import Operations from CSV (Priority: P1)
@@ -58,6 +64,7 @@ As a downstream service (aggregation, fees, views), I want operations data in id
 - How does system handle broker API rate limits or temporary unavailability?
 - What happens with large CSV files or broker responses with many operations?
 - How are duplicate operations from different sources handled?
+    - Dedupe rule: prefer `brokerOperationId` if present; otherwise use a deterministic composite key (instrument + date/time + quantity + type + price). Matching operations are treated as the same logical operation and must not create duplicate downstream records. Partial matches (same instrument/date but differing quantity/price) must surface a validation warning and require manual review.
 - What if broker API returns inconsistent data formats?
 
 ## Requirements *(mandatory)*
@@ -72,12 +79,24 @@ As a downstream service (aggregation, fees, views), I want operations data in id
 - **FR-006**: System MUST handle errors gracefully for both sources without corrupting existing data.
 - **FR-007**: System MUST validate input data from both sources before processing.
 - **FR-008**: System MUST ensure downstream services (aggregation, fees, views) require no changes.
+- **FR-009**: System MUST detect and deduplicate operations across sources using this canonical rule: prefer broker-provided unique operation ID when present; otherwise fall back to a deterministic composite key (instrument + date/time + quantity + type + price). Deduplication must be idempotent and deterministic.
 
 ### Key Entities *(include if feature involves data)*
 
-- **Operation**: Represents a financial operation with attributes like instrument code, quantity, price, date, type (buy/sell), and source metadata.
-- **Processing Pipeline**: A unified workflow that normalizes and validates operation data from different sources.
-- **Source**: Indicates whether operation originated from CSV import or broker API sync.
+- **Operation**: Represents a financial operation with attributes:
+    - instrument code
+    - quantity
+    - price
+    - date/time
+    - type (buy/sell)
+    - source metadata
+    - optional `brokerOperationId`
+
+    Uniqueness rules: When `brokerOperationId` is present, it is the canonical identifier for deduplication. When absent, the pipeline must compute a deterministic composite key from instrument, date/time, quantity, type and price and use that for identity comparisons.
+
+- **Processing Pipeline**: A unified workflow that normalizes, validates, and transforms operation data from different sources into the canonical output shape required by downstream services.
+
+- **Source**: Indicates whether an operation originated from CSV import or broker API sync; source metadata must include original source name and ingestion timestamp.
 
 ## Success Criteria *(mandatory)*
 
