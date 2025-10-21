@@ -35,8 +35,8 @@ Add repo (cauciones) fees & expenses calculation and UI tooltip to the frontend 
 
 Minimum Gates (derived from expected constitution v1.1.0):
 - Principle 1: Feature directly supports an end-user capability — PASS (expense breakdown is a customer-visible feature documented in spec).
-- Principle 2: Deterministic logic testable without DOM — PASS (calculation functions will be implemented as pure functions with unit tests).
-- Principle 3: Test-first plan for logic transformation — PARTIAL (unit test skeletons will be created in `tests/unit` and `frontend/tests` during Phase 1).
+- Principle 2: Deterministic logic testable without DOM — PASS (calculation functions will be implemented as pure functions to ease verification).
+- Principle 3: Testing plan for logic transformation — PARTIAL (unit test skeletons or manual validation steps will be prepared during Phase 1).
 - Principle 4: Performance impact analysis — PARTIAL (goal: <2s render; calculations <1ms; bundle delta minimal as no new runtime libs will be added).
 - Principle 5: Simplicity check (new dependencies?) — PASS (no new runtime dependencies; will reuse existing MUI and Vite toolchain).
 - Principle 6: All new UI text authored in Spanish (es-AR) — MUST DO (strings will be added to `frontend/src/strings/es-AR.js`).

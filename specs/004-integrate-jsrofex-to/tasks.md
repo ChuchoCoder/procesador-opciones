@@ -6,7 +6,9 @@ Spec: spec.md | Plan: plan.md | Research: research.md | Data Model: data-model.m
 
 ## Overview
 
-This tasks list is organized by user stories (P1, P2, P3) to ensure each slice is independently implementable and testable. Tests are included (test-first) because the plan flags pure logic and performance needs.
+This tasks list is organized by user stories (P1, P2, P3) to ensure each slice is independently implementable and verifiable. Tests
+are included where the plan flags pure logic and performance needs; TDD ordering is not required. Include a validation plan for
+each story indicating whether automated tests or manual verification will be used.
 
 ## Phase 1: Setup (Shared Infrastructure)
 

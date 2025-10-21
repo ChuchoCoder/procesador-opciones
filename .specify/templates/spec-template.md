@@ -5,7 +5,10 @@
 **Status**: Draft  
 **Input**: User description: "$ARGUMENTS"
 
-## User Scenarios & Testing *(mandatory)*
+## User Scenarios & Validation
+
+*(Each user story should be independently verifiable. Describe automated tests if planned, or manual
+validation steps when tests are not provided.)*
 
 <!--
   IMPORTANT: User stories should be PRIORITIZED as user journeys ordered by importance.
@@ -26,7 +29,7 @@
 
 **Why this priority**: [Explain the value and why it has this priority level]
 
-**Independent Test**: [Describe how this can be tested independently - e.g., "Can be fully tested by [specific action] and delivers [specific value]"]
+**Independent Verification**: [Describe how this can be verified independently - e.g., "Can be verified by [specific action] and delivers [specific value]"]
 
 **Acceptance Scenarios**:
 
@@ -41,7 +44,7 @@
 
 **Why this priority**: [Explain the value and why it has this priority level]
 
-**Independent Test**: [Describe how this can be tested independently]
+**Independent Verification**: [Describe how this can be verified independently]
 
 **Acceptance Scenarios**:
 
@@ -55,7 +58,7 @@
 
 **Why this priority**: [Explain the value and why it has this priority level]
 
-**Independent Test**: [Describe how this can be tested independently]
+**Independent Verification**: [Describe how this can be verified independently]
 
 **Acceptance Scenarios**:
 

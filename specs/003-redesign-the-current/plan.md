@@ -39,7 +39,8 @@ Gate evaluations:
 
 - Principle 2 (Deterministic Processing & Idempotence): PASS (with action) — The core processing rules (validation and formatting of strike tokens) will be implemented as pure functions and covered by unit tests where logic changes are requested. Planned pure units: `formatStrikeToken(rawToken, decimals)`, `validatePrefix(prefix)`, `validateSuffix(suffix)`.
 
-- Principle 3 (Test On Request): PASS — Tests will be added for transformation logic where requested. Initial planned test names (Phase 1):
+- Principle 3 (Test On Request): PASS — A testing or validation plan will be provided for transformation logic where requested. Initial
+  planned verification items (Phase 1):
   - `formatStrikeToken.spec.js` (happy path + malformed input)
   - `symbol-uniqueness.spec.js` (prevent duplicate symbol creation)
   - `suffix-validation.spec.js` (1- and 2-letter acceptance)

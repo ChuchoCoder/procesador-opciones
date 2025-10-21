@@ -48,7 +48,8 @@ Principle Verification (Constitution v2.0.0):
 
 1. Minimal Surface: Feature directly adds end-user capability (automatic sync) — PASS.
 2. Deterministic Processing & Idempotence: Duplicate resolution & merge logic will be pure (functions: `normalizeOperation`, `dedupeOperations`, `mergeBrokerBatch`) — PASS (tests planned).
-3. Test On Request: Logic transformation (dedupe / merge) will have test-first additions (`dedupeOperations.spec.js`, `mergeBrokerBatch.edgecases.spec.js`) — PASS.
+3. Test On Request: Logic transformation (dedupe / merge) will include a testing or validation plan (e.g. `dedupeOperations.spec.js`,
+   `mergeBrokerBatch.edgecases.spec.js`) as appropriate — PASS.
 4. Simplicity Over Framework Accretion: Introducing jsRofex dependency — NEEDS CLARIFICATION (size, necessity). Justification to be added post research.
 5. Spanish (Argentina) Localization: All new UI strings (login form, status panel, refresh messages) will be added to `frontend/src/strings/es-AR.js` — PASS (to implement).
 

@@ -26,7 +26,8 @@ Remove pre-upload symbol/expiration selectors by auto-detecting option attribute
 All gates addressed:
 - Principle 1: Directly improves user workflow (removes pre-step selectors) – end-user value clear.
 - Principle 2: Pure functions to add / update: `parseToken()`, `enrichOperationRow()`, `deriveGroups(operations)` – all testable without DOM.
-- Principle 3: Planned initial tests (failing-first): `parseToken.spec`, `process-operations groups spec`, `group-filter integration`.
+- Principle 3: Planned initial verification items: automated specs (e.g., `parseToken.spec`, `process-operations groups spec`) or
+	manual verification steps as appropriate. Failing-first/TDD ordering is optional.
 - Principle 4: Added processing: one pass to enrich + one pass to derive groups (O(n)); negligible overhead (<5% of parse time). Bundle delta limited to small helper (<100 LOC, <5KB gzip).
 - Principle 5: No new external dependencies introduced.
 - Principle 6: New UI text (e.g., "Todos", "Grupos", tooltip for inferred rows) will be added to `frontend/src/strings/es-AR.js`.

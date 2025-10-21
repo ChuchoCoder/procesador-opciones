@@ -33,12 +33,10 @@
 
 [Gates determined based on constitution file]
 
-Minimum Gates (sync with constitution v3.0.0):
+Minimum Gates (sync with constitution v1.1.0):
 - Principle 1: Feature directly supports an end-user capability (justify if infrastructural).
-- Principle 2: Deterministic logic designed to be testable without DOM where practical (list planned pure
-  function units or validation approach).
-- Principle 3: Include a testing or validation plan proportionate to risk (list automated tests if planned, or
-  manual validation steps otherwise).
+- Principle 2: Deterministic logic testable without DOM (list planned pure function units).
+- Principle 3: Testing plan for any logic transformation (list initial test names or manual validation steps).
 - Principle 4: Performance impact analysis (estimate added processing time / bundle delta).
 - Principle 5: Simplicity check (new dependencies? justification required).
 - Principle 6: All new UI text authored in Spanish (Argentina) (es-AR) and added to centralized strings module.

@@ -3,7 +3,8 @@
 **Input**: Design documents from `/specs/001-feature-migrate-popup/`
 **Prerequisites**: `plan.md`, `spec.md`, `research.md`, `data-model.md`, `contracts/`, `quickstart.md`
 
-**Tests**: Constitution Principle 3 mandates test-first for processing logic. Test tasks are included per user story and should be executed before implementation work.
+**Tests**: Include test tasks as appropriate for processing logic. The constitution no longer mandates test-first/TDD ordering; instead
+provide a validation plan listing automated tests (if any) or manual verification steps per user story.
 
 **Organization**: Tasks are grouped by phase and user story to enable independent implementation and testing of each story.
 
@@ -146,7 +147,8 @@
 
 ### Within-Story Ordering
 
-- Execute listed tests before implementation tasks for the same story.
+- If automated tests are listed, indicate their intended sequencing in the task plan. Executing tests before implementation
+	is optional; provide manual verification steps when automated tests are not included.
 - Services/utilities (e.g., validators, consolidator) must precede UI wiring dependent on them.
 - UI assembly tasks should follow component creation to keep diffs isolated and reviewable.
 

@@ -31,7 +31,7 @@ Minimum Gates (sync with constitution v2.0.0):
 
 - Principle 1: Feature directly supports an end-user capability (visualization and P&L calculation for arbitrage operations).
 - Principle 2: Deterministic logic testable without DOM (option processing logic is pure; P&L calculations are pure functions).
-- Principle 3: Test-first plan for any logic transformation (no tests requested in spec; manual validation documented).
+- Principle 3: Testing plan for any logic transformation (no automated tests requested in spec; manual validation documented).
 - Principle 4: Performance impact analysis (added processing for daily operations; estimate <1s for calculations, bundle delta negligible).
 - Principle 5: Simplicity check (no new dependencies; uses existing React, MUI, papaparse).
 - Principle 6: All new UI text authored in Spanish (Argentina) (es-AR) (spec and UI strings in Spanish).

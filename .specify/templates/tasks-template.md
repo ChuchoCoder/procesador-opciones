@@ -7,7 +7,9 @@ description: "Task list template for feature implementation"
 **Input**: Design documents from `/specs/[###-feature-name]/`
 **Prerequisites**: plan.md (required), spec.md (required for user stories), research.md, data-model.md, contracts/
 
-**Tests**: The examples below include test tasks. Tests are OPTIONAL - only include them if explicitly requested in the feature specification.
+**Tests**: The examples below include test tasks. Tests are OPTIONAL: include them when requested by the
+feature specification or when the implementation risk warrants automated verification. If not included, the
+task list MUST contain clear manual validation steps and sample test data.
 
 **Organization**: Tasks are grouped by user story to enable independent implementation and testing of each story.
 
@@ -76,12 +78,12 @@ Examples of foundational tasks (adjust based on your project):
 
 **Independent Test**: [How to verify this story works on its own]
 
-### Tests for User Story 1 (OPTIONAL - only if tests requested) ⚠️
+### Tests for User Story 1 (OPTIONAL)
 
-**NOTE: Write these tests FIRST, ensure they FAIL before implementation**
+If automated tests are included, list them here. Otherwise provide manual verification steps.
 
-- [ ] T010 [P] [US1] Contract test for [endpoint] in tests/contract/test_[name].py
-- [ ] T011 [P] [US1] Integration test for [user journey] in tests/integration/test_[name].py
+- [ ] T010 [P] [US1] Contract test for [endpoint] in tests/contract/test_[name].py (optional)
+- [ ] T011 [P] [US1] Integration test for [user journey] in tests/integration/test_[name].py (optional)
 
 ### Implementation for User Story 1
 
@@ -102,10 +104,10 @@ Examples of foundational tasks (adjust based on your project):
 
 **Independent Test**: [How to verify this story works on its own]
 
-### Tests for User Story 2 (OPTIONAL - only if tests requested) ⚠️
+### Tests for User Story 2 (OPTIONAL)
 
-- [ ] T018 [P] [US2] Contract test for [endpoint] in tests/contract/test_[name].py
-- [ ] T019 [P] [US2] Integration test for [user journey] in tests/integration/test_[name].py
+- [ ] T018 [P] [US2] Contract test for [endpoint] in tests/contract/test_[name].py (optional)
+- [ ] T019 [P] [US2] Integration test for [user journey] in tests/integration/test_[name].py (optional)
 
 ### Implementation for User Story 2
 
@@ -124,10 +126,10 @@ Examples of foundational tasks (adjust based on your project):
 
 **Independent Test**: [How to verify this story works on its own]
 
-### Tests for User Story 3 (OPTIONAL - only if tests requested) ⚠️
+### Tests for User Story 3 (OPTIONAL)
 
-- [ ] T024 [P] [US3] Contract test for [endpoint] in tests/contract/test_[name].py
-- [ ] T025 [P] [US3] Integration test for [user journey] in tests/integration/test_[name].py
+- [ ] T024 [P] [US3] Contract test for [endpoint] in tests/contract/test_[name].py (optional)
+- [ ] T025 [P] [US3] Integration test for [user journey] in tests/integration/test_[name].py (optional)
 
 ### Implementation for User Story 3
 
@@ -175,7 +177,7 @@ Examples of foundational tasks (adjust based on your project):
 
 ### Within Each User Story
 
-- Tests (if included) MUST be written and FAIL before implementation
+- If automated tests are included, provide a brief test plan and the expected verification steps.
 - Models before services
 - Services before endpoints
 - Core implementation before integration
@@ -206,14 +208,15 @@ Task: "Create [Entity2] model in src/models/[entity2].py"
 
 ---
 
-## Implementation Strategy
+### Implementation Strategy
 
 ### MVP First (User Story 1 Only)
 
 1. Complete Phase 1: Setup
 2. Complete Phase 2: Foundational (CRITICAL - blocks all stories)
 3. Complete Phase 3: User Story 1
-4. **STOP and VALIDATE**: Test User Story 1 independently
+4. **STOP and VALIDATE**: Verify User Story 1 independently (run automated tests if present; otherwise follow
+  the documented manual verification steps)
 5. Deploy/demo if ready
 
 ### Incremental Delivery
@@ -242,7 +245,8 @@ With multiple developers:
 - [P] tasks = different files, no dependencies
 - [Story] label maps task to specific user story for traceability
 - Each user story should be independently completable and testable
-- Verify tests fail before implementing
+- If automated tests are used, include their intended sequencing in the plan. Teams may choose any workflow (TDD or otherwise).
+  Always document manual verification steps when automated tests are not provided.
 - Commit after each task or logical group
 - Stop at any checkpoint to validate story independently
 - Avoid: vague tasks, same file conflicts, cross-story dependencies that break independence

@@ -119,7 +119,9 @@ As a user I want to understand which operations had fields inferred so that I ca
 
 - **NFR-001**: Processing MUST meet the constitution performance budget—≤100 ms for typical datasets (≤500 rows) and ≤10 seconds for large datasets (≤10,000 rows), with group filter interactions staying under 500 ms (Principle 4; aligns with FR-021, SC-001, SC-004, SC-009).
 - **NFR-002**: All newly introduced user-visible text MUST be localized in Spanish (Argentina) and routed through centralized string resources (Principle 6).
-- **NFR-003**: Significant parsing or filtering logic changes MUST ship with failing-first automated tests prior to implementation to satisfy Principle 3 and keep CALL/PUT detection deterministic.
+- **NFR-003**: Significant parsing or filtering logic changes SHOULD be accompanied by a verification plan. Automated tests are
+  recommended for high-risk parsing changes, but failing-first/TDD ordering is not mandated; document manual verification steps when
+  automated tests are omitted.
 - **NFR-004**: UI responsiveness SHOULD keep group-selection updates under 200 ms for typical workloads to preserve a fluid popup experience.
 
 ### Assumptions

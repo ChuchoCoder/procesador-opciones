@@ -34,11 +34,12 @@ You **MUST** consider the user input before proceeding (if not empty).
        - Mark which tasks are [P] parallelizable
        - If tests requested: Include tests specific to that story
      - Polish/Integration tasks (cross-cutting concerns)
-   - **Tests are OPTIONAL**: Only generate test tasks if explicitly requested in the feature spec or user asks for TDD approach
-   - Apply task rules:
+      - **Tests are OPTIONAL**: Only generate test tasks if explicitly requested in the feature spec or user asks for automated tests. Do not
+         assume a TDD order; instead include a validation plan that states whether automated tests or manual verification will be used.
+      - Apply task rules:
      - Different files = mark [P] for parallel
      - Same file = sequential (no [P])
-     - If tests requested: Tests before implementation (TDD order)
+   - If tests requested: Include tests in the plan and indicate expected sequencing; TDD order is optional, not required.
    - Number tasks sequentially (T001, T002...)
    - Generate dependency graph showing user story completion order
    - Create parallel execution examples per user story

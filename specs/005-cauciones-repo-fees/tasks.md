@@ -43,7 +43,7 @@ T004 [X]: Create calculation library (pure functions)
   - `calculateIva(amounts: number[], ivaRate: number): number`
   - `calculateRepoExpenseBreakdown(repoOperation: object, repoFeeConfig: object): RepoExpenseBreakdown`
 - Follow FR-001..FR-013. Keep internal precision; apply display rounding only for outputs (round half up to 2 decimals).
-- Outcome: Deterministic, tested calculation module.
+- Outcome: Deterministic, verifiable calculation module.
 - Notes (2025-10-18): Implemented logger injection, rate resolution per currency/role, graceful handling for tenor/base reconciliation, and returns detailed warnings + rounding metadata.
 - Parallel: no (single file)
 
@@ -95,7 +95,7 @@ T027 [X]: Standardize WARN-level logging wrapper and usage
 Phase 3 — User Stories (Priority order)
 
 User Story 1 (US1) - P1: Calculate and Display Repo Expense Breakdown for Lender
-Independent test: enter a colocadora repo trade and verify displayed amounts match manual calculations
+Independent verification: enter a colocadora repo trade and verify displayed amounts match manual calculations
 
 T007 [X] (US1-T1): UI tooltip component wiring for lender rows
 - File: `C:\git\procesador-opciones\frontend\src\components\Processor\TooltipRepoFees.jsx` (new)
@@ -119,7 +119,7 @@ Checkpoint: After T009, US1 should be independently testable and shippable.
 
 
 User Story 2 (US2) - P1: Calculate and Display Repo Expense Breakdown for Borrower
-Independent test: tomadora repo shows Gastos de Garantia and Net Settlement = B + totalExpenses
+Independent verification: tomadora repo shows Gastos de Garantia and Net Settlement = B + totalExpenses
 
 T010 (US2-T1): Ensure calculation library supports tomadora role (already in T004)
 - File: `C:\git\procesador-opciones\frontend\src\services\fees\repo-fees.js`
@@ -143,7 +143,7 @@ Checkpoint: After T012, US2 is independently testable.
 
 
 User Story 3 (US3) - P2: Display Accrued Interest and Reconcile with Base Amount
-Independent test: accrued interest matches formula and reconciliation warning logged on mismatch
+Independent verification: accrued interest matches formula and reconciliation warning logged on mismatch
 
 T013 (US3-T1): Display accrued interest and parsed tenor in tooltip
 - File: `C:\git\procesador-opciones\frontend\src\components\Processor\TooltipRepoFees.jsx`
@@ -159,7 +159,7 @@ T014 (US3-T2): Unit test for accrued interest and reconciliation
 
 
 User Story 4 (US4) - P2: Configure Currency-Specific Repo Fee Rates
-Independent test: change broker commission rate in settings and observe updated calculations
+Independent verification: change broker commission rate in settings and observe updated calculations
 
 T015 (US4-T1): Settings UI for repo fee configuration
 - File: `C:\git\procesador-opciones\frontend\src\components\Settings\RepoFeeSettings.jsx` (new)
@@ -181,7 +181,7 @@ T017 (US4-T3): Integration test for settings workflow
 
 
 User Story 5 (US5) - P3: Handle Missing or Invalid Repo Tenor Information
-Independent test: malformed instrument name leads to validation warning and expense zero
+Independent verification: malformed instrument name leads to validation warning and expense zero
 
 T018 (US5-T1): Parser tolerant behavior and warning logging
 - File: `C:\git\procesador-opciones\frontend\src\services\fees\repo-fees.js`
@@ -235,10 +235,10 @@ Task counts & summary
 - Setup/Foundational/Polish: 9 tasks (T001..T006, T020..T022)
 
 MVP suggestion
-- Deliverable MVP: User Story 1 (US1) only — calculate and display lender (colocadora) expense breakdown with unit tests and tooltip in the table. This minimizes scope and yields immediate user value.
+- Deliverable MVP: User Story 1 (US1) only — calculate and display lender (colocadora) expense breakdown with tooltip in the table. Automated tests are optional; if omitted, include manual verification steps in the PR.
 
 Execution notes
 - File paths are absolute and point to expected locations in this repository. If a file does not exist, create it under the provided path.
-- Tests: implement Vitest unit tests (no TDD enforced in the spec, but user stories specified independent tests; we created unit/integration test tasks accordingly).
+- Tests: Automated tests are optional. Include them if requested by reviewers or if the risk warrants automated verification; otherwise provide clear manual validation steps and sample payloads.
 
 

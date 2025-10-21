@@ -3,7 +3,9 @@
 **Input**: Design documents from `/specs/004-show-per-operation/`
 **Prerequisites Docs Present**: plan.md, spec.md, research.md, data-model.md, contracts/fees.openapi.yaml, quickstart.md
 
-**Tests Requested**: YES (Spec includes mandatory user scenarios, FR-012 testability requirement, SC-003 coverage target); apply TDD ordering (tests before implementation within each story).
+**Tests Requested**: YES (Spec includes mandatory user scenarios, FR-012 testability requirement, SC-003 coverage target). Automated
+tests are requested for this feature; however TDD ordering is not mandated by policy. Ensure a test/validation plan is included
+and list whether automated tests or manual verification steps will be used for each user story.
 
 ## Format
 

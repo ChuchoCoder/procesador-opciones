@@ -33,8 +33,10 @@ Add per‑operation fee calculation and inline display for Opciones (CALL/PUT) a
 ## Constitution Check (Pre-Research – Version 2.0.0)
 
 - Principle 1 (Minimal Surface): Direct end-user enhancement: inline fee visibility; no infrastructural-only code. PASS  
-- Principle 2 (Deterministic Processing): Plan introduces pure module `fee-calculator.js` + `config-validation.js` returning derived components. Tests will cover identical input -> identical output. PASS  
-- Principle 3 (Test On Request): Logic change requires tests. Planned initial tests: `fee-calculation.spec.js`, `instrument-mapping-fallback.spec.js`, `config-validation.spec.js`, `fee-aggregation-rounding.spec.js`, `caucion-placeholder.spec.js`. PASS  
+-- Principle 2 (Deterministic Processing): Plan introduces pure module `fee-calculator.js` + `config-validation.js` returning derived components. Verification
+  will ensure identical input -> identical output. PASS  
+-- Principle 3 (Test On Request): Provide a testing or validation plan for logic changes. Planned verification items: automated specs
+  (e.g., `fee-calculation.spec.js`, `instrument-mapping-fallback.spec.js`) or documented manual validation steps. PASS  
 - Principle 4 (Simplicity Over Framework Accretion): No new dependencies proposed; reuse existing stack. Bundle delta expected <5KB. PASS  
 - Principle 5 (Spanish Localization): New tooltip & column header strings added to centralized `frontend/src/strings/es-AR.js` in Spanish. PASS  
 - Technical Constraints (Logging/Parsing): Logging extended with structured prefix `PO:` (row count, unknown CfiCode count). PASS  
@@ -47,7 +49,8 @@ Re-evaluated after producing `research.md`, `data-model.md`, `contracts/fees.ope
 
 - Principle 1: Still direct user capability (inline fee visibility). No scope creep. PASS
 - Principle 2: Pure modules specified (`fee-calculator.js`, `config-validation.js`, `instrument-mapping.js`). Determinism documented in data-model. PASS
-- Principle 3: Test list refined (add `fee-config-validation.spec.js`, `aggregation-precision.spec.js`). Failing tests planned before implementation. PASS
+- Principle 3: Test list refined (add `fee-config-validation.spec.js`, `aggregation-precision.spec.js`). Planned verification items include
+  automated specs or documented manual verification steps. PASS
 - Principle 4: No new dependencies introduced; JSON config static asset only. Bundle delta expected minimal (<5KB). PASS
 - Principle 5: All new UI strings enumerated in quickstart for Spanish inclusion. PASS
 - Performance & Responsiveness Budget (removed in v2.0.0, previously principle 4) replaced by explicit performance goals (<8s for 50k rows) documented; estimation: O(n) simple arithmetic likely <2s on i5 for 50k rows. PASS
