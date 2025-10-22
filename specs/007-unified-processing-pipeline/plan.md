@@ -15,7 +15,7 @@ This plan outlines the phased implementation of the unified processing pipeline 
 - ✅ Review existing CSV pipeline code (`frontend/src/services/csv/process-operations.js`, `legacy-normalizer.js`, etc.)
 - ✅ Analyze broker data structures and existing dedupe utilities (`frontend/src/services/broker/dedupe-utils.js`)
 - ✅ Identify integration points in jsRofex sync flow
-- ✅ Review test fixtures (`tests/integration/data/Operations-2025-10-21.json` and `.csv`)
+- ✅ Review test fixtures (`frontend\tests\integration\data\Operations-2025-10-21.json` and `frontend\tests\integration\data\Operations-2025-10-21.csv`)
 - ✅ Document any gaps or clarifications needed
 
 ### Deliverables
@@ -28,20 +28,21 @@ This plan outlines the phased implementation of the unified processing pipeline 
 
 **Duration:** 2-3 days  
 **Objective:** Create the core mapping functionality from broker operations to CSV-compatible rows.
+**Status:** ✅ COMPLETED
 
 ### Tasks
 
-- Implement `mapBrokerOperationsToCsvRows` function in `frontend/src/services/broker/convert-to-csv-model.js`
-- Handle all field mappings as specified (order_id, symbol, side, quantity, price, timestamps, etc.)
-- Preserve token text fields for strike derivation
-- Add source attribution (`source: 'broker'`)
-- Implement field aliases and fallbacks for robust mapping
+- ✅ Implement `mapBrokerOperationsToCsvRows` function in `frontend/src/services/broker/convert-to-csv-model.js`
+- ✅ Handle all field mappings as specified (order_id, symbol, side, quantity, price, timestamps, etc.)
+- ✅ Preserve token text fields for strike derivation
+- ✅ Add source attribution (`source: 'broker'`)
+- ✅ Implement field aliases and fallbacks for robust mapping
 
 ### Deliverables
 
-- `frontend/src/services/broker/convert-to-csv-model.js` with full implementation
-- Unit tests for mapping function (happy path, missing fields, edge cases)
-- Documentation of mapping rules and assumptions
+- ✅ `frontend/src/services/broker/convert-to-csv-model.js` with full implementation
+- ✅ Unit tests for mapping function (happy path, missing fields, edge cases)
+- ✅ Documentation of mapping rules and assumptions
 
 ## Phase 3: Orchestrator Shim Implementation
 
