@@ -12,6 +12,7 @@ import DescriptionIcon from '@mui/icons-material/Description';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import CloseIcon from '@mui/icons-material/Close';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 
 /**
  * Format timestamp as "hace X minutos/horas"
@@ -51,12 +52,14 @@ const formatLastSync = (timestamp) => {
  * @param {string|null} props.csvSource.fileName - CSV file name
  * @param {number} props.csvSource.operationCount - Operations from CSV
  * @param {Function} props.onRefreshBroker - Callback to refresh broker data
+ * @param {Function} props.onProcessBroker - Callback to process broker operations through pipeline
  * @param {Function} props.onRemoveCsv - Callback to remove CSV file
  */
 const DataSourcesPanel = ({
   brokerSource = null,
   csvSource = null,
   onRefreshBroker,
+  onProcessBroker,
   onRemoveCsv,
 }) => {
   const [anchorEl, setAnchorEl] = useState(null);
@@ -184,7 +187,7 @@ const DataSourcesPanel = ({
                   )}
                 </Typography>
 
-                <Box>
+                <Box sx={{ display: 'flex', gap: 1 }}>
                   <Button
                     size="small"
                     startIcon={<RefreshIcon />}
@@ -192,6 +195,15 @@ const DataSourcesPanel = ({
                     disabled={brokerSource.syncing}
                   >
                     Actualizar
+                  </Button>
+                  <Button
+                    size="small"
+                    variant="contained"
+                    startIcon={<PlayArrowIcon />}
+                    onClick={onProcessBroker}
+                    disabled={brokerSource.syncing || !brokerSource.operationCount}
+                  >
+                    Procesar
                   </Button>
                 </Box>
               </Stack>

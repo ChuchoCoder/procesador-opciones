@@ -321,6 +321,7 @@ const computeScopedData = ({
   useAveraging,
   groupedOperations,
   cache,
+  allOperations = [],
 }) => {
   if (!report) {
     return {
@@ -333,7 +334,12 @@ const computeScopedData = ({
     };
   }
 
-  const operations = Array.isArray(report.operations) ? report.operations : [];
+  // Prioritize report.operations (processed data) over allOperations (raw storage)
+  const operations = Array.isArray(report.operations) && report.operations.length > 0
+    ? report.operations
+    : Array.isArray(allOperations) && allOperations.length > 0
+      ? allOperations
+      : [];
   const allSelected = !selectedGroupId || selectedGroupId === ALL_GROUP_ID;
   const selectedGroup = allSelected
     ? null
@@ -440,6 +446,7 @@ const ProcessorScreen = () => {
     brokerApiUrl,
     sync,
     operations: syncedOperations,
+    brokerOperations,
     setOperations,
     setBrokerAuth,
     clearBrokerAuth,
@@ -506,8 +513,15 @@ const ProcessorScreen = () => {
     [syncedOperations],
   );
 
+  // Combine CSV and broker operations for unified processing and display
+  const allOperations = useMemo(() => {
+    const csvOps = Array.isArray(syncedOperations) ? syncedOperations : [];
+    const brokerOps = Array.isArray(brokerOperations) ? brokerOperations : [];
+    return [...csvOps, ...brokerOps];
+  }, [syncedOperations, brokerOperations]);
+
   const sourceCounts = useMemo(() => {
-    return existingOperations.reduce(
+    return allOperations.reduce(
       (acc, operation) => {
         const sourceKey = operation?.source;
         if (sourceKey === 'broker') {
@@ -522,7 +536,7 @@ const ProcessorScreen = () => {
       },
       { broker: 0, csv: 0, other: 0, total: 0 },
     );
-  }, [existingOperations]);
+  }, [allOperations]);
 
   const setSelectedGroupIdForType = useCallback((type, nextValue) => {
     if (!type) {
@@ -628,29 +642,28 @@ const ProcessorScreen = () => {
   );
 
   const triggerSync = useCallback(
-    async ({ authOverride = null, mode = 'daily', brokerApiUrl: apiUrlOverride = null } = {}) => {
+    async ({ authOverride = null, brokerApiUrl: apiUrlOverride = null } = {}) => {
       const auth = authOverride ?? brokerAuth;
       if (!auth || !auth.token) {
-        return { success: false, error: 'NOT_AUTHENTICATED', mode };
+        return { success: false, error: 'NOT_AUTHENTICATED' };
       }
 
       if (syncInProgress) {
-        return { success: false, error: 'SYNC_IN_PROGRESS', mode };
+        return { success: false, error: 'SYNC_IN_PROGRESS' };
       }
 
-      if (mode === 'refresh') {
-        setActionFeedback(null);
-      }
+      setActionFeedback(null);
 
       const cancellationToken = { isCanceled: false };
       syncCancellationRef.current = cancellationToken;
 
       const effectiveBrokerApiUrl = apiUrlOverride || brokerApiUrl;
 
+      // Build configuration for unified pipeline processing
+      const configuration = buildConfiguration();
+
       const syncPayload = {
         brokerAuth: auth,
-        existingOperations,
-        operations: existingOperations,
         setBrokerAuth,
         startSync,
         stagePage,
@@ -661,40 +674,22 @@ const ProcessorScreen = () => {
         cancellationToken,
         sync: syncState,
         brokerApiUrl: effectiveBrokerApiUrl,
+        configuration, // Pass configuration to unified pipeline
       };
 
       let result;
       try {
-        if (mode === 'refresh') {
-          result = await refreshNewOperations(syncPayload);
-        } else {
-          result = await startDailySync({ ...syncPayload, mode: 'daily' });
-        }
+        result = await startDailySync(syncPayload);
 
         if (result.success) {
           setBrokerLoginError(null);
-
-          if (mode === 'refresh') {
-            if (result.operationsAdded > 0) {
-              const template = brokerStrings.refreshSuccess || '';
-              const message = template
-                ? template.replace('{count}', String(result.operationsAdded))
-                : `${result.operationsAdded} operaciones nuevas.`;
-              setActionFeedback({ type: 'success', message });
-            } else {
-              setActionFeedback({ type: 'info', message: brokerStrings.noNewOperations });
-            }
-          } else {
-            setActionFeedback(null);
-          }
+          setActionFeedback(null);
         } else if (result.needsReauth) {
           clearBrokerAuth();
           setBrokerLoginError(brokerStrings.loginError);
-          if (mode === 'refresh') {
-            const message = brokerStrings.sessionExpired || brokerStrings.loginError;
-            setActionFeedback({ type: 'error', message });
-          }
-        } else if (mode === 'refresh' && result.rateLimited) {
+          const message = brokerStrings.sessionExpired || brokerStrings.loginError;
+          setActionFeedback({ type: 'error', message });
+        } else if (result.rateLimited) {
           const waitMs = result.rateLimitMs ?? 60000;
           const seconds = Math.max(Math.round(waitMs / 1000), 1);
           const template = brokerStrings.rateLimitedWait || brokerStrings.rateLimited;
@@ -702,16 +697,16 @@ const ProcessorScreen = () => {
             ? template.replace('{seconds}', seconds)
             : `Límite de velocidad alcanzado. Intentá nuevamente en ~${seconds} segundos.`;
           setActionFeedback({ type: 'warning', message });
-        } else if (mode === 'refresh' && result.error) {
+        } else if (result.error) {
           setActionFeedback({
             type: 'error',
-            message: brokerStrings.refreshError || 'Ocurrió un error al actualizar las operaciones.',
+            message: brokerStrings.refreshError || 'Ocurrió un error al sincronizar las operaciones.',
           });
         }
       } catch (error) {
         const message = error?.message || 'Error de sincronización';
-        failSync({ error: message, mode });
-        result = { success: false, error: message, mode };
+        failSync({ error: message });
+        result = { success: false, error: message };
       } finally {
         syncCancellationRef.current = null;
       }
@@ -722,17 +717,15 @@ const ProcessorScreen = () => {
       brokerApiUrl,
       brokerAuth,
       brokerStrings.loginError,
-      brokerStrings.noNewOperations,
       brokerStrings.rateLimited,
       brokerStrings.rateLimitedWait,
-      brokerStrings.refreshSuccess,
       brokerStrings.sessionExpired,
+      brokerStrings.refreshError,
+      buildConfiguration,
       cancelSync,
       clearBrokerAuth,
       commitSync,
-      existingOperations,
       failSync,
-      refreshNewOperations,
       setActionFeedback,
       setBrokerAuth,
       setBrokerLoginError,
@@ -769,7 +762,7 @@ const ProcessorScreen = () => {
 
   setBrokerAuth(authPayload);
   autoSyncTokenRef.current = authPayload.token;
-  await triggerSync({ authOverride: authPayload, mode: 'daily', brokerApiUrl: effectiveApiUrl });
+  await triggerSync({ authOverride: authPayload, brokerApiUrl: effectiveApiUrl });
       } catch (error) {
         console.warn('PO: Broker login failed', error?.message || error);
         clearBrokerAuth();
@@ -811,7 +804,7 @@ const ProcessorScreen = () => {
     }
 
   autoSyncTokenRef.current = brokerAuth.token;
-  triggerSync({ authOverride: brokerAuth, mode: 'daily', brokerApiUrl });
+  triggerSync({ authOverride: brokerAuth, brokerApiUrl });
   }, [brokerAuth, brokerApiUrl, isAuthenticated, syncInProgress, triggerSync]);
 
   useEffect(() => () => {
@@ -832,6 +825,73 @@ const ProcessorScreen = () => {
       removeItem(storageKeys.lastReport);
     }
   };
+
+  const handleProcessBrokerOperations = useCallback(async () => {
+    if (!brokerOperations || brokerOperations.length === 0) {
+      setActionFeedback({ 
+        type: 'warning', 
+        message: 'No hay operaciones del broker para procesar' 
+      });
+      return;
+    }
+
+    setIsProcessing(true);
+    setProcessingError(null);
+    setActionFeedback(null);
+
+    try {
+      const configurationPayload = buildConfiguration();
+      
+      // Import broker operations through unified pipeline
+      const { importBrokerOperations } = await import('../../services/broker/broker-import-pipeline.js');
+      
+      const result = await importBrokerOperations({
+        operationsJson: brokerOperations,
+        configuration: configurationPayload,
+        existingOperations: [],
+      });
+
+      // Set the report from pipeline processing result
+      setReport(result);
+      setWarningCodes(result.summary?.warnings ?? []);
+      
+      // Determine initial view
+      const initialViewKey = configurationPayload.useAveraging ? 'averaged' : 'raw';
+      const initialView = result.views?.[initialViewKey];
+      const initialCalls = initialView?.calls?.operations?.length ?? 0;
+      const initialPuts = initialView?.puts?.operations?.length ?? 0;
+      
+      if (initialCalls > 0) {
+        setActivePreview(CLIPBOARD_SCOPES.CALLS);
+      } else if (initialPuts > 0) {
+        setActivePreview(CLIPBOARD_SCOPES.PUTS);
+      } else {
+        setActivePreview(CLIPBOARD_SCOPES.CALLS);
+      }
+
+      setActionFeedback({ 
+        type: 'success', 
+        message: `${brokerOperations.length} operaciones del broker procesadas exitosamente` 
+      });
+      
+      // Create a virtual file object to ensure the UI switches to results view
+      // This allows broker operations to be displayed the same way as CSV uploads
+      const virtualFile = new File([], 'broker-operations.json', { type: 'application/json' });
+      setSelectedFile(virtualFile);
+      
+    } catch (err) {
+      setReport(null);
+      setWarningCodes([]);
+      removeItem(storageKeys.lastReport);
+      setProcessingError(err?.message ?? 'Error al procesar operaciones del broker');
+      setActionFeedback({ 
+        type: 'error', 
+        message: err?.message ?? 'Error al procesar operaciones del broker' 
+      });
+    } finally {
+      setIsProcessing(false);
+    }
+  }, [brokerOperations, buildConfiguration]);
 
   // Auto-process when a file is selected
   useEffect(() => {
@@ -934,7 +994,10 @@ const ProcessorScreen = () => {
       });
     }
 
-    const operations = Array.isArray(report?.operations) ? report.operations : [];
+    // Use report.operations if available (fresh processing), otherwise use allOperations (persisted state)
+    const operations = (report && Array.isArray(report.operations) && report.operations.length > 0)
+      ? report.operations
+      : allOperations;
     operations.forEach((operation) => {
       const prefix = typeof operation?.meta?.prefixRule === 'string'
         ? operation.meta.prefixRule.trim().toUpperCase()
@@ -957,11 +1020,14 @@ const ProcessorScreen = () => {
     });
 
     return map;
-  }, [prefixRules, report]);
+  }, [prefixRules, report, allOperations]);
 
   const groupedData = useMemo(() => {
     const map = new Map();
-    const operations = Array.isArray(report?.operations) ? report.operations : [];
+    // Use report.operations if available (fresh processing), otherwise use allOperations (persisted state)
+    const operations = (report && Array.isArray(report.operations) && report.operations.length > 0)
+      ? report.operations
+      : allOperations;
 
     map.set(ALL_GROUP_ID, operations);
 
@@ -1012,14 +1078,14 @@ const ProcessorScreen = () => {
       groupedOperationsMap: map,
       optionInstrumentGroups,
     };
-  }, [report, groups]);
+  }, [report, groups, allOperations]);
 
   const groupedOperations = groupedData.groupedOperationsMap;
   const optionInstrumentGroups = groupedData.optionInstrumentGroups;
 
   useEffect(() => {
     scopedDataCacheRef.current = new Map();
-  }, [report, groups, groupedOperations]);
+  }, [report, groups, groupedOperations, allOperations]);
 
   const { optionGroupOptions, compraVentaGroupOptions, allGroupOptions } = useMemo(() => {
     if (!groups.length) {
@@ -1143,8 +1209,9 @@ const ProcessorScreen = () => {
       useAveraging,
       groupedOperations,
       cache: scopedDataCacheRef.current,
+      allOperations,
     }),
-    [report, groups, selectedGroupId, useAveraging, groupedOperations],
+    [report, groups, selectedGroupId, useAveraging, groupedOperations, allOperations],
   );
 
   const currentViewKey = useAveraging ? 'averaged' : 'raw';
@@ -1465,12 +1532,15 @@ const ProcessorScreen = () => {
                 onSelectFile={handleFileSelected}
                 onBrokerLogin={handleBrokerLogin}
                 onBrokerLogout={handleBrokerLogout}
+                onBrokerSync={() => triggerSync()}
+                onBrokerProcess={handleProcessBrokerOperations}
                 isBrokerLoginLoading={isBrokerLoginLoading}
                 brokerLoginError={brokerLoginError}
                 isAuthenticated={isAuthenticated}
                 syncInProgress={syncInProgress}
                 defaultApiUrl={brokerApiUrl}
                 brokerAccountId={brokerAuth?.accountId}
+                brokerOperationCount={sourceCounts.broker}
               />
             </>
           ) : report ? (
@@ -1503,7 +1573,8 @@ const ProcessorScreen = () => {
                           }
                         : null
                     }
-                    onRefreshBroker={() => triggerSync({ mode: 'refresh' })}
+                    onRefreshBroker={() => triggerSync()}
+                    onProcessBroker={handleProcessBrokerOperations}
                     onRemoveCsv={() => setSelectedFile(null)}
                   />
                 }

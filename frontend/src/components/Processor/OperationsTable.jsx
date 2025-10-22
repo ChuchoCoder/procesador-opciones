@@ -29,6 +29,16 @@ const quantityFormatter = typeof Intl !== 'undefined'
     })
   : null;
 
+// Strike formatter - use en-US to show decimal point instead of comma
+// Financial convention: strikes use point as decimal separator regardless of locale
+const strikeFormatter = typeof Intl !== 'undefined'
+  ? new Intl.NumberFormat('en-US', {
+      useGrouping: true,
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 4,
+    })
+  : null;
+
 const decimalFormatter = typeof Intl !== 'undefined'
   ? new Intl.NumberFormat('es-AR', {
       useGrouping: true,
@@ -43,6 +53,16 @@ const formatQuantity = (value) => {
   }
   if (quantityFormatter) {
     return quantityFormatter.format(value);
+  }
+  return String(value);
+};
+
+const formatStrike = (value) => {
+  if (!Number.isFinite(value)) {
+    return '';
+  }
+  if (strikeFormatter) {
+    return strikeFormatter.format(value);
   }
   return String(value);
 };
@@ -301,7 +321,7 @@ const OperationsTable = ({
                   <TableCell sx={quantityValue < 0 ? { color: 'error.main', fontWeight: 600 } : undefined}>
                     {formatQuantity(quantityValue)}
                   </TableCell>
-                  <TableCell align="right">{formatDecimal(operation.strike)}</TableCell>
+                  <TableCell align="right">{formatStrike(operation.strike)}</TableCell>
                   <TableCell align="right">{formatDecimal(operation.averagePrice)}</TableCell>
                   <TableCell align="right">
                     <FeeTooltip

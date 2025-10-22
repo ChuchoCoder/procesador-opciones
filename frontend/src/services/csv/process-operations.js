@@ -312,9 +312,9 @@ const formatStrikeTokenValue = (strikeToken = '', decimals = 0) => {
 
 /**
  * Find the expiration code by checking which expiration has a suffix matching the token
- * @param {string} tokenSuffix - The suffix from the token (e.g., 'O', 'OC', 'OCT')
+ * @param {string} tokenSuffix - The suffix from the token (e.g., 'O', 'OC', 'OCT', 'D')
  * @param {Object} symbolConfig - The symbol configuration with expirations
- * @returns {string} The matching expiration code (e.g., 'OCT') or the original suffix
+ * @returns {string} The matching expiration code (e.g., 'OCT', 'DIC') or the original suffix
  */
 const findExpirationCodeBySuffix = (tokenSuffix, symbolConfig) => {
   if (!tokenSuffix || !symbolConfig?.expirations) {
@@ -325,8 +325,21 @@ const findExpirationCodeBySuffix = (tokenSuffix, symbolConfig) => {
   
   // Check each expiration to see if any of its suffixes match
   for (const [expirationCode, expirationSettings] of Object.entries(symbolConfig.expirations)) {
-    if (expirationSettings?.suffixes?.includes(upper)) {
+    if (!expirationSettings?.suffixes) {
+      continue;
+    }
+    
+    // Check for exact match
+    if (expirationSettings.suffixes.includes(upper)) {
       return expirationCode;
+    }
+    
+    // Check for partial match (e.g., "D" matches "DIC" or vice versa)
+    for (const suffix of expirationSettings.suffixes) {
+      const upperSuffix = String(suffix).toUpperCase();
+      if (upper.startsWith(upperSuffix) || upperSuffix.startsWith(upper)) {
+        return expirationCode;
+      }
     }
   }
   
@@ -403,11 +416,51 @@ const applyPrefixRule = ({ tokenMatch, symbolConfig, explicitExpiration }) => {
     ? formatStrikeTokenValue(strikeToken, decimals)
     : null;
 
+  console.log('💎 APPLY PREFIX RULE:', {
+    tokenRaw: tokenMatch?.rawValue,
+    strikeToken: strikeToken,
+    tokenStrike: tokenMatch?.strike,
+    expirationCode: expirationCode,
+    decimals: decimals,
+    formattedStrike: formattedStrike,
+    symbolConfigSymbol: symbolConfig.symbol
+  });
+
   return {
     symbol: symbolConfig.symbol ? toUpperCase(symbolConfig.symbol) : null,
     strike: formattedStrike ?? tokenMatch?.strike ?? null,
     decimalsApplied: decimals,
   };
+};
+
+/**
+ * Find symbol config by matching token symbol against configured prefixes
+ * Supports exact match and partial match (e.g., "GFG" matches "GFGC")
+ * @param {string} tokenSymbol - Symbol extracted from token (e.g., "GFGC", "GFGV")
+ * @param {Object} prefixMap - Map of prefix → SymbolConfiguration
+ * @returns {Object|null} Matching symbol configuration or null
+ */
+const findSymbolConfigByPrefix = (tokenSymbol, prefixMap) => {
+  if (!tokenSymbol || !prefixMap) {
+    return null;
+  }
+
+  const upperToken = tokenSymbol.toUpperCase();
+
+  // Try exact match first
+  if (prefixMap[upperToken]) {
+    return prefixMap[upperToken];
+  }
+
+  // Try partial match: check if any configured prefix is a prefix of the token
+  // This handles cases like prefix "GFG" matching tokens "GFGC", "GFGV", etc.
+  for (const [prefix, config] of Object.entries(prefixMap)) {
+    if (upperToken.startsWith(prefix)) {
+      return config;
+    }
+  }
+
+  return null;
 };
 
 export const enrichOperationRow = async (row = {}, configuration = {}) => {
@@ -461,7 +514,8 @@ export const enrichOperationRow = async (row = {}, configuration = {}) => {
     type = tokenType;
   }
 
-  const symbolConfig = tokenSymbol ? prefixMap[tokenSymbol] : undefined;
+  // Use the new helper to find symbol config with partial prefix matching
+  const symbolConfig = tokenSymbol ? findSymbolConfigByPrefix(tokenSymbol, prefixMap) : undefined;
   let appliedDecimals = null;
 
   if (symbolConfig) {
@@ -475,7 +529,35 @@ export const enrichOperationRow = async (row = {}, configuration = {}) => {
       symbol = mappedSymbol;
     }
 
-    const usingTokenStrike = tokenFilledStrike || (!Number.isFinite(strike) && mappedStrike !== null);
+    // For broker operations, always prefer the token-parsed strike with decimals applied
+    // because the broker API provides raw strike values (e.g., 61558 instead of 6155.8)
+    const isBrokerOperation = row.source === 'broker';
+    const hasDecimalAdjustedStrike = Number.isFinite(mappedStrike) && decimalsApplied !== null && decimalsApplied > 0;
+    
+    console.log('🎯 STRIKE DEBUG:', {
+      token: tokenMatch?.rawValue,
+      explicitStrike: explicitStrike,
+      currentStrike: strike,
+      mappedStrike: mappedStrike,
+      decimalsApplied: decimalsApplied,
+      isBrokerOperation: isBrokerOperation,
+      hasDecimalAdjustedStrike: hasDecimalAdjustedStrike,
+      tokenFilledStrike: tokenFilledStrike,
+      rowSource: row.source
+    });
+    
+    const usingTokenStrike = tokenFilledStrike 
+      || (!Number.isFinite(strike) && mappedStrike !== null)
+      || (isBrokerOperation && hasDecimalAdjustedStrike);
+    
+    console.log('🎯 STRIKE DECISION:', {
+      token: tokenMatch?.rawValue,
+      usingTokenStrike: usingTokenStrike,
+      willReplaceStrike: usingTokenStrike && Number.isFinite(mappedStrike),
+      beforeStrike: strike,
+      afterStrike: usingTokenStrike && Number.isFinite(mappedStrike) ? mappedStrike : strike
+    });
+    
     if (usingTokenStrike && Number.isFinite(mappedStrike)) {
       strike = mappedStrike;
     }
@@ -917,6 +999,31 @@ export const processOperations = async ({
   const { rows: parsedRows, meta: parseMeta } = await resolveRows({ rows, file, parserConfig });
 
   logger.log(`Inicio de procesamiento - ${formatLogFileInfo(resolvedFileName, parseMeta.rowCount)}`);
+
+  // Handle empty rows gracefully (e.g., empty broker sync)
+  if (!parsedRows || parsedRows.length === 0) {
+    const emptyResult = {
+      summary: {
+        fileName: resolvedFileName,
+        processedAt: getNow(),
+        rawRowCount: 0,
+        validRowCount: 0,
+        excludedRowCount: 0,
+        warnings: [],
+      },
+      calls: { operations: [], stats: {} },
+      puts: { operations: [], stats: {} },
+      operations: [],
+      normalizedOperations: [],
+      meta: {
+        parse: parseMeta,
+        duration: timer({ fileName: resolvedFileName, totalRows: 0, warnings: [], view: 'raw' }),
+      },
+    };
+    
+    logger.log('Procesamiento completo - duración: 0ms');
+    return emptyResult;
+  }
 
   const { rows: normalizedRows, missingColumns } = normalizeOperationRows(parsedRows, activeConfiguration);
 

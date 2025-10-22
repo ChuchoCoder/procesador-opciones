@@ -8,6 +8,8 @@ import Button from '@mui/material/Button';
 import UploadFileIcon from '@mui/icons-material/UploadFile';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import CloudSyncIcon from '@mui/icons-material/CloudSync';
+import PlayArrowIcon from '@mui/icons-material/PlayArrow';
+import RefreshIcon from '@mui/icons-material/Refresh';
 
 import BrokerLogin from './BrokerLogin.jsx';
 
@@ -19,12 +21,15 @@ const DataSourceSelector = ({
   onSelectFile,
   onBrokerLogin,
   onBrokerLogout,
+  onBrokerSync,
+  onBrokerProcess,
   isBrokerLoginLoading,
   brokerLoginError,
   isAuthenticated,
   syncInProgress,
   defaultApiUrl,
   brokerAccountId,
+  brokerOperationCount = 0,
 }) => {
   const handleFileSelection = (event) => {
     const file = event.target.files?.[0];
@@ -276,12 +281,48 @@ const DataSourceSelector = ({
                       <Typography variant="body2" color="text.secondary">
                         Tus operaciones se sincronizarán automáticamente
                       </Typography>
+                      
+                      {brokerOperationCount > 0 && (
+                        <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>
+                          {brokerOperationCount} operaciones sincronizadas
+                        </Typography>
+                      )}
+
+                      <Stack direction="row" spacing={1} sx={{ width: '100%' }}>
+                        <Button
+                          variant="outlined"
+                          startIcon={syncInProgress ? <RefreshIcon sx={{ animation: 'spin 1s linear infinite' }} /> : <RefreshIcon />}
+                          onClick={onBrokerSync}
+                          disabled={syncInProgress}
+                          fullWidth
+                          sx={{
+                            '@keyframes spin': {
+                              '0%': { transform: 'rotate(0deg)' },
+                              '100%': { transform: 'rotate(360deg)' },
+                            },
+                          }}
+                        >
+                          Sincronizar
+                        </Button>
+                        <Button
+                          variant="contained"
+                          color="primary"
+                          startIcon={<PlayArrowIcon />}
+                          onClick={onBrokerProcess}
+                          disabled={syncInProgress || brokerOperationCount === 0}
+                          fullWidth
+                        >
+                          Procesar
+                        </Button>
+                      </Stack>
+
                       <Button
                         variant="outlined"
                         color="error"
                         onClick={onBrokerLogout}
                         disabled={syncInProgress}
                         fullWidth
+                        size="small"
                       >
                         Cerrar sesión
                       </Button>

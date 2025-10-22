@@ -1,0 +1,365 @@
+@startuml CSV Processing Pipeline - CALLS & PUTS Display
+
+title CSV File Processing Pipeline - From Upload to UI Display
+
+actor User
+participant "ProcessorScreen\n(UI Component)" as UI
+participant "processOperations\n(Orchestrator)" as Orchestrator
+participant "parseOperationsCsv\n(Parser)" as Parser
+participant "normalizeOperationRows\n(Legacy Normalizer)" as Normalizer
+participant "validateAndFilterRows\n(Validator)" as Validator
+participant "enrichOperationRow\n(Enrichment)" as Enrichment
+participant "loadPrefixMap\n(Config Loader)" as ConfigLoader
+participant "parseToken\n(Token Parser)" as TokenParser
+participant "resolveStrikeDecimals\n(Decimal Resolver)" as DecimalResolver
+participant "formatStrikeTokenValue\n(Strike Formatter)" as StrikeFormatter
+participant "enrichOperationsWithFees\n(Fee Enrichment)" as FeeEnrichment
+participant "buildConsolidatedViews\n(Consolidator)" as Consolidator
+participant "OpcionesView\n(Display)" as Display
+
+== User Selects CSV File ==
+User -> UI: Select CSV file
+UI -> Orchestrator: processOperations({ file, configuration })
+
+== 1. Configuration Loading ==
+Orchestrator -> ConfigLoader: loadPrefixMap()
+note right
+  Loads symbol configurations
+  from storage (GGAL, YPFD, etc.)
+  Creates map: prefix → SymbolConfig
+  e.g., "GFG" → { symbol: "GGAL", 
+                  prefixes: ["GFG"], 
+                  defaultDecimals: 2,
+                  expirations: {...} }
+end note
+ConfigLoader --> Orchestrator: prefixMap
+
+== 2. CSV Parsing ==
+Orchestrator -> Parser: parseOperationsCsv(file)
+note right
+  Uses PapaParse library
+  Detects delimiter (,;\\t)
+  Converts numeric columns
+  Returns: { rows, meta }
+end note
+Parser --> Orchestrator: { rows: [...], meta: { rowCount, errors } }
+
+== 3. Row Normalization ==
+Orchestrator -> Normalizer: normalizeOperationRows(rows, config)
+note right
+  Maps CSV columns to standard names:
+  - Symbolo/symbol → symbol
+  - Numero de Orden/order_id → order_id
+  - Precio/price → price
+  - Cantidad/quantity → quantity
+  - Lado/side → side (BUY/SELL)
+  Handles Spanish/English variants
+  Returns: { rows, missingColumns }
+end note
+Normalizer --> Orchestrator: { rows: [...], missingColumns: [] }
+
+== 4. Validation & Filtering ==
+Orchestrator -> Validator: validateAndFilterRows({ rows, config })
+note right
+  **Status Filtering:**
+  - Only "fully_executed" or "partially_executed"
+  - Normalizes: "ejecutada" → "fully_executed"
+  
+  **Event Type Filtering:**
+  - Only "execution_report" events
+  - Excludes order updates
+  
+  **Field Validation:**
+  - Required: order_id, side, quantity, price
+  - Side: must be "BUY" or "SELL"
+  - Quantity & Price: must be positive numbers
+  
+  Returns: { rows, exclusions }
+end note
+Validator --> Orchestrator: { rows: [...], exclusions: {...} }
+
+== 5. Token Parsing & Enrichment ==
+loop For each validated row
+  Orchestrator -> Enrichment: enrichOperationRow(row, config)
+  
+  Enrichment -> TokenParser: parseToken(row.symbol)
+  note right
+    **Token Regex:** /^([A-Z0-9]+?)([CV])(\\d+(?:\\.\\d+)?)(.*)$/
+    
+    **Example:** "GFGC47343O"
+    - symbol: "GFG" (prefix)
+    - typeCode: "C" (CALL)
+    - strikeGroup: "47343" (raw strike)
+    - remainder: "O" (expiration suffix)
+    
+    **Example:** "YPFV60000MAR"
+    - symbol: "YPF"
+    - typeCode: "V" (PUT)
+    - strikeGroup: "60000"
+    - remainder: "MAR"
+  end note
+  TokenParser --> Enrichment: { symbol: "GFG", type: "CALL", strike: 47343, expiration: "O" }
+  
+  alt Token parsed successfully
+    Enrichment -> ConfigLoader: Lookup prefix "GFG" in prefixMap
+    note right
+      **Prefix Matching:**
+      1. Check if "GFG" exists in prefixMap
+      2. Get SymbolConfig for "GGAL"
+      3. Config contains:
+         - symbol: "GGAL"
+         - prefixes: ["GFG", "GFGC", "GFGV"]
+         - defaultDecimals: 2
+         - expirations: { "OCT": {...}, "DIC": {...} }
+    end note
+    ConfigLoader --> Enrichment: SymbolConfig for "GGAL"
+    
+    Enrichment -> Enrichment: resolveExpirationCode(tokenMatch, config)
+    note right
+      **Expiration Detection:**
+      1. Token suffix "O" from "GFGC47343O"
+      2. Check each expiration in config:
+         - OCT: suffixes ["O", "OC"]
+         - DIC: suffixes ["D", "DI"]
+      3. Match "O" → "OCT"
+      4. Return: "OCT"
+    end note
+    
+    Enrichment -> DecimalResolver: resolveStrikeDecimals({ symbolConfig, strikeToken, expirationCode })
+    note right
+      **Decimal Resolution Hierarchy:**
+      
+      **1. Symbol-level default:**
+      - GGAL config: defaultDecimals = 2
+      
+      **2. Expiration-level override:**
+      - Check expirations["OCT"].decimals
+      - If exists, use it (e.g., decimals = 1)
+      
+      **3. Strike-specific override:**
+      - Check expirations["OCT"].overrides[]
+      - Look for: { raw: "47343", formatted: "4734.3" }
+      - Calculate decimals from formatted: 1
+      
+      **Final Result:** 1 decimal place
+    end note
+    DecimalResolver --> Enrichment: decimals = 1
+    
+    Enrichment -> StrikeFormatter: formatStrikeTokenValue("47343", decimals=1)
+    note right
+      **Strike Formatting Logic:**
+      
+      Input: strikeToken="47343", decimals=1
+      
+      1. Remove non-digits: "47343"
+      2. Pad to length: decimals + 1 = 2
+         "47343".padStart(2, '0') = "47343"
+      3. Split at decimals position:
+         whole = "4734" (all but last 1 digit)
+         decimal = "3" (last 1 digit)
+      4. Compose: "4734.3"
+      
+      **Examples:**
+      - "60000", decimals=2 → "600.00"
+      - "47343", decimals=0 → "47343"
+      - "12345", decimals=3 → "12.345"
+    end note
+    StrikeFormatter --> Enrichment: strike = 4734.3
+    
+    Enrichment --> Orchestrator: Enriched operation
+    note right
+      {
+        id: "order-123",
+        orderId: "123",
+        originalSymbol: "GFGC47343O",
+        matchedSymbol: "GGAL",
+        symbol: "GGAL",
+        expiration: "OCT",
+        optionType: "CALL",
+        strike: 4734.3,
+        quantity: 100,
+        price: 5.25,
+        side: "BUY",
+        meta: {
+          prefixRule: "GFG",
+          decimalsApplied: 1,
+          detectedFromToken: true
+        }
+      }
+    end note
+  else Token parsing failed
+    note right
+      Falls back to explicit fields:
+      - symbol from row.symbol
+      - expiration from row.expiration
+      - strike from row.strike
+      - optionType from row.option_type
+    end note
+    Enrichment --> Orchestrator: Operation with explicit fields
+  end
+end
+
+== 6. Fee Enrichment (Feature 004) ==
+Orchestrator -> FeeEnrichment: enrichOperationsWithFees(enrichedOperations, config)
+note right
+  **Fee Calculation:**
+  
+  1. Get instrument details (CfiCode, multiplier)
+  2. Calculate gross notional:
+     grossNotional = quantity × price × multiplier
+  
+  3. Determine category (bonds/options):
+     - Options: CfiCode starts with "OC"
+     - Bonds: other securities
+  
+  4. Apply fee rates from config:
+     - commissionPct (e.g., 0.5%)
+     - rightsPct (e.g., 0.1%)
+     - vatPct (e.g., 21%)
+  
+  5. Calculate amounts:
+     - commissionAmount
+     - rightsAmount
+     - vatAmount
+     - totalFeeAmount
+  
+  Adds feeBreakdown to each operation
+end note
+FeeEnrichment --> Orchestrator: Operations with fee data
+
+== 7. Consolidation ==
+Orchestrator -> Consolidator: buildConsolidatedViews(enrichedOperations)
+note right
+  **Creates two views:**
+  
+  **RAW View (useAveraging=false):**
+  - Groups by: orderId + symbol + optionType
+  - Keeps individual orders separate
+  - Calculates VWAP per order
+  
+  **AVERAGED View (useAveraging=true):**
+  - Groups by: symbol + optionType + strike
+  - Aggregates all fills for same strike
+  - Calculates weighted average price
+  
+  **Aggregation:**
+  - Signed quantity (BUY=+, SELL=-)
+  - Weighted sum = Σ(signedQty × price)
+  - Average price = weightedSum / netQuantity
+  - Excludes operations with netQuantity = 0
+  
+  **Fee Aggregation:**
+  - Sums fee amounts from all legs
+  - Recalculates breakdown for total notional
+end note
+Consolidator --> Orchestrator: { raw: {...}, averaged: {...} }
+
+== 8. Group Discovery ==
+note over Orchestrator
+  **Operation Grouping:**
+  
+  1. For each operation, generate groupKey:
+     - Options: symbol::expiration (e.g., "GGAL::OCT")
+     - Others: symbol::NONE
+  
+  2. Count operations per group:
+     - calls: count(optionType == "CALL")
+     - puts: count(optionType == "PUT")
+  
+  3. Build group metadata:
+     groups = [
+       {
+         id: "GGAL::OCT",
+         symbol: "GGAL",
+         expiration: "OCT",
+         counts: { calls: 5, puts: 3 }
+       },
+       ...
+     ]
+end note
+
+== 9. Report Building ==
+Orchestrator -> Orchestrator: Build OperationsReport
+note right
+  **Report Structure:**
+  {
+    summary: {
+      fileName: "Operations.csv",
+      processedAt: timestamp,
+      rawRowCount: 150,
+      validRowCount: 142,
+      excludedRowCount: 8,
+      warnings: []
+    },
+    
+    views: {
+      raw: {
+        calls: { operations: [...], stats: {...} },
+        puts: { operations: [...], stats: {...} }
+      },
+      averaged: {
+        calls: { operations: [...], stats: {...} },
+        puts: { operations: [...], stats: {...} }
+      }
+    },
+    
+    operations: [...], // enrichedWithFees
+    normalizedOperations: [...], // CSV format
+    groups: [...],
+    
+    meta: {
+      parse: { rowCount, errors },
+      duration: "1234ms"
+    }
+  }
+end note
+Orchestrator --> UI: OperationsReport
+
+== 10. UI Display ==
+UI -> UI: computeScopedData(report, groups, selectedGroupId)
+note right
+  **Scoping & Caching:**
+  
+  1. Filter operations by selected group
+     - If "ALL" selected: use all operations
+     - If "GGAL::OCT": filter to matching group
+  
+  2. Rebuild consolidated views for scope:
+     - Call buildConsolidatedViews(filteredOps)
+     - Cache result by groupKey
+  
+  3. Extract active view (raw or averaged):
+     - Get calls/puts operations
+     - Calculate statistics
+  
+  4. Return scopedReport with filtered data
+end note
+
+UI -> Display: Render OpcionesView
+note right
+  **Display Components:**
+  
+  1. Group Selector (Dropdown):
+     - Options: "Todos", "GGAL OCT", "YPFD DIC", etc.
+     - Labels formatted with prefix mapping:
+       "GFG" → "GGAL" (from prefixMap)
+  
+  2. Averaging Toggle:
+     - Switch between RAW and AVERAGED views
+  
+  3. CALLS Table:
+     - Columns: Strike, Quantity, Average Price, Total
+     - Sorted by strike
+     - Formatted numbers (4 decimals)
+  
+  4. PUTS Table:
+     - Same structure as CALLS
+  
+  5. Actions:
+     - Copy to Clipboard
+     - Export to CSV
+end note
+
+Display --> User: Display CALLS & PUTS tables
+
+@enduml

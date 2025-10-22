@@ -1,14 +1,34 @@
-// sync-service.js - Broker operations sync orchestration (T020)
 import { listOperations, setBaseUrl } from './jsrofex-client.js';
 import { ensureValidToken } from './token-manager.js';
-import { mergeBrokerBatch, normalizeOperation, dedupeOperations } from './dedupe-utils.js';
+import { importBrokerOperations } from './broker-import-pipeline.js';
 import { classifyError, shouldRetry, ERROR_CATEGORIES } from './error-taxonomy.js';
 import { retryWithBackoff, parseRetryAfter } from './retry-util.js';
+import { createDevLogger } from '../logging/dev-logger.js';
 
-const DAILY_MODE = 'daily';
-const REFRESH_MODE = 'refresh';
+const logger = createDevLogger('SyncService');
 
 const isNumber = (value) => typeof value === 'number' && Number.isFinite(value);
+
+const normalizeTimestampValue = (value) => {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value;
+  }
+
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    if (!trimmed) {
+      return null;
+    }
+
+    const isoCandidate = trimmed.includes('T') ? trimmed : trimmed.replace(' ', 'T');
+    const parsed = Date.parse(isoCandidate);
+    if (!Number.isNaN(parsed)) {
+      return parsed;
+    }
+  }
+
+  return null;
+};
 
 async function fetchPageWithRetry({ token, tradingDay, pageToken }) {
   let attempts = 0;
@@ -49,29 +69,26 @@ async function fetchPageWithRetry({ token, tradingDay, pageToken }) {
 }
 
 /**
- * Start daily sync: retrieve all operations for trading day, stage per page, commit atomically.
+ * Sync broker operations: retrieve all operations for trading day and process through unified pipeline.
+ * Always replaces previous broker operations - does not merge or deduplicate with existing data.
  * 
  * @param {Object} config - Sync configuration
  * @param {Object} config.brokerAuth - Current broker auth from context { token, expiry, accountId, displayName }
- * @param {Array} config.existingOperations - Current operations in state (for deduplication)
  * @param {Function} config.setBrokerAuth - Dispatcher for SET_BROKER_AUTH (token refresh)
  * @param {Function} config.startSync - Dispatcher for START_SYNC (initialize session)
  * @param {Function} config.stagePage - Dispatcher for STAGE_PAGE (accumulate page)
  * @param {Function} config.commitSync - Dispatcher for COMMIT_SYNC (atomic commit)
  * @param {Function} config.failSync - Dispatcher for FAIL_SYNC (error state)
  * @param {Function} config.cancelSync - Dispatcher for CANCEL_SYNC (user cancellation)
- * @param {string} config.tradingDay - Trading day to retrieve (e.g., 'today', 'YYYY-MM-DD')
- * @param {Function} config.onProgress - Optional progress callback: ({ pageIndex, operationsCount, pagesFetched }) => void
- * @param {Object} config.cancellationToken - Optional cancellation token: { isCanceled: boolean }
- * @param {number|null} config.minTimestamp - Optional minimum trade timestamp; operations <= value are ignored
- * @param {string} config.mode - Sync mode identifier ('daily' or 'refresh')
- * @param {string} config.brokerApiUrl - Optional broker API base URL to use for this sync
+ * @param {string} [config.tradingDay='today'] - Trading day to retrieve (e.g., 'today', 'YYYY-MM-DD')
+ * @param {Function} [config.onProgress=null] - Optional progress callback: ({ pageIndex, operationsCount, pagesFetched }) => void
+ * @param {Object} [config.cancellationToken=null] - Optional cancellation token: { isCanceled: boolean }
+ * @param {string} [config.brokerApiUrl] - Optional broker API base URL to use for this sync
+ * @param {Object} config.configuration - Active configuration (fee settings, symbol mappings) for unified pipeline
  * @returns {Promise<Object>} Result: { success: boolean, operationsAdded: number, error?: string, needsReauth?: boolean, rateLimited?: boolean }
  */
 export async function startDailySync({
   brokerAuth,
-  existingOperations,
-  operations: currentOperations = [],
   setBrokerAuth,
   startSync,
   stagePage,
@@ -81,42 +98,39 @@ export async function startDailySync({
   tradingDay = 'today',
   onProgress = null,
   cancellationToken = null,
-  minTimestamp = null,
-  mode = DAILY_MODE,
   brokerApiUrl,
+  configuration,
 }) {
   // Set base URL if provided
   if (brokerApiUrl) {
     setBaseUrl(brokerApiUrl);
   }
   const sessionId = `sync-${Date.now()}`;
-  const baselineOperations = Array.isArray(existingOperations)
-    ? existingOperations
-    : Array.isArray(currentOperations)
-      ? currentOperations
-      : [];
-  const dedupePool = [...baselineOperations];
-  const candidateOperations = [];
+  
+  // IMPORTANT: Always start fresh - no merging with existing operations
+  // Every broker sync replaces all previous broker operations
+  const baselineOperations = [];
+  
+  const allRawOperations = []; // Collect all raw operations for unified pipeline
   let pageToken = null;
   let pageIndex = 0;
   let totalRetries = 0;
   let lastEstimatedTotal = null;
-  let totalEvaluated = 0;
 
   try {
     // Step 1: Validate token (auto-refresh if within 60s of expiry)
     const token = await ensureValidToken(brokerAuth, setBrokerAuth);
     
     // Step 2: Initialize sync session
-    startSync(sessionId, { mode });
+    startSync(sessionId);
 
     // Step 3: Fetch operations with pagination
     
     do {
       // Check cancellation before each page
       if (cancellationToken?.isCanceled) {
-        cancelSync({ mode });
-        return { success: false, canceled: true, operationsAdded: 0, mode };
+        cancelSync();
+        return { success: false, canceled: true, operationsAdded: 0 };
       }
       
       // Fetch page with retry on transient errors
@@ -126,46 +140,33 @@ export async function startDailySync({
       if (!pageResult.success) {
         // Handle specific error types
         if (pageResult.category === ERROR_CATEGORIES.AUTH) {
-          failSync({ error: 'TOKEN_EXPIRED', retryAttempts: totalRetries, mode });
-          return { success: false, error: 'TOKEN_EXPIRED', needsReauth: true, mode };
+          failSync({ error: 'TOKEN_EXPIRED', retryAttempts: totalRetries });
+          return { success: false, error: 'TOKEN_EXPIRED', needsReauth: true };
         }
 
         if (pageResult.category === ERROR_CATEGORIES.RATE_LIMIT) {
           const waitMs = parseRetryAfter(pageResult.error);
           const errorMessage = `RATE_LIMITED:${waitMs}`;
-          failSync({ error: errorMessage, retryAttempts: totalRetries, rateLimitMs: waitMs, mode });
+          failSync({ error: errorMessage, retryAttempts: totalRetries, rateLimitMs: waitMs });
           return {
             success: false,
             error: 'RATE_LIMITED',
             rateLimited: true,
             rateLimitMs: waitMs,
-            mode,
           };
         }
 
         const message = pageResult.error?.message || 'SYNC_PAGE_ERROR';
-        failSync({ error: message, retryAttempts: totalRetries, mode });
-        return { success: false, error: message, mode };
+        failSync({ error: message, retryAttempts: totalRetries });
+        return { success: false, error: message };
       }
 
-      // Normalize operations with source attribution
+      // Collect raw operations for unified pipeline - NO FILTERING
       const rawOperations = pageResult.data.operations || [];
-      const normalized = rawOperations.map((op) => normalizeOperation(op, 'broker'));
-      const timestampFiltered = isNumber(minTimestamp)
-        ? normalized.filter((op) => op.tradeTimestamp > minTimestamp)
-        : normalized;
-      totalEvaluated += timestampFiltered.length;
+      allRawOperations.push(...rawOperations);
 
-      let acceptedForPage = [];
-      if (timestampFiltered.length > 0) {
-        acceptedForPage = dedupeOperations(dedupePool, timestampFiltered);
-        if (acceptedForPage.length > 0) {
-          candidateOperations.push(...acceptedForPage);
-          dedupePool.push(...acceptedForPage);
-        }
-      }
-
-      stagePage(acceptedForPage, pageIndex, {
+      // Stage page for UI feedback (show count of operations collected so far)
+      stagePage([], pageIndex, {
         estimatedTotal: pageResult.data.estimatedTotal ?? lastEstimatedTotal,
       });
 
@@ -173,10 +174,10 @@ export async function startDailySync({
       if (onProgress) {
         onProgress({
           pageIndex,
-          operationsCount: candidateOperations.length,
+          operationsCount: allRawOperations.length,
           pagesFetched: pageIndex + 1,
           estimatedTotal: pageResult.data.estimatedTotal ?? lastEstimatedTotal,
-          retrievedCount: timestampFiltered.length,
+          retrievedCount: rawOperations.length,
         });
       }
 
@@ -188,45 +189,54 @@ export async function startDailySync({
       
     } while (pageToken);
     
-    // Check cancellation before commit
+    // Check cancellation before processing
     if (cancellationToken?.isCanceled) {
-      cancelSync({ mode });
-      return { success: false, canceled: true, operationsAdded: 0, mode };
+        cancelSync();
+      return { success: false, canceled: true, operationsAdded: 0 };
     }
-    
-    // Step 4: Deduplicate and merge with existing operations
-    const { mergedOps, newOrdersCount, newOpsCount } = mergeBrokerBatch(
-      baselineOperations,
-      candidateOperations,
-    );
 
-    // Step 5: Atomic commit
-    commitSync(mergedOps, {
+    // Step 4: Process through unified pipeline
+    if (!configuration) {
+      const errorMessage = 'Configuration required for broker import processing';
+      failSync({ error: errorMessage });
+      return { success: false, error: errorMessage };
+    }
+
+    const importResult = await importBrokerOperations({
+      operationsJson: allRawOperations,
+      configuration,
+      existingOperations: baselineOperations
+    });
+
+    // Step 5: Extract results for state management
+    // Use mergedOperations which should equal allRawOperations since baselineOperations is empty
+    const mergedOperations = importResult.brokerImport.mergedOperations;
+    const operationsAdded = importResult.brokerImport.newOperationsCount;
+    const newOrdersCount = importResult.brokerImport.newOrdersCount;
+
+    // Step 6: Atomic commit - replaces all previous broker operations
+    commitSync(mergedOperations, {
       sessionId,
-      newOperationsCount: newOpsCount,
+      newOperationsCount: operationsAdded,
       newOrdersCount,
-      totalOperations: mergedOps.length,
+      totalOperations: mergedOperations.length,
       pagesFetched: pageIndex,
-      mode,
       estimatedTotal: lastEstimatedTotal,
-      evaluatedCount: totalEvaluated,
       retryAttempts: totalRetries,
     });
     
     return {
       success: true,
-      operationsAdded: newOpsCount,
+      operationsAdded,
       newOrdersCount,
-      totalOperations: mergedOps.length,
+      totalOperations: mergedOperations.length,
       pagesFetched: pageIndex,
-      evaluatedCount: totalEvaluated,
-      mode,
     };
     
   } catch (error) {
     // Catch-all for unexpected errors
     const errorMessage = error.message || 'Error de sincronización desconocido';
-    failSync({ error: errorMessage, mode });
+    failSync({ error: errorMessage });
     // eslint-disable-next-line no-console
     console.warn('startDailySync failure', errorMessage);
     
@@ -234,45 +244,9 @@ export async function startDailySync({
       success: false,
       error: errorMessage,
       needsReauth: errorMessage.includes('TOKEN_EXPIRED') || errorMessage.includes('NOT_AUTHENTICATED'),
-      mode,
     };
   }
 }
 
-/**
- * Refresh operations: fetch only operations newer than last sync timestamp.
- * Used for manual refresh button (US3).
- * 
- * @param {Object} config - Same as startDailySync but includes lastSyncTimestamp
- * @param {number|null} config.lastSyncTimestamp - Timestamp of last successful sync (epoch ms)
- * @returns {Promise<Object>} Result: { success: boolean, operationsAdded: number, hasNewOperations: boolean }
- */
-export async function refreshNewOperations(params = {}) {
-  const {
-    sync,
-    operations = [],
-    cancellationToken = null,
-    lastSyncTimestamp,
-    ...rest
-  } = params;
-
-  const inferredLastSync = isNumber(lastSyncTimestamp)
-    ? lastSyncTimestamp
-    : isNumber(sync?.lastSyncTimestamp)
-      ? sync.lastSyncTimestamp
-      : null;
-
-  const result = await startDailySync({
-    ...rest,
-    cancellationToken,
-    existingOperations: operations,
-    minTimestamp: inferredLastSync,
-    mode: REFRESH_MODE,
-  });
-
-  return {
-    ...result,
-    hasNewOperations: (result.operationsAdded ?? 0) > 0,
-    mode: REFRESH_MODE,
-  };
-}
+// Alias for backward compatibility - both do the same thing now (always replace operations)
+export const refreshNewOperations = startDailySync;

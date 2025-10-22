@@ -28,6 +28,7 @@ export const reducer = (state, action) => {
         },
         stagingOps: action.payload.stagingOps || [],
         syncSessions: action.payload.syncSessions || [], // T061: append-only sync session log
+        brokerOperations: action.payload.brokerOperations || [],
       });
     case 'SET_AVERAGING':
       return applyChanges(state, { useAveraging: action.payload });
@@ -166,7 +167,7 @@ export const reducer = (state, action) => {
         mode,
       };
       return applyChanges(state, {
-        operations: action.payload.operations,
+        brokerOperations: action.payload.operations,
         sync: {
           ...state.sync,
           status: 'success',
@@ -255,6 +256,7 @@ export const reducer = (state, action) => {
       return applyChanges(state, {
         brokerAuth: action.payload,
         operations: csvOperations,
+        brokerOperations: [], // Clear broker operations when switching accounts
         sync: {
           ...DEFAULT_SYNC_STATE,
         },
