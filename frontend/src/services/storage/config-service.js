@@ -296,6 +296,7 @@ export const sanitizeConfiguration = (candidate = {}) => {
     activeExpiration: activeExpiration ?? defaults.activeExpiration,
     useAveraging,
     operations: sanitizeOperationsSlice(candidate.operations),
+    brokerOperations: sanitizeOperationsSlice(candidate.brokerOperations),
     brokerAuth: sanitizeBrokerAuth(candidate.brokerAuth),
     sync: sanitizeSyncState(candidate.sync),
     stagingOps: sanitizeOperationsSlice(candidate.stagingOps),
@@ -317,6 +318,7 @@ export const loadConfiguration = async () => {
     brokerApiUrl: await readItem(storageKeys.brokerApiUrl),
     brokerAuth: await readItem(storageKeys.brokerAuth),
     operations: await readItem(storageKeys.operations),
+    brokerOperations: await readItem(storageKeys.brokerOperations),
   };
 
   return sanitizeConfiguration(candidate);
@@ -335,6 +337,7 @@ export const saveConfiguration = (configuration) => {
   writeItem(storageKeys.brokerApiUrl, sanitized.brokerApiUrl);
   writeItem(storageKeys.brokerAuth, sanitized.brokerAuth);
   writeItem(storageKeys.operations, sanitized.operations);
+  writeItem(storageKeys.brokerOperations, sanitized.brokerOperations);
 
   return sanitized;
 };

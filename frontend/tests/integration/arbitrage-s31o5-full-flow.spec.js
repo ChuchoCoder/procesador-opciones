@@ -49,7 +49,10 @@ describe('S31O5 Arbitrage Full Flow', () => {
     let metrics = {};
     let defaultRates;
 
-    beforeAll(() => {
+    beforeAll(async () => {
+        // Initialize fee services before using them
+        await bootstrapDefaults.bootstrapFeeServices();
+        
         // Use actual default fee rates - S31O5 is classified as 'letra' category
         defaultRates = bootstrapDefaults.getEffectiveRates();
         console.log('[Test Setup] Using default fee rates:', {

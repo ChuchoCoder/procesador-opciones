@@ -25,22 +25,31 @@ export function normalizeOperation(raw, source) {
   
   return {
     id: generateUUID(),
-    order_id: raw.order_id || null,
-    operation_id: raw.operation_id || null,
-    symbol: (raw.symbol || '').toUpperCase().trim(),
+    order_id: raw.order_id || raw.orderId || null,
+    operation_id: raw.operation_id || raw.execId || null,
+    symbol: (raw.symbol || raw.instrumentId?.symbol || '').toUpperCase().trim(),
     underlying: raw.underlying ? raw.underlying.toUpperCase().trim() : null,
     optionType: raw.optionType || raw.option_type || 'stock',
     action: (raw.action || raw.side || '').toLowerCase(),
-    quantity: Number(raw.quantity || raw.last_qty || 0),
-    price: Number(raw.price || raw.last_price || 0),
-    tradeTimestamp: raw.tradeTimestamp || raw.trade_timestamp || now,
+    // Use cumQty (cumulative filled) for broker ops, fallback to quantity for CSV
+    quantity: Number(raw.quantity || raw.cumQty || raw.last_qty || raw.lastQty || 0),
+    price: Number(raw.price || raw.last_price || raw.avgPx || raw.lastPx || 0),
+    tradeTimestamp: raw.tradeTimestamp || raw.trade_timestamp || raw.transactTime || now,
     strike: raw.strike !== undefined && raw.strike !== null ? Number(raw.strike) : null,
     expirationDate: raw.expirationDate || raw.expiration_date || raw.expiration || null,
     source,
-    sourceReferenceId: raw.sourceReferenceId || raw.source_reference_id || null,
+    sourceReferenceId: raw.sourceReferenceId || raw.source_reference_id || raw.numericOrderId || null,
     importTimestamp: now,
     revisionIndex: raw.revisionIndex !== undefined ? Number(raw.revisionIndex) : null,
     status: raw.status || null,
+    // Preserve broker-specific fields needed for cancelled fill extraction
+    cumQty: raw.cumQty !== undefined ? Number(raw.cumQty) : undefined,
+    avgPx: raw.avgPx !== undefined ? Number(raw.avgPx) : undefined,
+    lastQty: raw.lastQty !== undefined ? Number(raw.lastQty) : undefined,
+    lastPx: raw.lastPx !== undefined ? Number(raw.lastPx) : undefined,
+    clOrdId: raw.clOrdId || null,
+    origClOrdId: raw.origClOrdId || null,
+    text: raw.text || null,
   };
 }
 

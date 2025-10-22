@@ -6,7 +6,9 @@ const STATUS_NORMALIZATION = {
   fully_executed: 'fully_executed',
   partially_executed: 'partially_executed',
   filled: 'fully_executed',
+  FILLED: 'fully_executed',  // Broker API uppercase
   partial_fill: 'partially_executed',
+  PARTIAL_FILL: 'partially_executed',  // Broker API uppercase
   ejecutada: 'fully_executed',
   'ejecutada.': 'fully_executed',
   'parcialmente ejecutada': 'partially_executed',

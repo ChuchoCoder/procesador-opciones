@@ -8,6 +8,7 @@
 import { normalizeOperation, dedupeOperations, mergeBrokerBatch } from './dedupe-utils.js';
 import { mapBrokerOperationsToCsvRows } from './convert-to-csv-model.js';
 import { processOperations } from '../csv/process-operations.js';
+import { extractFilledQuantityFromCancelled } from './extract-cancelled-fills.js';
 import { createDevLogger } from '../logging/dev-logger.js';
 
 /**
@@ -40,13 +41,26 @@ export async function importBrokerOperations({
     const normalizedBrokerOps = operationsJson.map(raw => normalizeOperation(raw, 'broker'));
     logger.log(`Normalized ${normalizedBrokerOps.length} broker operations`);
 
+    // Step 1.5: Extract filled quantities from cancelled orders
+    const extractionResult = extractFilledQuantityFromCancelled(normalizedBrokerOps);
+    const opsWithExtractedFills = extractionResult.operations;
+    
+    if (extractionResult.extracted > 0) {
+      logger.log(`Extracted ${extractionResult.extracted} fills from cancelled orders (${extractionResult.skipped} skipped due to replacements)`);
+      
+      // Log detailed extraction info
+      extractionResult.metadata.forEach(meta => {
+        logger.log(`  → ${meta.side} ${meta.extractedQty} ${meta.symbol} @ ${meta.avgPrice} = ${meta.estimatedValue}${meta.wasReplaced ? ' (was replaced)' : ''}`);
+      });
+    }
+
     // Step 2: Dedupe against existing operations if provided
     let uniqueNormalizedOps;
     if (existingOperations && existingOperations.length > 0) {
-      uniqueNormalizedOps = dedupeOperations(existingOperations, normalizedBrokerOps);
-      logger.log(`Deduped operations: ${normalizedBrokerOps.length} -> ${uniqueNormalizedOps.length} unique`);
+      uniqueNormalizedOps = dedupeOperations(existingOperations, opsWithExtractedFills);
+      logger.log(`Deduped operations: ${opsWithExtractedFills.length} -> ${uniqueNormalizedOps.length} unique`);
     } else {
-      uniqueNormalizedOps = normalizedBrokerOps;
+      uniqueNormalizedOps = opsWithExtractedFills;
       logger.log(`No existing operations to dedupe against`);
     }
 
@@ -71,6 +85,9 @@ export async function importBrokerOperations({
       brokerImport: {
         rawOperationsCount: operationsJson.length,
         normalizedOperationsCount: normalizedBrokerOps.length,
+        extractedFillsCount: extractionResult.extracted,
+        skippedFillsCount: extractionResult.skipped,
+        extractedFillsMetadata: extractionResult.metadata,
         uniqueOperationsCount: uniqueNormalizedOps.length,
         newOrdersCount: mergeResult.newOrdersCount,
         newOperationsCount: mergeResult.newOpsCount,
@@ -80,7 +97,7 @@ export async function importBrokerOperations({
     };
 
   } catch (error) {
-    logger.error('Broker import failed', { error: error.message, stack: error.stack });
+    logger.warn('Broker import failed', { error: error.message, stack: error.stack });
     throw new Error(`Broker import processing failed: ${error.message}`);
   }
 }

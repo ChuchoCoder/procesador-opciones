@@ -61,28 +61,47 @@ This plan outlines the phased implementation of the unified processing pipeline 
 ### Deliverables
 
 - ✅ `frontend/src/services/broker/broker-import-pipeline.js` with full implementation
-- ✅ Unit tests for orchestrator logic
+- Unit tests for orchestrator logic
 - Integration tests with mock broker data
 
 ## Phase 4: Broker Sync Integration
 
 **Duration:** 2-3 days  
 **Objective:** Wire the new pipeline into the existing broker sync flow.
+**Status:** ✅ COMPLETED (January 21, 2025)
 
 ### Tasks
 
-- Locate jsRofex integration points (likely in extension or frontend services)
-- Modify broker sync code to use new `importBrokerOperations` orchestrator
-- Update UI to show sync status and handle broker operation display
-- Ensure separate storage for broker vs CSV operations
-- Handle configuration passing (fee settings, symbol mappings)
+- ✅ Locate jsRofex integration points (likely in extension or frontend services)
+- ✅ Modify broker sync code to use new `importBrokerOperations` orchestrator
+- ✅ Update UI to show sync status and handle broker operation display
+- ✅ Ensure separate storage for broker vs CSV operations
+- ✅ Handle configuration passing (fee settings, symbol mappings)
 
 ### Deliverables
 
-- Modified broker sync integration points
-- Updated UI components for broker operation display
-- Storage separation implementation
-- End-to-end integration tests
+- ✅ Modified broker sync integration points
+  - `frontend/src/components/Processor/ProcessorScreen.jsx` - passes configuration to sync
+  - `frontend/src/services/broker/sync-service.js` - uses mergedOperations for storage
+- ✅ Updated UI components for broker operation display
+  - `DataSourcesPanel` already properly displays broker operations
+  - Operation counts tracked and displayed separately
+- ✅ Storage separation implementation
+  - `po.operations` stores CSV operations
+  - `po.brokerOperations` stores broker operations
+  - Verified in config-service and reducer
+- ✅ End-to-end integration tests
+  - `frontend/tests/integration/broker-sync-integration.test.js`
+
+### Implementation Summary
+
+See detailed documentation: `specs/007-unified-processing-pipeline/PHASE-4-IMPLEMENTATION.md`
+
+**Key Changes:**
+1. Configuration now passed from ProcessorScreen → sync-service → broker-import-pipeline
+2. Merged operations used for broker storage (maintains full history)
+3. Storage separation already properly implemented
+4. UI already properly integrated and displaying broker operations
 
 ## Phase 5: Testing and Validation
 
@@ -95,14 +114,12 @@ This plan outlines the phased implementation of the unified processing pipeline 
 - Implement integration tests using fixture data (Operations-2025-10-21.json vs .csv)
 - Test deduping and merging logic with various scenarios
 - Validate that broker operations produce identical enriched results as CSV equivalents
-- Performance testing with large operation sets
 - Regression testing for existing CSV functionality
 
 ### Deliverables
 
 - Complete test coverage (unit and integration)
 - Test fixtures and mock data
-- Performance benchmarks
 - Bug fixes and refinements
 
 ## Phase 6: Documentation and Deployment

@@ -1,5 +1,3 @@
 import '@testing-library/jest-dom/vitest';
-import { bootstrapFeeServices } from '../../src/services/bootstrap-defaults.js';
-
-// Initialize fee services before tests run
-await bootstrapFeeServices();
+// Note: bootstrapFeeServices() is not called here to avoid JSON import issues in unit tests
+// Fee services are mocked in individual test files as needed

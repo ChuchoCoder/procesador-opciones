@@ -7,6 +7,7 @@ import App from '../../src/app/App.jsx';
 import { ConfigProvider } from '../../src/state/config-context.jsx';
 import { storageKeys } from '../../src/services/storage/local-storage.js';
 import * as exportService from '../../src/services/csv/export-service.js';
+import * as bootstrapDefaults from '../../src/services/bootstrap-defaults.js';
 import ggalPutsCsv from './data/GGAL-PUTS.csv?raw';
 
 const TEST_TIMEOUT = 15000;
@@ -21,8 +22,11 @@ const renderProcessorApp = () =>
   );
 
 describe('Processor flow integration - GGAL PUTs fixture', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     window.localStorage.clear();
+    
+    // Initialize fee services before tests
+    await bootstrapDefaults.bootstrapFeeServices();
 
     // Use new settings format (po:settings:GGAL)
     window.localStorage.setItem(
