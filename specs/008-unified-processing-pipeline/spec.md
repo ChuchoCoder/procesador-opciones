@@ -5,6 +5,16 @@
 **Status**: Draft  
 **Input**: User description: "Unified Processing Pipeline - Refactor to remove unnecessary code and create single pipeline for CSV and JSON data sources"
 
+## Clarifications
+
+### Session 2025-10-22
+
+- Q: How should the system handle format-specific fields that don't have equivalents in both sources? → A: Semantic mapping - fields that mean similar things are mapped to a common name, even if exact equivalents don't exist; adapters perform intelligent transformation
+- Q: What should happen if chunk processing fails partway through a large dataset? → A: Partial success - keep successfully processed chunks, report which operations failed, allow user to continue with partial data
+- Q: What level of "identical" is required when comparing CSV vs API processing results? → A: Business data only - core trading data (symbol, side, quantity, prices, account, instrument details) must match; timestamps, IDs, and metadata can differ in format
+- Q: What should happen to UI state (filters, sorts, selected rows, scroll position) when switching data sources? → A: Reset all UI state - clear filters, reset sort, deselect rows, scroll to top when switching sources
+- Q: Should validation be strict or lenient when data fails to match the Input Data contract? → A: Reject entire operation
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Load and Process CSV Operations (Priority: P1)
@@ -51,17 +61,17 @@ As a trader, I want clear indication of which data source is currently active (C
 
 1. **Given** I have loaded CSV data, **When** I view the operations list, **Then** the UI clearly indicates "Data Source: CSV File" and shows the filename
 2. **Given** I have loaded API data, **When** I view the operations list, **Then** the UI clearly indicates "Data Source: Broker API" and shows connection status
-3. **Given** I switch from CSV to API data, **When** the new data loads, **Then** the data source indicator updates immediately and no previous data is visible
+3. **Given** I switch from CSV to API data, **When** the new data loads, **Then** the data source indicator updates immediately and no previous data is visible, and all UI state (filters, sorts, selected rows, scroll position) is reset to default
 
 ---
 
 ### Edge Cases
 
-- What happens when a CSV file has fewer columns than expected? System should validate against the standard Input Data contract and provide clear error message indicating missing required fields.
-- What happens when the Broker API returns operations in a different structure? The JSON adapter should handle the transformation, but if required fields are missing, system should log error and skip that operation with user notification.
+- What happens when a CSV file has fewer columns than expected? System validates against the standard Input Data contract using strict validation. Operations with missing required fields are rejected entirely and not processed. System provides clear error message listing the specific missing required fields for each rejected operation.
+- What happens when the Broker API returns operations in a different structure? The JSON adapter performs semantic mapping to transform the structure to the Input Data contract. If required fields are missing after transformation, strict validation rejects that operation entirely. System logs the validation error with specific missing field details and notifies user of rejected operations.
 - What happens when loading a new data source while processing is in progress? System should cancel the current processing task and begin loading the new data source.
 - What happens when both CSV and API data sources fail to load? System should display appropriate error messages and allow user to retry or switch data sources.
-- What happens with very large datasets (10,000+ operations)? System should process in chunks and provide progress indication to maintain responsiveness.
+- What happens with very large datasets (10,000+ operations)? System should process in chunks and provide progress indication to maintain responsiveness. If chunk processing fails partway through, the system keeps successfully processed chunks, reports which operations failed with specific error details, and allows the user to continue working with the partial dataset.
 
 **Note**: The reference data files `data/Operations-2025-10-20.csv` (209 operations) and `data/Operations-2025-10-20.json` (same 209 operations in JSON format) should be used to validate edge case handling and ensure consistent behavior across both data sources.
 
@@ -74,10 +84,10 @@ As a trader, I want clear indication of which data source is currently active (C
 - **FR-003**: System MUST provide a CSV adapter that converts CSV rows to the Input Data format, validated against `data/Operations-2025-10-20.csv`
 - **FR-004**: System MUST provide a JSON adapter that converts Broker API operations to the Input Data format, validated against `data/Operations-2025-10-20.json`
 - **FR-005**: System MUST ensure only one data source (CSV or API) is active and displayed at any given time
-- **FR-006**: System MUST clear the current data source before loading a new one
+- **FR-006**: System MUST clear the current data source before loading a new one, including resetting all UI state (filters, sorts, selected rows, scroll position) to defaults
 - **FR-007**: System MUST remove all code that attempts to merge or display both CSV and JSON data simultaneously
-- **FR-008**: System MUST produce identical processing results for the same operation data regardless of source format (CSV or API)
-- **FR-009**: System MUST validate incoming data against the Input Data contract before processing
+- **FR-008**: System MUST produce identical processing results for the same operation data regardless of source format (CSV or API). "Identical" is defined as: core business data fields (security symbol, side, quantity, execution price, order price, account, instrument details) must match exactly; timestamps, order IDs, and metadata fields may differ in format or type representation
+- **FR-009**: System MUST validate incoming data against the Input Data contract before processing. Validation is strict: any operation that fails validation must be rejected entirely (not processed), with specific error details logged and reported to the user
 - **FR-010**: System MUST remove redundant validation checks that duplicate functionality
 - **FR-011**: System MUST remove format-specific processing logic beyond the initial adapter layer
 - **FR-012**: System MUST maintain all existing functionality for fee calculations, operation analysis, and reporting
@@ -85,11 +95,11 @@ As a trader, I want clear indication of which data source is currently active (C
 
 ### Key Entities
 
-- **Input Data Contract**: The standardized data structure that serves as input to the unified processing pipeline. Contains minimum required fields present in both CSV and JSON sources including operation identifiers, prices, quantities, dates, instrument details, and any other fields necessary for fee calculation and analysis. Defines data types, required vs optional fields, default values, and validation rules.
+- **Input Data Contract**: The standardized data structure that serves as input to the unified processing pipeline. Uses semantic field mapping where fields from CSV and JSON sources that represent similar concepts are mapped to common canonical field names (e.g., CSV `transact_time` and JSON `transactTime` both map to a unified field). Adapters perform intelligent transformation to normalize naming conventions and related fields. Contains all fields necessary for fee calculation and analysis. Defines data types, required vs optional fields, default values, and validation rules.
 
-- **CSV Adapter**: Component responsible for parsing CSV files and transforming rows into Input Data format. Handles column mapping, type conversions, and application of defaults for optional fields. See reference data: `data/Operations-2025-10-20.csv`.
+- **CSV Adapter**: Component responsible for parsing CSV files and transforming rows into Input Data format. Performs semantic mapping of CSV column names to canonical contract field names. Handles type conversions and application of defaults for optional fields. See reference data: `data/Operations-2025-10-20.csv`.
 
-- **JSON Adapter**: Component responsible for extracting operations from Broker API responses and transforming them into Input Data format. Handles property mapping, type conversions, and application of defaults for optional fields. See reference data: `data/Operations-2025-10-20.json`.
+- **JSON Adapter**: Component responsible for extracting operations from Broker API responses and transforming them into Input Data format. Performs semantic mapping of JSON property names to canonical contract field names. Handles nested property extraction, type conversions, and application of defaults for optional fields. See reference data: `data/Operations-2025-10-20.json`.
 
 - **Unified Processing Pipeline**: The core processing component that accepts Input Data and applies all business logic including fee calculations, price adjustments, operation classification, and result formatting. Independent of data source format.
 
@@ -112,7 +122,7 @@ Both data sources represent the same trading operations from October 20, 2025, a
 ### Measurable Outcomes
 
 - **SC-001**: All operations processing (calculations, analysis, display) completes through a single unified pipeline with no format-specific branching beyond the adapter layer
-- **SC-002**: CSV files and Broker API operations with identical data produce byte-for-byte identical processing results
+- **SC-002**: CSV files and Broker API operations with identical data produce identical business data results (same symbol, side, quantity, prices, account, instrument details); timestamps and IDs may have different formats
 - **SC-003**: Code complexity (measured by cyclomatic complexity or similar metric) is reduced by at least 30% in data processing modules
 - **SC-004**: Number of code paths for operation processing is reduced from 2+ to 1 (single unified pipeline)
 - **SC-005**: Test execution time for processing pipeline tests remains the same or improves by up to 20%
