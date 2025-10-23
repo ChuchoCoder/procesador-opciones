@@ -14,6 +14,8 @@ Auto-generated from all feature plans. Last updated: 2025-10-10
 - Browser localStorage (existing settings system - `frontend/src/services/storage` and `storage-settings.js`) (005-cauciones-repo-fees)
 - JavaScript ES2020+ + React 18.x, Material UI v5.x, papaparse, Vite 5.x (006-arbitraje-de-plazos)
 - localStorage, chrome.storage (006-arbitraje-de-plazos)
+- JavaScript ES2020+ (frontend React 18.x application) + React 18.3.1, Material UI v7.3.4, papaparse 5.5.3 (CSV parsing), Vite 7.1.7 (bundler), vitest 3.2.4 (testing) (008-unified-processing-pipeline)
+- Browser localStorage for persisted configuration and settings; chrome.storage for browser extension sync; in-memory state for operations data during processing (008-unified-processing-pipeline)
 
 ## Project Structure
 ```
@@ -33,9 +35,9 @@ Use Powershell style (; instead of & or &&) when executing console commands on W
 JavaScript (ES2020+) with React 18.x, JSX transform via bundler: Follow standard conventions
 
 ## Recent Changes
+- 008-unified-processing-pipeline: Added JavaScript ES2020+ (frontend React 18.x application) + React 18.3.1, Material UI v7.3.4, papaparse 5.5.3 (CSV parsing), Vite 7.1.7 (bundler), vitest 3.2.4 (testing)
 - 006-arbitraje-de-plazos: Added JavaScript ES2020+ + React 18.x, Material UI v5.x, papaparse, Vite 5.x
 - 005-cauciones-repo-fees: Added JavaScript / ES2020+ (frontend React 18.x) + React 18.x, Vite (frontend bundler), Material UI (MUI) v5 (existing), papaparse (already used in project for CSV flows)
-- 004-integrate-jsrofex-to: Added JavaScript (ES2020+) (frontend extension + React processor UI) + React 18, Vite bundler (frontend), Material UI v5, papaparse (CSV), jsRofex (NEEDS CLARIFICATION: library availability / API surface), chrome extension APIs (Manifest V3)
 
 <!-- MANUAL ADDITIONS START -->
 <!-- MANUAL ADDITIONS END -->

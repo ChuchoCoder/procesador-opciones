@@ -586,8 +586,10 @@ describe('CSV Processing Pipeline - Complete Integration', () => {
       });
 
       expect(result).toBeDefined();
-      expect(result.summary.excludedRowCount).toBeGreaterThan(0);
-      console.log(`✅ Invalid rows excluded: ${result.summary.excludedRowCount}`);
+      // Invalid rows can be either excluded by validator OR rejected by adapter
+      const totalInvalidRows = (result.summary.excludedRowCount || 0) + (result.summary.rejectedRowCount || 0);
+      expect(totalInvalidRows).toBeGreaterThan(0);
+      console.log(`✅ Invalid rows excluded/rejected: ${totalInvalidRows} (excluded: ${result.summary.excludedRowCount || 0}, rejected: ${result.summary.rejectedRowCount || 0})`);
     });
   });
 });

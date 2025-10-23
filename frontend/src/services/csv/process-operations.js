@@ -6,6 +6,7 @@ import { normalizeOperationRows } from './legacy-normalizer.js';
 import { getAllSymbols, loadSymbolConfig } from '../storage-settings.js';
 import { normalizeOperation } from '../broker/dedupe-utils.js';
 import { enrichOperationsWithFees } from '../fees/fee-enrichment.js';
+import { adaptCsvRowsToContract } from '../adapters/csv-adapter.js';
 
 const OPTION_TOKEN_REGEX = /^([A-Z0-9]+?)([CV])(\d+(?:\.\d+)?)(.*)$/;
 const DEFAULT_EXPIRATION = 'NONE';
@@ -983,6 +984,7 @@ export const processOperations = async ({
   configuration,
   fileName,
   parserConfig,
+  skipCsvAdapter = false,  // Set true when operations are already in InputData format (e.g., from JSON adapter)
 } = {}) => {
   const activeConfiguration = sanitizeConfiguration(configuration);
   
@@ -1025,53 +1027,129 @@ export const processOperations = async ({
     return emptyResult;
   }
 
-  const { rows: normalizedRows, missingColumns } = normalizeOperationRows(parsedRows, activeConfiguration);
-
-  if (missingColumns.length > 0) {
-    const unresolvedColumns = missingColumns.filter((column) =>
-      normalizedRows.every((row) => row[column] === null || row[column] === undefined),
-    );
-
-    if (unresolvedColumns.length === missingColumns.length) {
-      throw new Error(`Faltan columnas requeridas: ${unresolvedColumns.join(', ')}.`);
+  // ========================================================================
+  // Phase 2.5: Adapt CSV rows to InputData contract EARLY (Feature 008)
+  // This happens BEFORE normalization/validation to preserve original field names
+  // Skip this step if operations are already in InputData format (e.g., from JSON adapter)
+  // ========================================================================
+  
+  let inputDataOperations, rejectedOperations;
+  
+  if (skipCsvAdapter) {
+    // Operations are already in InputData format from JSON adapter
+    logger.log(`Saltando CSV adapter - ${parsedRows.length} operaciones ya están en formato InputData`);
+    inputDataOperations = parsedRows;
+    rejectedOperations = [];
+  } else {
+    // Convert CSV rows to InputData format
+    logger.log(`Adaptando ${parsedRows.length} filas parseadas a InputData contract (pre-validation)`);
+    
+    const adapterResult = adaptCsvRowsToContract(parsedRows);
+    inputDataOperations = adapterResult.valid;
+    rejectedOperations = adapterResult.rejected;
+    
+    if (rejectedOperations.length > 0) {
+      logger.warn(`Adapter rechazó ${rejectedOperations.length} operaciones`, {
+        firstRejection: rejectedOperations[0], // Show full first rejection for debugging
+        rejections: rejectedOperations.slice(0, 3).map(r => ({
+          row: r.sourceData?.order_id || r.sourceData?.id,
+          errors: r.errors?.slice(0, 3), // Show first 3 errors
+        })),
+      });
     }
+    
+    logger.log(`Adapter produjo ${inputDataOperations.length} operaciones InputData válidas`);
+  }
+  
+  // If adapter rejected ALL operations, return early with rejection details
+  if (inputDataOperations.length === 0) {
+    const emptyResult = {
+      summary: {
+        fileName: resolvedFileName,
+        processedAt: getNow(),
+        rawRowCount: parseMeta.rowCount,
+        validRowCount: 0,
+        excludedRowCount: 0,
+        rejectedRowCount: rejectedOperations.length,
+        warnings: ['adapterRejections'],
+      },
+      calls: { operations: [], stats: {} },
+      puts: { operations: [], stats: {} },
+      operations: [],
+      normalizedOperations: [],
+      meta: {
+        parse: parseMeta,
+        adapterRejections: rejectedOperations.length,
+        duration: timer({ fileName: resolvedFileName, totalRows: 0, warnings: ['adapterRejections'], view: 'raw' }),
+      },
+      rejectedOperations,
+    };
+    
+    logger.log('Todos los registros fueron rechazados por el adapter');
+    return emptyResult;
   }
 
-  let validated;
-  try {
-    validated = validateAndFilterRows({ rows: normalizedRows, configuration: activeConfiguration });
-  } catch (error) {
-    logger.warn('Validación fallida', { error: error.message });
-    throw error;
-  }
+  // ========================================================================
+  // Phase 3: Validation (legacy CSV validator - SKIPPED for adapter paths)
+  // Both CSV and JSON adapters validate operations during transformation
+  // Legacy validation is no longer needed - adapters handle all validation
+  // Set validated structure for backward compatibility with reporting code
+  // ========================================================================
+  
+  const validated = {
+    rows: inputDataOperations, // Not used by downstream code, just for structure
+    exclusions: {}, // No CSV-level exclusions (adapters handle rejections separately)
+    totalInvalidRows: rejectedOperations.length // Count of rejected operations
+  };
+  
+  // For backward compatibility: validatedRows = the operations that passed adapter validation
+  const validatedRows = inputDataOperations;
 
-  const validatedRows = validated.rows ?? [];
-
-  const enrichedOperations = await Promise.all(validatedRows.map(async (row, index) => {
-    const enrichment = await enrichOperationRow(row, activeConfiguration);
+  // ========================================================================
+  // Phase 4: Enrich InputData with token parsing and option details
+  // (InputData was already created in Phase 2.5, before validation)
+  // ========================================================================
+  
+  const enrichedOperations = await Promise.all(inputDataOperations.map(async (inputData, index) => {
+    // Transform InputData back to row format for enrichOperationRow
+    // (This is a temporary bridge until enrichOperationRow can work with InputData directly)
+    const rowForEnrichment = {
+      order_id: inputData.orderId,
+      symbol: inputData.symbol,
+      side: inputData.side,
+      quantity: inputData.cumQty || inputData.lastQty,
+      price: inputData.avgPx || inputData.lastPx,
+      status: inputData.status,
+      transact_time: inputData.transactTime,
+      source: inputData._source,
+      // Include all InputData fields for enrichment
+      ...inputData._rawData,
+    };
+    
+    const enrichment = await enrichOperationRow(rowForEnrichment, activeConfiguration);
 
     const optionType = enrichment.type === 'CALL' || enrichment.type === 'PUT' ? enrichment.type : 'UNKNOWN';
-    const strike = enrichment.strike ?? row.strike ?? null;
-    const originalSymbol = typeof row.symbol === 'string' ? row.symbol.trim() : '';
+    const strike = enrichment.strike ?? rowForEnrichment.strike ?? null;
+    const originalSymbol = typeof inputData.symbol === 'string' ? inputData.symbol.trim() : '';
 
     return {
-      id: enrichment.id || String(row.order_id || index),
-      orderId: row.order_id,
+      id: enrichment.id || String(inputData.orderId || index),
+      orderId: inputData.orderId,
       originalSymbol: originalSymbol || enrichment.symbol,
       matchedSymbol: enrichment.symbol,
       symbol: enrichment.symbol,
       expiration: enrichment.expiration,
       optionType,
       strike,
-      quantity: row.quantity,
-      price: row.price,
-      side: row.side,
-      source: 'csv',
+      quantity: inputData.cumQty || inputData.lastQty,
+      price: inputData.avgPx || inputData.lastPx,
+      side: inputData.side,
+      source: inputData._source,
       meta: {
         ...enrichment.meta,
-        status: row.status ?? '',
+        status: inputData.status || '',
       },
-      raw: row.raw ?? row,
+      raw: inputData._rawData || inputData,
     };
   }));
 
@@ -1097,6 +1175,11 @@ export const processOperations = async ({
   const activeViewKey = activeConfiguration.useAveraging ? 'averaged' : 'raw';
   const processedAt = formatTimestamp(new Date());
   const warnings = buildWarnings(parseMeta);
+  
+  // Add adapter rejection warnings (Feature 008)
+  if (rejectedOperations.length > 0) {
+    warnings.push('adapterRejections');
+  }
 
   const viewSnapshots = Object.fromEntries(
     Object.entries(views).map(([key, consolidated]) => {
@@ -1140,6 +1223,7 @@ export const processOperations = async ({
             rawRowCount: parseMeta.rowCount,
             validRowCount: validatedRows.length,
             excludedRowCount: viewTotalExcluded,
+            rejectedRowCount: rejectedOperations.length, // Feature 008: adapter rejections
             warnings,
             durationMs: 0,
             groups: groupSummaries,
@@ -1199,6 +1283,9 @@ export const processOperations = async ({
     normalizedOperations,
     meta: {
       parse: parseMeta,
+      adapterRejections: rejectedOperations.length,
     },
+    // Include rejection details for debugging and UI display (Feature 008)
+    rejectedOperations: rejectedOperations.length > 0 ? rejectedOperations : undefined,
   };
 };

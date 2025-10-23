@@ -6,7 +6,7 @@
  */
 
 import { normalizeOperation, dedupeOperations, mergeBrokerBatch } from './dedupe-utils.js';
-import { mapBrokerOperationsToCsvRows } from './convert-to-csv-model.js';
+import { adaptBrokerOperationsToContract } from '../adapters/json-adapter.js';
 import { processOperations } from '../csv/process-operations.js';
 import { extractFilledQuantityFromCancelled } from './extract-cancelled-fills.js';
 import { createDevLogger } from '../logging/dev-logger.js';
@@ -37,11 +37,22 @@ export async function importBrokerOperations({
   logger.log(`Starting broker import - ${operationsJson.length} operations`);
 
   try {
-    // Step 1: Normalize each broker operation
-    const normalizedBrokerOps = operationsJson.map(raw => normalizeOperation(raw, 'broker'));
-    logger.log(`Normalized ${normalizedBrokerOps.length} broker operations`);
+    // Step 1: Adapt raw broker operations to InputData contract FIRST (before normalization)
+    // This preserves the original nested structure that the JSON adapter expects
+    const adapterResult = adaptBrokerOperationsToContract(operationsJson);
+    logger.log(`JSON adapter: ${adapterResult.valid.length} valid, ${adapterResult.rejected.length} rejected operations`);
+    
+    // Log first rejection if any for debugging
+    if (adapterResult.rejected.length > 0) {
+      const firstRejection = adapterResult.rejected[0];
+      logger.log(`First rejection: ${firstRejection.reason}`, firstRejection.errors);
+    }
 
-    // Step 1.5: Extract filled quantities from cancelled orders
+    // Step 2: Normalize each broker operation for deduplication/merging (parallel path)
+    const normalizedBrokerOps = operationsJson.map(raw => normalizeOperation(raw, 'broker'));
+    logger.log(`Normalized ${normalizedBrokerOps.length} broker operations (for deduplication)`);
+
+    // Step 2.5: Extract filled quantities from cancelled orders
     const extractionResult = extractFilledQuantityFromCancelled(normalizedBrokerOps);
     const opsWithExtractedFills = extractionResult.operations;
     
@@ -54,7 +65,7 @@ export async function importBrokerOperations({
       });
     }
 
-    // Step 2: Dedupe against existing operations if provided
+    // Step 3: Dedupe against existing operations if provided
     let uniqueNormalizedOps;
     if (existingOperations && existingOperations.length > 0) {
       uniqueNormalizedOps = dedupeOperations(existingOperations, opsWithExtractedFills);
@@ -64,15 +75,12 @@ export async function importBrokerOperations({
       logger.log(`No existing operations to dedupe against`);
     }
 
-    // Step 3: Convert unique normalized operations to CSV-compatible rows
-    const csvRows = mapBrokerOperationsToCsvRows(uniqueNormalizedOps);
-    logger.log(`Converted to ${csvRows.length} CSV rows for pipeline processing`);
-
-    // Step 4: Process through unified pipeline
+    // Step 4: Process through unified pipeline with adapted operations
     const pipelineResult = await processOperations({
-      rows: csvRows,
+      rows: adapterResult.valid,  // Pass InputData operations directly
       configuration,
-      fileName: 'broker-sync.json'
+      fileName: 'broker-sync.json',
+      skipCsvAdapter: true  // Skip CSV adapter since operations are already in InputData format
     });
 
     // Step 5: Merge with existing operations for storage (if needed)
@@ -89,6 +97,9 @@ export async function importBrokerOperations({
         skippedFillsCount: extractionResult.skipped,
         extractedFillsMetadata: extractionResult.metadata,
         uniqueOperationsCount: uniqueNormalizedOps.length,
+        validOperationsCount: adapterResult.valid.length,
+        rejectedOperationsCount: adapterResult.rejected.length,
+        rejectedOperations: adapterResult.rejected,
         newOrdersCount: mergeResult.newOrdersCount,
         newOperationsCount: mergeResult.newOpsCount,
         mergedOperations: mergeResult.mergedOps,

@@ -1,0 +1,244 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://procesador-opciones.example.com/schemas/input-data-contract.json",
+  "title": "Input Data Contract",
+  "description": "Canonical data format for trading operations entering the unified processing pipeline. Both CSV and JSON adapters must transform source data to conform to this schema.",
+  "type": "object",
+  "required": [
+    "orderId",
+    "accountId",
+    "symbol",
+    "side",
+    "price",
+    "lastPx",
+    "avgPx",
+    "orderQty",
+    "lastQty",
+    "cumQty",
+    "leavesQty",
+    "ordType",
+    "status",
+    "transactTime",
+    "_source"
+  ],
+  "properties": {
+    "orderId": {
+      "type": "string",
+      "description": "Exchange order ID (CSV: order_id, JSON: orderId)",
+      "minLength": 1,
+      "examples": ["01K8151KAADY2W2STETVHJKEX8", "O0OuvIeWiu3M-10881131"]
+    },
+    "clOrdId": {
+      "type": ["string", "null"],
+      "description": "Client order ID (CSV: last_cl_ord_id, JSON: clOrdId)",
+      "examples": ["499535441010074", "499539486014047", null]
+    },
+    "execId": {
+      "type": ["string", "null"],
+      "description": "Execution ID (CSV: id, JSON: execId)",
+      "examples": ["39af43a7-4251-4ed0-8f37-5f03ddf71c3f", "MERVE0OuvDoUt9pj", null]
+    },
+    "accountId": {
+      "type": "string",
+      "description": "Trading account ID (CSV: account, JSON: accountId.id)",
+      "minLength": 1,
+      "examples": ["17825", "98765"]
+    },
+    "symbol": {
+      "type": "string",
+      "description": "Full instrument symbol (CSV: symbol, JSON: instrumentId.symbol)",
+      "minLength": 1,
+      "pattern": "^[A-Z0-9 \\-]+$",
+      "examples": [
+        "MERV - XMEV - TX25 - CI",
+        "MERV - XMEV - S16E6 - 24hs",
+        "GGALC47500O"
+      ]
+    },
+    "instrumentId": {
+      "type": ["string", "null"],
+      "description": "Instrument identifier (CSV: security_id, JSON: instrumentId)",
+      "examples": ["bm_MERV_TX25_CI", null]
+    },
+    "marketId": {
+      "type": ["string", "null"],
+      "description": "Market identifier (JSON: instrumentId.marketId, CSV: derived from symbol)",
+      "examples": ["ROFX", "MERV", null]
+    },
+    "side": {
+      "type": "string",
+      "description": "Order side - must be uppercase",
+      "enum": ["BUY", "SELL"]
+    },
+    "price": {
+      "type": "number",
+      "description": "Order price (CSV: order_price, JSON: price)",
+      "minimum": 0,
+      "exclusiveMinimum": true,
+      "examples": [1385, 107.225, 5500]
+    },
+    "lastPx": {
+      "type": "number",
+      "description": "Last execution price (CSV: last_price, JSON: lastPx)",
+      "minimum": 0,
+      "exclusiveMinimum": true,
+      "examples": [1385, 107, 5500.5]
+    },
+    "avgPx": {
+      "type": "number",
+      "description": "Average execution price (CSV: avg_price, JSON: avgPx)",
+      "minimum": 0,
+      "exclusiveMinimum": true,
+      "examples": [1385.0, 107.225, 5500.25]
+    },
+    "orderQty": {
+      "type": "number",
+      "description": "Original order quantity (CSV: order_size, JSON: orderQty)",
+      "minimum": 0,
+      "examples": [100000, 150000, 500]
+    },
+    "lastQty": {
+      "type": "number",
+      "description": "Last executed quantity (CSV: last_qty, JSON: lastQty)",
+      "minimum": 0,
+      "examples": [100000, 150000, 500]
+    },
+    "cumQty": {
+      "type": "number",
+      "description": "Cumulative executed quantity (CSV: cum_qty, JSON: cumQty)",
+      "minimum": 0,
+      "examples": [100000, 150000, 500]
+    },
+    "leavesQty": {
+      "type": "number",
+      "description": "Remaining quantity to be executed (CSV: leaves_qty, JSON: leavesQty)",
+      "minimum": 0,
+      "examples": [0, 50000, 100]
+    },
+    "ordType": {
+      "type": "string",
+      "description": "Order type (CSV: ord_type, JSON: ordType)",
+      "enum": ["LIMIT", "MARKET", "STOP", "STOP_LIMIT"],
+      "examples": ["LIMIT", "MARKET"]
+    },
+    "status": {
+      "type": "string",
+      "description": "Order status (CSV: ord_status [normalized], JSON: status)",
+      "enum": ["FILLED", "PARTIAL", "CANCELLED", "REJECTED", "NEW", "PENDING"],
+      "examples": ["FILLED", "PARTIAL", "CANCELLED"]
+    },
+    "transactTime": {
+      "type": "string",
+      "description": "Transaction timestamp in ISO 8601 format (CSV: transact_time, JSON: transactTime)",
+      "format": "date-time",
+      "examples": [
+        "2025-10-20T15:50:41.226Z",
+        "2025-10-20T13:58:06.287-03:00"
+      ]
+    },
+    "timeInForce": {
+      "type": ["string", "null"],
+      "description": "Time in force instruction (CSV: time_in_force, JSON: timeInForce)",
+      "enum": ["DAY", "GTC", "IOC", "FOK", null],
+      "examples": ["DAY", "GTC", null]
+    },
+    "stopPx": {
+      "type": ["number", "null"],
+      "description": "Stop price for stop orders (CSV: stop_px, JSON: stopPx)",
+      "minimum": 0,
+      "exclusiveMinimum": true,
+      "examples": [1400, null]
+    },
+    "displayQty": {
+      "type": ["number", "null"],
+      "description": "Display quantity for iceberg orders (JSON: displayQty)",
+      "minimum": 0,
+      "examples": [0, 10000, null]
+    },
+    "text": {
+      "type": ["string", "null"],
+      "description": "Order text or notes (CSV: text, JSON: text)",
+      "examples": [" ", "Manual order", null]
+    },
+    "eventSubtype": {
+      "type": ["string", "null"],
+      "description": "Event subtype for execution reports (CSV: event_subtype)",
+      "examples": ["execution_report", null]
+    },
+    "_source": {
+      "type": "string",
+      "description": "Data source type - indicates which adapter produced this data",
+      "enum": ["csv", "broker"]
+    },
+    "_rawData": {
+      "type": ["object", "null"],
+      "description": "Original raw data from source (for debugging and traceability)",
+      "examples": [null, {}]
+    },
+    "_adaptedAt": {
+      "type": "string",
+      "description": "ISO 8601 timestamp when adaptation occurred",
+      "format": "date-time",
+      "examples": ["2025-10-22T14:30:00.000Z"]
+    }
+  },
+  "additionalProperties": false,
+  "examples": [
+    {
+      "orderId": "01K8151KAADY2W2STETVHJKEX8",
+      "clOrdId": "499535441010074",
+      "execId": "39af43a7-4251-4ed0-8f37-5f03ddf71c3f",
+      "accountId": "17825",
+      "symbol": "MERV - XMEV - TX25 - CI",
+      "instrumentId": "bm_MERV_TX25_CI",
+      "marketId": "MERV",
+      "side": "SELL",
+      "price": 1385,
+      "lastPx": 1385,
+      "avgPx": 1385,
+      "orderQty": 100000,
+      "lastQty": 100000,
+      "cumQty": 100000,
+      "leavesQty": 0,
+      "ordType": "LIMIT",
+      "status": "FILLED",
+      "transactTime": "2025-10-20T15:50:41.226Z",
+      "timeInForce": "DAY",
+      "stopPx": null,
+      "displayQty": null,
+      "text": " ",
+      "eventSubtype": "execution_report",
+      "_source": "csv",
+      "_rawData": null,
+      "_adaptedAt": "2025-10-22T14:30:00.000Z"
+    },
+    {
+      "orderId": "O0OuvIeWiu3M-10881131",
+      "clOrdId": "499539486014047",
+      "execId": "MERVE0OuvDoUt9pj",
+      "accountId": "17825",
+      "symbol": "MERV - XMEV - S16E6 - 24hs",
+      "instrumentId": null,
+      "marketId": "ROFX",
+      "side": "BUY",
+      "price": 107,
+      "lastPx": 107,
+      "avgPx": 107,
+      "orderQty": 150000,
+      "lastQty": 150000,
+      "cumQty": 150000,
+      "leavesQty": 0,
+      "ordType": "LIMIT",
+      "status": "FILLED",
+      "transactTime": "2025-10-20T13:58:06.287-03:00",
+      "timeInForce": "DAY",
+      "stopPx": null,
+      "displayQty": 0,
+      "text": " ",
+      "eventSubtype": null,
+      "_source": "broker",
+      "_rawData": null,
+      "_adaptedAt": "2025-10-22T14:30:00.000Z"
+    }
+  ]
+}
