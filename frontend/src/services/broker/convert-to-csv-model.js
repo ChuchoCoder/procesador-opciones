@@ -118,6 +118,9 @@ function mapBrokerOperationToCsvRow(brokerOp) {
     account: accountId.id || brokerOp.account || null,
     security_id: rawSymbol || brokerOp.security_id || brokerOp.securityId || null,
     symbol: cleanSymbol || null,
+    // Preserve full broker symbol for repos/cauciones that need tenor extraction
+    // For repos like "MERV - XMEV - PESOS - 1D", this allows fee calculation to extract "1D"
+    instrumentDisplayName: rawSymbol || null,
 
     // Transaction details - use normalized fields
     transact_time: tradeTimestamp,

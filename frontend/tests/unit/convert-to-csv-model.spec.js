@@ -88,6 +88,31 @@ describe('Broker to CSV Model Conversion', () => {
       expect(csvRow.source).toBe('broker');
     });
 
+    it('should preserve full symbol for repo/caucion operations with tenor', () => {
+      const brokerOp = {
+        orderId: 'REPO-001',
+        instrumentId: { 
+          symbol: 'MERV - XMEV - PESOS - 1D'
+        },
+        side: 'BUY',
+        orderQty: 1000000,
+        price: 25.5,
+        transactTime: '20251021-10:00:00.000-0300',
+        status: 'FILLED',
+      };
+
+      const csvRow = mapBrokerOperationToCsvRow(brokerOp);
+
+      // Symbol should be extracted token only
+      expect(csvRow.symbol).toBe('PESOS');
+      // Settlement should be extracted
+      expect(csvRow.expiration).toBe('1D');
+      // instrumentDisplayName should preserve full symbol for tenor extraction
+      expect(csvRow.instrumentDisplayName).toBe('MERV - XMEV - PESOS - 1D');
+      expect(csvRow.side).toBe('BUY');
+      expect(csvRow.source).toBe('broker');
+    });
+
     it('should handle missing fields with defaults', () => {
       const brokerOp = {
         orderId: 'ORD123',
