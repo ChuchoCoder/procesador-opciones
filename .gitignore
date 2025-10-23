@@ -3,3 +3,4 @@ extension-dist
 logs/console.log
 app_logs/console.log
 app_logs/operations.json
+frontend/tests/test-results.json
