@@ -41,7 +41,10 @@ describe('Broker to CSV Model Conversion', () => {
       expect(csvRow.operation_id).toBe('MERVE0OveBIQkPQv');
       expect(csvRow.account).toBe('17825');
       expect(csvRow.security_id).toBe('MERV - XMEV - GFGC400OCT - CI');
-      expect(csvRow.symbol).toBe('MERV - XMEV - GFGC400OCT - CI');
+      // Symbol should now extract just the token from broker symbol format
+      expect(csvRow.symbol).toBe('GFGC400OCT');
+      // Expiration should now extract the settlement/venue from broker symbol format
+      expect(csvRow.expiration).toBe('CI');
       expect(csvRow.side).toBe('SELL');
       expect(csvRow.ord_type).toBe('LIMIT');
       expect(csvRow.order_price).toBe(174.25);
@@ -78,7 +81,9 @@ describe('Broker to CSV Model Conversion', () => {
       expect(csvRow.order_size).toBe(10);
       expect(csvRow.last_price).toBe(1.5);
       expect(csvRow.option_type).toBe('CALL');
-      expect(csvRow.strike).toBe(400);
+      // Strike should be null for option tokens because broker provides raw strike values
+      // Token parsing will extract and format the strike correctly with decimals
+      expect(csvRow.strike).toBe(null);
       expect(csvRow.expiration).toBe('OCT');
       expect(csvRow.source).toBe('broker');
     });
