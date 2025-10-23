@@ -21,34 +21,49 @@ function isOptionToken(symbol) {
 }
 
 /**
- * Extract token from broker symbol string
- * Broker symbols come as "MERV - XMEV - GFGC61558D - 24hs" and we need just "GFGC61558D"
+ * Extract token and settlement from broker symbol string
+ * Broker symbols come as "MERV - XMEV - GFGC61558D - 24hs" and we need "GFGC61558D" and "24hs"
  * @param {string} symbol - Full broker symbol string
- * @returns {string} Extracted token or original symbol
+ * @returns {Object} Object with token and settlement properties
  */
 function extractTokenFromBrokerSymbol(symbol) {
-  if (!symbol || typeof symbol !== 'string') return symbol;
+  if (!symbol || typeof symbol !== 'string') {
+    return { token: symbol, settlement: null };
+  }
   
-  // Pattern to match option tokens in broker symbol format
-  // Examples: "MERV - XMEV - GFGC61558D - 24hs" → "GFGC61558D"
-  //           "MERV - XMEV - LEDE - CI" → "LEDE"
-  const tokenMatch = symbol.match(/([A-Z0-9]+(?:[CV]\d+[A-Z]?)?)/);
-  
-  // Find all potential tokens and return the one that looks like an option
   const parts = symbol.split(/\s*-\s*/);
+  let token = null;
+  let settlement = null;
+  
+  // Known settlement/venue types
+  const settlementTypes = new Set(['CI', '24HS', '48HS', '72HS', '1D', '2D', '3D', 'CONTADO', 'T0', 'T1', 'T2']);
+  // Known market identifiers to skip
+  const marketIdentifiers = new Set(['MERV', 'XMEV', 'ROFX', 'BYMA', 'BCBA']);
+  
   for (const part of parts) {
-    const trimmed = part.trim();
-    // Skip market identifiers and settlement types
-    if (trimmed === 'MERV' || trimmed === 'XMEV' || trimmed === '24hs' || trimmed === 'CI' || trimmed === '48hs') {
+    const trimmed = part.trim().toUpperCase();
+    
+    // Skip market identifiers
+    if (marketIdentifiers.has(trimmed)) {
       continue;
     }
-    // Return the first non-market part (this should be the token)
-    if (trimmed && /^[A-Z0-9]+/.test(trimmed)) {
-      return trimmed;
+    
+    // Check if this is a settlement type
+    if (settlementTypes.has(trimmed)) {
+      settlement = trimmed;
+      continue;
+    }
+    
+    // If we haven't found a token yet and this looks like one, keep it
+    if (!token && trimmed && /^[A-Z0-9]+/.test(trimmed)) {
+      token = trimmed;
     }
   }
   
-  return symbol;
+  return { 
+    token: token || symbol, 
+    settlement: settlement 
+  };
 }
 
 /**
@@ -90,9 +105,9 @@ function mapBrokerOperationToCsvRow(brokerOp) {
   // Create the CSV row object with all required mappings
   // NOTE: brokerOp is a NORMALIZED operation from dedupe-utils.js, not raw broker API response
   
-  // Extract clean token from broker symbol format
+  // Extract clean token and settlement from broker symbol format
   const rawSymbol = brokerOp.symbol || instrumentId.symbol || brokerOp.underlying || '';
-  const cleanSymbol = extractTokenFromBrokerSymbol(rawSymbol);
+  const { token: cleanSymbol, settlement: extractedSettlement } = extractTokenFromBrokerSymbol(rawSymbol);
   
   const csvRow = {
     // Primary identifiers - use normalized fields
@@ -139,7 +154,9 @@ function mapBrokerOperationToCsvRow(brokerOp) {
     // Detect options by checking if symbol contains option token pattern (e.g., GFGC61558D)
     option_type: brokerOp.optionType || brokerOp.option_type || null,
     strike: isOptionToken(cleanSymbol) ? null : (brokerOp.strike || 0),
-    expiration: brokerOp.expirationDate || brokerOp.expiration || brokerOp.expiration_date || null,
+    // Use extracted settlement from broker symbol (e.g., "24hs", "CI") if available
+    // Otherwise fall back to explicit expiration fields
+    expiration: extractedSettlement || brokerOp.expirationDate || brokerOp.expiration || brokerOp.expiration_date || null,
 
     // Additional fields for token parsing and legacy compatibility
     instrument: instrumentId.symbol || brokerOp.instrument || null,

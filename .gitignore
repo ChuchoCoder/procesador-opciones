@@ -1,3 +1,5 @@
 node_modules
 extension-dist
 logs/console.log
+app_logs/console.log
+app_logs/operations.json
