@@ -140,63 +140,6 @@ describe('Processing Pipeline - Data Source Decoupling', () => {
     );
   });
 
-  describe('Backward Compatibility', () => {
-    it(
-      'still works with file parameter without dataSource (legacy mode)',
-      async () => {
-        const csvFile = await loadCsvFile('GGAL-PUTS.csv');
-        const configuration = createTestConfiguration();
-
-        const result = await processOperations({
-          file: csvFile,
-          fileName: 'GGAL-PUTS.csv',
-          configuration,
-        });
-
-        expect(result).toBeDefined();
-        expect(result.operations.length).toBeGreaterThan(0);
-      },
-      TEST_TIMEOUT,
-    );
-
-    it(
-      'still works with rows array parameter',
-      async () => {
-        const rows = [
-          {
-            order_id: '123',
-            symbol: 'GFGV47343O',
-            side: 'SELL',
-            quantity: 10,
-            price: 330,
-            option_type: 'PUT',
-            strike: 473.43,
-          },
-          {
-            order_id: '124',
-            symbol: 'GFGV47343O',
-            side: 'BUY',
-            quantity: 10,
-            price: 350,
-            option_type: 'PUT',
-            strike: 473.43,
-          },
-        ];
-
-        const configuration = createTestConfiguration();
-
-        const result = await processOperations({
-          rows,
-          configuration,
-        });
-
-        expect(result).toBeDefined();
-        expect(result.operations.length).toBe(2);
-      },
-      TEST_TIMEOUT,
-    );
-  });
-
   describe('JSON Data Source', () => {
     it('processes broker JSON response format', async () => {
       const brokerData = {
@@ -379,14 +322,15 @@ describe('Processing Pipeline - Data Source Decoupling', () => {
       ).rejects.toThrow(/failing-test/);
     });
 
-    it('throws error when no input provided', async () => {
+    it('throws error when no dataSource provided', async () => {
       const configuration = createTestConfiguration();
 
       await expect(
         processOperations({
+          file: null,
           configuration,
         }),
-      ).rejects.toThrow();
+      ).rejects.toThrow(/adaptador de fuente de datos/);
     });
   });
 
