@@ -100,7 +100,31 @@ function calculateTotals(operations) {
  * Single table for either CI or 24h operations
  */
 const OperationsTable = ({ title, operations, sideLabel, isSell }) => {
-  const groupedOps = useMemo(() => groupOperationsByOrderId(operations), [operations]);
+  const groupedOps = useMemo(() => {
+    const grouped = groupOperationsByOrderId(operations);
+    
+    // Sort based on side (compra vs venta)
+    return grouped.sort((a, b) => {
+      // For venta (sell): price (desc), then cantidad (desc)
+      if (isSell) {
+        // Price descending
+        if (a.precio !== b.precio) {
+          return b.precio - a.precio;
+        }
+        // Cantidad descending (absolute values for comparison)
+        return Math.abs(b.cantidad) - Math.abs(a.cantidad);
+      }
+      
+      // For compra (buy): price (asc), then cantidad (desc)
+      // Price ascending
+      if (a.precio !== b.precio) {
+        return a.precio - b.precio;
+      }
+      // Cantidad descending
+      return b.cantidad - a.cantidad;
+    });
+  }, [operations, isSell]);
+  
   const totals = useMemo(() => calculateTotals(groupedOps), [groupedOps]);
   const hasData = groupedOps.length > 0;
   

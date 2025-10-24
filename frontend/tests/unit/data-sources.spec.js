@@ -294,6 +294,363 @@ describe('Data Source Adapters', () => {
     });
   });
 
+  describe('JsonDataSource - Enhanced Features', () => {
+    describe('normalizeTimestamp', () => {
+      const source = new JsonDataSource();
+
+      it('converts broker timestamp to ISO format', () => {
+        const result = source.normalizeTimestamp('20251021-14:57:20.149-0300');
+        expect(result).toBe('2025-10-21T14:57:20.149-03:00');
+      });
+
+      it('handles timestamps without milliseconds', () => {
+        const result = source.normalizeTimestamp('20251021-14:57:20-0300');
+        expect(result).toBe('2025-10-21T14:57:20.000-03:00');
+      });
+
+      it('handles positive timezone offset', () => {
+        const result = source.normalizeTimestamp('20251021-14:57:20.123+0530');
+        expect(result).toBe('2025-10-21T14:57:20.123+05:30');
+      });
+
+      it('preserves ISO timestamps unchanged', () => {
+        const iso = '2025-10-21T14:57:20.149Z';
+        expect(source.normalizeTimestamp(iso)).toBe(iso);
+      });
+
+      it('preserves CSV-style timestamps unchanged', () => {
+        const csv = '2025-10-21 14:57:20.149000Z';
+        expect(source.normalizeTimestamp(csv)).toBe(csv);
+      });
+
+      it('returns original for invalid format', () => {
+        const invalid = 'invalid-timestamp';
+        expect(source.normalizeTimestamp(invalid)).toBe(invalid);
+      });
+
+      it('returns null for null input', () => {
+        expect(source.normalizeTimestamp(null)).toBeNull();
+      });
+
+      it('returns null for undefined input', () => {
+        expect(source.normalizeTimestamp(undefined)).toBeNull();
+      });
+
+      it('returns null for non-string input', () => {
+        expect(source.normalizeTimestamp(12345)).toBeNull();
+      });
+    });
+
+    describe('extractExecInst', () => {
+      const source = new JsonDataSource();
+
+      it('returns "D" for iceberg string "true"', () => {
+        expect(source.extractExecInst({ iceberg: 'true' })).toBe('D');
+      });
+
+      it('returns "D" for iceberg boolean true', () => {
+        expect(source.extractExecInst({ iceberg: true })).toBe('D');
+      });
+
+      it('returns "D" for displayQty > 0', () => {
+        expect(source.extractExecInst({ displayQty: 5 })).toBe('D');
+      });
+
+      it('returns "D" for displayQty string > 0', () => {
+        expect(source.extractExecInst({ displayQty: '10' })).toBe('D');
+      });
+
+      it('returns null for iceberg "false"', () => {
+        expect(source.extractExecInst({ iceberg: 'false' })).toBeNull();
+      });
+
+      it('returns null for iceberg false', () => {
+        expect(source.extractExecInst({ iceberg: false })).toBeNull();
+      });
+
+      it('returns null for displayQty 0', () => {
+        expect(source.extractExecInst({ displayQty: 0 })).toBeNull();
+      });
+
+      it('returns null for normal order', () => {
+        expect(source.extractExecInst({})).toBeNull();
+      });
+
+      it('returns null for null displayQty', () => {
+        expect(source.extractExecInst({ displayQty: null })).toBeNull();
+      });
+    });
+
+    describe('inferExecType', () => {
+      const source = new JsonDataSource();
+
+      it('returns existing execType if provided', () => {
+        expect(source.inferExecType({ execType: 'X' })).toBe('X');
+      });
+
+      it('returns "F" for FILLED status', () => {
+        expect(source.inferExecType({ status: 'FILLED' })).toBe('F');
+      });
+
+      it('returns "F" for PARTIALLY_FILLED status', () => {
+        expect(source.inferExecType({ status: 'PARTIALLY_FILLED' })).toBe('F');
+      });
+
+      it('returns "F" for CANCELLED with executions', () => {
+        expect(source.inferExecType({ status: 'CANCELLED', cumQty: 10 })).toBe('F');
+      });
+
+      it('returns "4" for CANCELLED without executions', () => {
+        expect(source.inferExecType({ status: 'CANCELLED', cumQty: 0 })).toBe('4');
+      });
+
+      it('returns "8" for REJECTED', () => {
+        expect(source.inferExecType({ status: 'REJECTED' })).toBe('8');
+      });
+
+      it('returns null for unknown status', () => {
+        expect(source.inferExecType({ status: 'PENDING_NEW' })).toBeNull();
+      });
+
+      it('returns null for missing status', () => {
+        expect(source.inferExecType({})).toBeNull();
+      });
+
+      it('handles case insensitive status', () => {
+        expect(source.inferExecType({ status: 'filled' })).toBe('F');
+        expect(source.inferExecType({ status: 'Filled' })).toBe('F');
+      });
+    });
+
+    describe('inferEventSubtype', () => {
+      const source = new JsonDataSource();
+
+      it('always returns "execution_report"', () => {
+        expect(source.inferEventSubtype()).toBe('execution_report');
+      });
+    });
+
+    describe('shouldIncludeOrder', () => {
+      const source = new JsonDataSource();
+
+      it('includes FILLED orders', () => {
+        expect(source.shouldIncludeOrder({ status: 'FILLED' })).toBe(true);
+      });
+
+      it('includes PARTIALLY_FILLED orders', () => {
+        expect(source.shouldIncludeOrder({ status: 'PARTIALLY_FILLED' })).toBe(true);
+      });
+
+      it('excludes CANCELLED + REPLACED', () => {
+        expect(source.shouldIncludeOrder({
+          status: 'CANCELLED',
+          text: 'REPLACED',
+        })).toBe(false);
+      });
+
+      it('excludes CANCELLED + REPLACED case insensitive', () => {
+        expect(source.shouldIncludeOrder({
+          status: 'cancelled',
+          text: 'Order REPLACED by user',
+        })).toBe(false);
+      });
+
+      it('excludes PENDING_CANCEL', () => {
+        expect(source.shouldIncludeOrder({ status: 'PENDING_CANCEL' })).toBe(false);
+      });
+
+      it('excludes REJECTED', () => {
+        expect(source.shouldIncludeOrder({ status: 'REJECTED' })).toBe(false);
+      });
+
+      it('includes CANCELLED with executions', () => {
+        expect(source.shouldIncludeOrder({
+          status: 'CANCELLED',
+          cumQty: 10,
+        })).toBe(true);
+      });
+
+      it('excludes CANCELLED without executions', () => {
+        expect(source.shouldIncludeOrder({
+          status: 'CANCELLED',
+          cumQty: 0,
+        })).toBe(false);
+      });
+
+      it('excludes CANCELLED with null cumQty', () => {
+        expect(source.shouldIncludeOrder({
+          status: 'CANCELLED',
+          cumQty: null,
+        })).toBe(false);
+      });
+
+      it('includes unknown status', () => {
+        expect(source.shouldIncludeOrder({ status: 'NEW' })).toBe(true);
+      });
+
+      it('handles case insensitive status', () => {
+        expect(source.shouldIncludeOrder({ status: 'filled' })).toBe(true);
+        expect(source.shouldIncludeOrder({ status: 'pending_cancel' })).toBe(false);
+      });
+    });
+
+    describe('parse with filtering', () => {
+      it('filters out replaced orders', async () => {
+        const orders = [
+          { orderId: 'O1', status: 'FILLED', cumQty: 10 },
+          { orderId: 'O2', status: 'CANCELLED', text: 'REPLACED', cumQty: 0 },
+          { orderId: 'O3', status: 'FILLED', cumQty: 5 },
+        ];
+
+        const source = new JsonDataSource();
+        const result = await source.parse(orders);
+
+        expect(result.rows.length).toBe(2);
+        expect(result.meta.totalOrders).toBe(3);
+        expect(result.meta.excluded.replaced).toBe(1);
+        expect(result.rows[0].order_id).toBe('O1');
+        expect(result.rows[1].order_id).toBe('O3');
+      });
+
+      it('filters out pending cancellations', async () => {
+        const orders = [
+          { orderId: 'O1', status: 'FILLED' },
+          { orderId: 'O2', status: 'PENDING_CANCEL' },
+        ];
+
+        const source = new JsonDataSource();
+        const result = await source.parse(orders);
+
+        expect(result.rows.length).toBe(1);
+        expect(result.meta.excluded.pendingCancel).toBe(1);
+      });
+
+      it('filters out rejections', async () => {
+        const orders = [
+          { orderId: 'O1', status: 'FILLED' },
+          { orderId: 'O2', status: 'REJECTED', text: 'Insufficient funds' },
+        ];
+
+        const source = new JsonDataSource();
+        const result = await source.parse(orders);
+
+        expect(result.rows.length).toBe(1);
+        expect(result.meta.excluded.rejected).toBe(1);
+      });
+
+      it('filters out pure cancellations', async () => {
+        const orders = [
+          { orderId: 'O1', status: 'FILLED' },
+          { orderId: 'O2', status: 'CANCELLED', cumQty: 0 },
+        ];
+
+        const source = new JsonDataSource();
+        const result = await source.parse(orders);
+
+        expect(result.rows.length).toBe(1);
+        expect(result.meta.excluded.cancelled).toBe(1);
+      });
+
+      it('includes cancelled orders with executions', async () => {
+        const orders = [
+          { orderId: 'O1', status: 'CANCELLED', cumQty: 5, text: 'Cancelled by user' },
+        ];
+
+        const source = new JsonDataSource();
+        const result = await source.parse(orders);
+
+        expect(result.rows.length).toBe(1);
+        expect(result.meta.excluded.cancelled).toBe(0);
+      });
+
+      it('tracks all exclusion types', async () => {
+        const orders = [
+          { orderId: 'O1', status: 'FILLED' },
+          { orderId: 'O2', status: 'CANCELLED', text: 'REPLACED' },
+          { orderId: 'O3', status: 'PENDING_CANCEL' },
+          { orderId: 'O4', status: 'REJECTED' },
+          { orderId: 'O5', status: 'CANCELLED', cumQty: 0 },
+          { orderId: 'O6', status: 'FILLED' },
+        ];
+
+        const source = new JsonDataSource();
+        const result = await source.parse(orders);
+
+        expect(result.rows.length).toBe(2);
+        expect(result.meta.totalOrders).toBe(6);
+        expect(result.meta.excluded.replaced).toBe(1);
+        expect(result.meta.excluded.pendingCancel).toBe(1);
+        expect(result.meta.excluded.rejected).toBe(1);
+        expect(result.meta.excluded.cancelled).toBe(1);
+      });
+    });
+
+    describe('normalizeOrder with enhanced fields', () => {
+      it('normalizes timestamps', async () => {
+        const orders = [{
+          orderId: 'O1',
+          transactTime: '20251021-14:57:20.149-0300',
+          status: 'FILLED',
+        }];
+
+        const source = new JsonDataSource();
+        const result = await source.parse(orders);
+
+        expect(result.rows[0].transact_time).toBe('2025-10-21T14:57:20.149-03:00');
+      });
+
+      it('sets exec_inst for iceberg orders', async () => {
+        const orders = [{
+          orderId: 'O1',
+          iceberg: 'true',
+          status: 'FILLED',
+        }];
+
+        const source = new JsonDataSource();
+        const result = await source.parse(orders);
+
+        expect(result.rows[0].exec_inst).toBe('D');
+      });
+
+      it('sets event_subtype', async () => {
+        const orders = [{
+          orderId: 'O1',
+          status: 'FILLED',
+        }];
+
+        const source = new JsonDataSource();
+        const result = await source.parse(orders);
+
+        expect(result.rows[0].event_subtype).toBe('execution_report');
+      });
+
+      it('infers exec_type from status', async () => {
+        const orders = [{
+          orderId: 'O1',
+          status: 'FILLED',
+        }];
+
+        const source = new JsonDataSource();
+        const result = await source.parse(orders);
+
+        expect(result.rows[0].exec_type).toBe('F');
+      });
+
+      it('sets expire_date and stop_px to null', async () => {
+        const orders = [{
+          orderId: 'O1',
+          status: 'FILLED',
+        }];
+
+        const source = new JsonDataSource();
+        const result = await source.parse(orders);
+
+        expect(result.rows[0].expire_date).toBeNull();
+        expect(result.rows[0].stop_px).toBeNull();
+      });
+    });
+  });
+
   describe('Integration between adapters', () => {
     it('all adapters implement required interface', () => {
       const adapters = [

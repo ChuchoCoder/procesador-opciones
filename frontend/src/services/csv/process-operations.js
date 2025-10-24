@@ -779,6 +779,8 @@ const normalizeParseMeta = (rows, meta = {}) => {
 
   return {
     rowCount,
+    totalOrders: meta.totalOrders,
+    excluded: meta.excluded,
     warningThresholdExceeded:
       meta.warningThresholdExceeded ?? rowCount > LARGE_FILE_WARNING_THRESHOLD,
     exceededMaxRows: meta.exceededMaxRows ?? rowCount > MAX_ROWS,

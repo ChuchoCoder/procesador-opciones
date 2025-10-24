@@ -46,12 +46,45 @@ export class JsonDataSource extends DataSourceAdapter {
       throw new Error('Invalid JSON format: expected an array of orders');
     }
 
+    // Track exclusion statistics
+    const exclusionStats = {
+      replaced: 0,
+      pendingCancel: 0,
+      rejected: 0,
+      cancelled: 0,
+    };
+
+    // Filter valid orders and track exclusions
+    const validOrders = orders.filter(order => {
+      const shouldInclude = this.shouldIncludeOrder(order);
+
+      if (!shouldInclude) {
+        // Track reason for exclusion
+        const status = order.status?.toUpperCase();
+        const text = order.text?.toUpperCase();
+
+        if (status === 'CANCELLED' && text?.includes('REPLACED')) {
+          exclusionStats.replaced++;
+        } else if (status === 'PENDING_CANCEL') {
+          exclusionStats.pendingCancel++;
+        } else if (status === 'REJECTED') {
+          exclusionStats.rejected++;
+        } else if (status === 'CANCELLED') {
+          exclusionStats.cancelled++;
+        }
+      }
+
+      return shouldInclude;
+    });
+
     // Normalize broker JSON format to expected row format
-    const rows = orders.map((order, index) => this.normalizeOrder(order, index, config));
+    const rows = validOrders.map((order, index) => this.normalizeOrder(order, index, config));
 
     const rowCount = rows.length;
     const meta = {
       rowCount,
+      totalOrders: orders.length,
+      excluded: exclusionStats,
       exceededMaxRows: rowCount > MAX_ROWS,
       warningThresholdExceeded: rowCount > LARGE_FILE_WARNING_THRESHOLD,
       errors: [],
@@ -85,19 +118,44 @@ export class JsonDataSource extends DataSourceAdapter {
       account: order.accountId?.id || order.account || null,
       security_id: order.instrumentId?.symbol || order.securityId || null,
       symbol: this.extractSymbol(order),
-      transact_time: order.transactTime || order.timestamp || null,
+      
+      // Normalize timestamp to ISO 8601 format
+      transact_time: this.normalizeTimestamp(order.transactTime || order.timestamp),
+      
       side: this.normalizeSide(order.side),
       ord_type: order.ordType || order.orderType || null,
       order_price: this.parseNumeric(order.price || order.orderPrice),
       order_size: this.parseNumeric(order.orderQty || order.quantity),
+      
+      // Extract exec instruction from iceberg/displayQty
+      exec_inst: this.extractExecInst(order),
+      
       time_in_force: order.timeInForce || null,
+      expire_date: null, // Not provided in broker JSON
+      stop_px: null, // Not provided in broker JSON
+      
       last_price: this.parseNumeric(order.lastPx || order.lastPrice),
       last_qty: this.parseNumeric(order.lastQty || order.lastQuantity),
       avg_price: this.parseNumeric(order.avgPx || order.averagePrice),
       cum_qty: this.parseNumeric(order.cumQty || order.cumulativeQuantity),
       leaves_qty: this.parseNumeric(order.leavesQty || order.remainingQuantity),
+      
+      // For validator: quantity should be cumQty (total executed), price should be avgPx
+      quantity: this.parseNumeric(order.cumQty || order.cumulativeQuantity || order.lastQty),
+      price: this.parseNumeric(order.avgPx || order.averagePrice || order.lastPx || order.lastPrice),
+      
+      // Option fields - not directly provided by broker, will be parsed from symbol
+      option_type: null,
+      strike: null,
+      
       ord_status: order.status || order.ordStatus || null,
-      exec_type: order.execType || null,
+      
+      // Infer exec_type from status if not provided
+      exec_type: order.execType || this.inferExecType(order),
+      
+      // Always set event_subtype for broker JSON
+      event_subtype: this.inferEventSubtype(),
+      
       last_cl_ord_id: order.clOrdId || null,
       text: order.text || null,
       // Store original for reference
@@ -159,6 +217,137 @@ export class JsonDataSource extends DataSourceAdapter {
       return Number.isFinite(parsed) ? parsed : null;
     }
     return null;
+  }
+
+  /**
+   * Normalize broker timestamp to ISO 8601 format
+   * Input: "20251021-14:57:20.149-0300" (broker format)
+   * Output: "2025-10-21T14:57:20.149-03:00" (ISO 8601)
+   * @param {string} timestamp - Broker timestamp
+   * @returns {string|null} ISO 8601 timestamp or original if format not recognized
+   */
+  normalizeTimestamp(timestamp) {
+    if (!timestamp || typeof timestamp !== 'string') {
+      return null;
+    }
+
+    // Check if already ISO format (from CSV compatibility or already normalized)
+    if (timestamp.includes('T') || (timestamp.includes(' ') && timestamp.endsWith('Z'))) {
+      return timestamp;
+    }
+
+    // Parse broker format: "20251021-14:57:20.149-0300"
+    // Pattern: YYYYMMDD-HH:mm:ss.SSS[+-]HHMM
+    const match = timestamp.match(
+      /^(\d{4})(\d{2})(\d{2})-(\d{2}):(\d{2}):(\d{2})(?:\.(\d+))?([+-]\d{4})$/
+    );
+
+    if (!match) {
+      // Return as-is if format not recognized
+      return timestamp;
+    }
+
+    const [, year, month, day, hour, min, sec, ms = '000', tz] = match;
+
+    // Convert timezone from -0300 to -03:00
+    const tzFormatted = `${tz.slice(0, 3)}:${tz.slice(3)}`;
+
+    // Pad milliseconds to 3 digits
+    const msPadded = ms.padEnd(3, '0').slice(0, 3);
+
+    // Build ISO timestamp
+    const isoTimestamp =
+      `${year}-${month}-${day}T${hour}:${min}:${sec}.${msPadded}${tzFormatted}`;
+
+    return isoTimestamp;
+  }
+
+  /**
+   * Extract exec_inst from iceberg/displayQty fields
+   * Returns "D" for display/iceberg orders, null otherwise
+   * @param {Object} order - Broker order
+   * @returns {string|null} "D" for iceberg orders, null otherwise
+   */
+  extractExecInst(order) {
+    if (order.iceberg === 'true' || order.iceberg === true) {
+      return 'D';
+    }
+    const displayQty = this.parseNumeric(order.displayQty);
+    if (displayQty && displayQty > 0) {
+      return 'D';
+    }
+    return null;
+  }
+
+  /**
+   * Infer exec_type from order status if not provided
+   * @param {Object} order - Broker order
+   * @returns {string|null} FIX exec type code
+   */
+  inferExecType(order) {
+    if (order.execType) {
+      return order.execType;
+    }
+
+    const status = order.status?.toUpperCase();
+    const cumQty = this.parseNumeric(order.cumQty);
+
+    if (status === 'FILLED') {
+      return 'F'; // Fill
+    }
+    if (status === 'PARTIALLY_FILLED' || (status === 'CANCELLED' && cumQty > 0)) {
+      return 'F'; // Partial fill
+    }
+    if (status === 'CANCELLED') {
+      return '4'; // Cancelled
+    }
+    if (status === 'REJECTED') {
+      return '8'; // Rejected
+    }
+    return null;
+  }
+
+  /**
+   * Infer event_subtype (always "execution_report" for broker JSON)
+   * @returns {string} Event subtype
+   */
+  inferEventSubtype() {
+    return 'execution_report';
+  }
+
+  /**
+   * Determine if order should be included in output
+   * Filters out replaced, pending, rejected, and pure cancellations
+   * @param {Object} order - Broker order
+   * @returns {boolean} True if order should be included
+   */
+  shouldIncludeOrder(order) {
+    const status = order.status?.toUpperCase();
+    const text = order.text?.toUpperCase();
+    const cumQty = this.parseNumeric(order.cumQty);
+
+    // Exclude replaced orders
+    if (status === 'CANCELLED' && text?.includes('REPLACED')) {
+      return false;
+    }
+
+    // Exclude pending cancellations
+    if (status === 'PENDING_CANCEL') {
+      return false;
+    }
+
+    // Exclude rejections
+    if (status === 'REJECTED') {
+      return false;
+    }
+
+    // Exclude pure cancellations (no executions)
+    if (status === 'CANCELLED' && (!cumQty || cumQty === 0)) {
+      return false;
+    }
+
+    // Include everything else (FILLED, partial fills, etc.)
+    return true;
   }
 
   /**

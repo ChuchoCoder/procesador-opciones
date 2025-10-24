@@ -1,6 +1,6 @@
 node_modules
 extension-dist
-logs/console.log
-app_logs/console.log
-app_logs/operations.json
+logs/
+app_logs/
+app_logs/
 frontend/tests/test-results.json

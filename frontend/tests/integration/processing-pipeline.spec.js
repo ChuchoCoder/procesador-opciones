@@ -414,5 +414,59 @@ describe('Processing Pipeline - Data Source Decoupling', () => {
       expect(result.meta.parse.rowCount).toBe(10);
       expect(result.meta.parse.exceededMaxRows).toBe(false);
     });
+
+    it(
+      'processes real broker JSON data from Operations-2025-10-21.json',
+      async () => {
+        const filePath = resolve(__dirname, 'data', 'Operations-2025-10-21.json');
+        const content = await readFile(filePath, 'utf-8');
+        const jsonData = JSON.parse(content);
+
+        const dataSource = new JsonDataSource();
+        const configuration = createTestConfiguration();
+
+        const result = await processOperations({
+          dataSource,
+          file: jsonData,
+          fileName: 'Operations-2025-10-21.json',
+          configuration,
+        });
+
+        // Verify parsing and filtering worked
+        expect(result.meta).toBeDefined();
+        expect(result.meta.parse).toBeDefined();
+        
+        expect(result.meta.parse.totalOrders).toBeDefined();
+        expect(result.meta.parse.rowCount).toBeDefined();
+        expect(result.meta.parse.excluded).toBeDefined();
+        
+        // Verify exclusion tracking
+        expect(typeof result.meta.parse.excluded.replaced).toBe('number');
+        expect(typeof result.meta.parse.excluded.pendingCancel).toBe('number');
+        expect(typeof result.meta.parse.excluded.rejected).toBe('number');
+        expect(typeof result.meta.parse.excluded.cancelled).toBe('number');
+
+        // Verify filtered count matches totalOrders minus excluded
+        const totalExcluded = 
+          result.meta.parse.excluded.replaced +
+          result.meta.parse.excluded.pendingCancel +
+          result.meta.parse.excluded.rejected +
+          result.meta.parse.excluded.cancelled;
+        
+        expect(result.meta.parse.rowCount).toBe(
+          result.meta.parse.totalOrders - totalExcluded
+        );
+
+        // Verify exclusions were tracked (real data has ~38 excluded from ~166 total)
+        expect(totalExcluded).toBeGreaterThan(0);
+        expect(result.meta.parse.excluded.replaced).toBeGreaterThan(0);
+        
+        // Verify operations were successfully processed
+        expect(result.operations).toBeDefined();
+        expect(Array.isArray(result.operations)).toBe(true);
+        expect(result.operations.length).toBeGreaterThan(0);
+      },
+      TEST_TIMEOUT,
+    );
   });
 });
