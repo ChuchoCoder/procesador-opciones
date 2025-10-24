@@ -660,6 +660,9 @@ const ProcessorScreen = () => {
         setWarningCodes([]);
         removeItem(storageKeys.lastReport);
         setProcessingError(err?.message ?? processorStrings.errors.processingFailed);
+        // Clear the data source to prevent infinite loop when auto-processing fails
+        setSelectedDataSource(null);
+        setSelectedFile(null);
       } finally {
         setIsProcessing(false);
       }

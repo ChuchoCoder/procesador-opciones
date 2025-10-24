@@ -191,6 +191,7 @@ const strings = {
     },
     errors: {
       processingFailed: 'No se pudo procesar el archivo. Verificá el formato e intentá de nuevo.',
+      emptyFile: 'El archivo CSV no contiene operaciones. Verificá que el archivo tenga datos además del encabezado.',
     },
   },
   brokerSync: {
