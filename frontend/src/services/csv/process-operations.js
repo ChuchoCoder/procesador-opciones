@@ -921,6 +921,11 @@ export const processOperations = async ({
 
   logger.log(`Inicio de procesamiento - ${formatLogFileInfo(resolvedFileName, parseMeta.rowCount)}`);
 
+  // Check for empty file early to provide a clear error message
+  if (!parsedRows || parsedRows.length === 0) {
+    throw new Error('El archivo CSV no contiene operaciones. Verificá que el archivo tenga datos además del encabezado.');
+  }
+
   const { rows: normalizedRows, missingColumns } = normalizeOperationRows(parsedRows, activeConfiguration);
 
   if (missingColumns.length > 0) {

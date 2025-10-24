@@ -60,8 +60,12 @@ const parseNumber = (value) => {
 };
 
 const ensureRequiredColumns = (rows) => {
-  if (!Array.isArray(rows) || rows.length === 0) {
-    return;
+  if (!Array.isArray(rows)) {
+    throw new Error('El archivo no tiene un formato válido.');
+  }
+
+  if (rows.length === 0) {
+    throw new Error('El archivo CSV no contiene operaciones. Verificá que el archivo tenga datos además del encabezado.');
   }
 
   const sample = rows[0] ?? {};
