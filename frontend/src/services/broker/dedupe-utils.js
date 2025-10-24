@@ -26,13 +26,37 @@ export function normalizeOperation(raw, source) {
   // Extract symbol from nested instrumentId structure for broker data
   const symbolValue = raw.symbol || raw.instrumentId?.symbol || '';
   
-  // For broker operations, preserve the raw object so JsonDataSource can process it
+  // For broker operations, normalize fields while preserving raw data
   if (source === 'broker') {
+    // Parse broker timestamp to epoch ms
+    let tradeTimestamp = now;
+    if (raw.transactTime) {
+      const parsed = parseBrokerTimestamp(raw.transactTime);
+      if (parsed) {
+        tradeTimestamp = parsed;
+      }
+    }
+    
     return {
-      ...raw, // Preserve all raw fields
+      ...raw, // Preserve all raw fields for potential future use
       id: generateUUID(),
+      // Normalized fields for deduplication and processing
+      order_id: raw.orderId || raw.clOrdId || null,
+      operation_id: raw.execId || raw.orderId || null,
+      symbol: symbolValue.toUpperCase().trim(),
+      underlying: raw.underlying || null,
+      optionType: raw.optionType || 'stock',
+      action: (raw.side || '').toLowerCase(),
+      quantity: Number(raw.cumQty || raw.lastQty || raw.orderQty || 0),
+      price: Number(raw.avgPx || raw.lastPx || raw.price || 0),
+      tradeTimestamp,
+      strike: null, // Will be extracted from symbol by parser
+      expirationDate: null, // Will be extracted from symbol by parser
       source,
+      sourceReferenceId: raw.orderId || null,
       importTimestamp: now,
+      revisionIndex: null,
+      status: raw.status || null,
     };
   }
   
@@ -56,6 +80,39 @@ export function normalizeOperation(raw, source) {
     revisionIndex: raw.revisionIndex !== undefined ? Number(raw.revisionIndex) : null,
     status: raw.status || null,
   };
+}
+
+/**
+ * Parse broker timestamp format to epoch milliseconds
+ * Input: "20251024-10:55:49.102-0300"
+ * Output: epoch ms
+ * @param {string} timestamp - Broker timestamp
+ * @returns {number|null} Epoch ms or null if parse fails
+ */
+function parseBrokerTimestamp(timestamp) {
+  if (!timestamp || typeof timestamp !== 'string') {
+    return null;
+  }
+
+  // Pattern: YYYYMMDD-HH:mm:ss.SSS[+-]HHMM
+  const match = timestamp.match(
+    /^(\d{4})(\d{2})(\d{2})-(\d{2}):(\d{2}):(\d{2})(?:\.(\d+))?([+-]\d{4})$/
+  );
+
+  if (!match) {
+    return null;
+  }
+
+  const [, year, month, day, hour, min, sec, ms = '0', tz] = match;
+
+  // Build ISO timestamp
+  const tzHours = tz.slice(0, 3);
+  const tzMins = tz.slice(3);
+  const isoTimestamp =
+    `${year}-${month}-${day}T${hour}:${min}:${sec}.${ms.padEnd(3, '0')}${tzHours}:${tzMins}`;
+
+  const date = new Date(isoTimestamp);
+  return date.getTime();
 }
 
 /**
