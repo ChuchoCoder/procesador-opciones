@@ -11,9 +11,7 @@ import { useStrings } from '../../strings/index.js';
 
 // Broker API URL options
 const BROKER_OPTIONS = [
-  { label: 'Primary reMarkets (Demo)', value: 'https://api.remarkets.primary.com.ar' },
-  { label: 'Primary (Producción)', value: 'https://api.primary.com.ar' },
-  { label: 'Cocos Capital (requiere plan 🥥 Cocos Pro)', value: 'https://api.cocos.xoms.com.ar' },
+  { label: 'Cocos Capital 🥥 (Plan Pro)', value: 'https://api.cocos.xoms.com.ar' },
   { label: 'Eco Valores', value: 'https://api.eco.xoms.com.ar' },
   { label: 'Veta Capital', value: 'https://api.veta.xoms.com.ar' },
   { label: 'Bull Market Brokers', value: 'https://api.bull.xoms.com.ar' },
