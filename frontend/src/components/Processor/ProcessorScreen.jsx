@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
+import Button from '@mui/material/Button';
 import LinearProgress from '@mui/material/LinearProgress';
 import Snackbar from '@mui/material/Snackbar';
 import Stack from '@mui/material/Stack';
@@ -9,6 +10,7 @@ import Typography from '@mui/material/Typography';
 
 import { processOperations } from '../../services/csv/process-operations.js';
 import { buildConsolidatedViews } from '../../services/csv/consolidator.js';
+import { CsvDataSource, JsonDataSource } from '../../services/data-sources/index.js';
 import { login as brokerLogin, setBaseUrl } from '../../services/broker/jsrofex-client.js';
 import { startDailySync, refreshNewOperations } from '../../services/broker/sync-service.js';
 import { dedupeOperations, mergeBrokerBatch } from '../../services/broker/dedupe-utils.js';
@@ -452,6 +454,7 @@ const ProcessorScreen = () => {
   } = useConfig();
 
   const [selectedFile, setSelectedFile] = useState(null);
+  const [selectedDataSource, setSelectedDataSource] = useState(null); // { type: 'csv' | 'broker', file?, name }
   const [report, setReport] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [processingError, setProcessingError] = useState(null);
@@ -574,8 +577,8 @@ const ProcessorScreen = () => {
   );
 
   const runProcessing = useCallback(
-    async (file, overrides = {}) => {
-      if (!file) {
+    async (fileOrDataSource, overrides = {}) => {
+      if (!fileOrDataSource) {
         return;
       }
 
@@ -585,18 +588,45 @@ const ProcessorScreen = () => {
 
       try {
         const configurationPayload = buildConfiguration(overrides);
+        
+        // Determine data source type
+        let dataSource;
+        let file;
+        let fileName;
+        
+        if (fileOrDataSource.type === 'broker') {
+          // Broker data source: use JsonDataSource with synced operations
+          dataSource = new JsonDataSource();
+          file = fileOrDataSource.data || syncedOperations;
+          fileName = fileOrDataSource.name || `Broker-${brokerAuth?.accountId || 'Unknown'}.json`;
+        } else if (fileOrDataSource.type === 'csv') {
+          // CSV data source: use CsvDataSource with file
+          dataSource = new CsvDataSource();
+          file = fileOrDataSource.file;
+          fileName = fileOrDataSource.file?.name || 'operations.csv';
+        } else {
+          // Legacy: direct file object (for backward compatibility)
+          dataSource = new CsvDataSource();
+          file = fileOrDataSource;
+          fileName = fileOrDataSource.name || 'operations.csv';
+        }
+        
         const result = await processOperations({
+          dataSource,
           file,
-          fileName: file.name,
+          fileName,
           configuration: configurationPayload,
         });
 
         setReport(result);
         setWarningCodes(result.summary.warnings ?? []);
+        
+        // Only merge CSV operations into global state (broker ops already there)
         if (
-          typeof setOperations === 'function'
-          && Array.isArray(result.normalizedOperations)
-          && result.normalizedOperations.length > 0
+          fileOrDataSource.type === 'csv' &&
+          typeof setOperations === 'function' &&
+          Array.isArray(result.normalizedOperations) &&
+          result.normalizedOperations.length > 0
         ) {
           const incomingCsv = dedupeOperations(existingOperations, result.normalizedOperations);
           if (incomingCsv.length > 0) {
@@ -604,6 +634,7 @@ const ProcessorScreen = () => {
             setOperations(mergedOps);
           }
         }
+        
         const initialViewKey = configurationPayload.useAveraging ? 'averaged' : 'raw';
         const initialView = result.views?.[initialViewKey];
         const initialCalls = initialView?.calls?.operations?.length ?? 0;
@@ -624,7 +655,14 @@ const ProcessorScreen = () => {
         setIsProcessing(false);
       }
     },
-    [buildConfiguration, existingOperations, processorStrings.errors.processingFailed, setOperations],
+    [
+      buildConfiguration, 
+      existingOperations, 
+      processorStrings.errors.processingFailed, 
+      setOperations,
+      syncedOperations,
+      brokerAuth,
+    ],
   );
 
   const triggerSync = useCallback(
@@ -822,6 +860,7 @@ const ProcessorScreen = () => {
 
   const handleFileSelected = (file) => {
     setSelectedFile(file);
+    setSelectedDataSource(file ? { type: 'csv', file, name: file.name } : null);
     setProcessingError(null);
     setActionFeedback(null);
     setWarningCodes([]);
@@ -833,18 +872,63 @@ const ProcessorScreen = () => {
     }
   };
 
-  // Auto-process when a file is selected
-  useEffect(() => {
-    if (selectedFile && !report && !isProcessing) {
-      runProcessing(selectedFile);
+  const handleBrokerDataSelected = useCallback(() => {
+    if (!isAuthenticated || !syncedOperations || syncedOperations.length === 0) {
+      return;
     }
-  }, [selectedFile, report, isProcessing, runProcessing]);
+    
+    const dataSource = {
+      type: 'broker',
+      data: syncedOperations,
+      name: `Broker-${brokerAuth?.accountId || 'Unknown'}`,
+    };
+    
+    setSelectedFile(null); // Clear CSV file
+    setSelectedDataSource(dataSource);
+    setProcessingError(null);
+    setActionFeedback(null);
+    setWarningCodes([]);
+    setActivePreview(CLIPBOARD_SCOPES.CALLS);
+    resetGroupSelections();
+    setReport(null);
+  }, [isAuthenticated, syncedOperations, brokerAuth, resetGroupSelections]);
+
+  const handleBrokerRefresh = useCallback(async () => {
+    if (!isAuthenticated || syncInProgress) {
+      return;
+    }
+    
+    const wasViewingBrokerData = selectedDataSource?.type === 'broker';
+    
+    // Clear report if viewing broker data to avoid showing stale data during refresh
+    if (wasViewingBrokerData) {
+      setReport(null);
+    }
+    
+    const result = await triggerSync({ authOverride: brokerAuth, mode: 'refresh', brokerApiUrl });
+    
+    // If viewing broker data and sync was successful, re-process with updated operations
+    if (result?.success && wasViewingBrokerData) {
+      // Re-trigger broker data selection to use updated syncedOperations
+      // Use queueMicrotask to ensure state has settled
+      queueMicrotask(() => handleBrokerDataSelected());
+    }
+    
+    return result;
+  }, [isAuthenticated, syncInProgress, triggerSync, brokerAuth, brokerApiUrl, selectedDataSource?.type, handleBrokerDataSelected]);
+
+  // Auto-process when a data source is selected
+  useEffect(() => {
+    if (selectedDataSource && !report && !isProcessing) {
+      runProcessing(selectedDataSource);
+    }
+  }, [selectedDataSource, report, isProcessing, runProcessing]);
 
   const handleToggleAveraging = async (nextValue) => {
     setAveraging(nextValue);
     setActionFeedback(null);
-    if (selectedFile && report && !report.views) {
-      await runProcessing(selectedFile, { useAveraging: nextValue });
+    if (selectedDataSource && report && !report.views) {
+      await runProcessing(selectedDataSource, { useAveraging: nextValue });
     }
   };
 
@@ -1458,11 +1542,13 @@ const ProcessorScreen = () => {
         ))}
 
         <Stack spacing={0} sx={{ flex: 1, minHeight: 0 }}>
-          {!selectedFile ? (
+          {!selectedDataSource ? (
             <>
               <DataSourceSelector
                 strings={strings}
                 onSelectFile={handleFileSelected}
+                onSelectBroker={handleBrokerDataSelected}
+                onBrokerRefresh={handleBrokerRefresh}
                 onBrokerLogin={handleBrokerLogin}
                 onBrokerLogout={handleBrokerLogout}
                 isBrokerLoginLoading={isBrokerLoginLoading}
@@ -1471,6 +1557,7 @@ const ProcessorScreen = () => {
                 syncInProgress={syncInProgress}
                 defaultApiUrl={brokerApiUrl}
                 brokerAccountId={brokerAuth?.accountId}
+                brokerOperationCount={syncedOperations?.length || 0}
               />
             </>
           ) : report ? (
@@ -1480,8 +1567,11 @@ const ProcessorScreen = () => {
                 strings={processorStrings}
                 activeTab={activeOperationType}
                 onTabChange={handleOperationTypeChange}
-                onClose={() => handleFileSelected(null)}
-                fileName={selectedFile?.name}
+                onClose={() => {
+                  setSelectedDataSource(null);
+                  setSelectedFile(null);
+                }}
+                fileName={selectedDataSource?.name || selectedFile?.name}
                 dataSourcesPanel={
                   <DataSourcesPanel
                     brokerSource={

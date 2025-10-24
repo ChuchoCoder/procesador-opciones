@@ -500,17 +500,38 @@ const aggregateRows = (rows) => {
       };
     })
     .sort((a, b) => {
-      if (a.symbol === b.symbol) {
+      // Sort by Simbolo (asc)
+      if (a.symbol !== b.symbol) {
+        return a.symbol.localeCompare(b.symbol);
+      }
+      // Then by Plazo/settlement (asc)
+      if (a.settlement !== b.settlement) {
         return a.settlement.localeCompare(b.settlement);
       }
-      return a.symbol.localeCompare(b.symbol);
+      
+      // Determine if operations are buy or sell
+      const aIsBuy = a.side === 'BUY';
+      const bIsBuy = b.side === 'BUY';
+      
+      // Then by Precio - ASC for COMPRA, DESC for VENTA
+      if (a.price !== b.price) {
+        if (aIsBuy && bIsBuy) {
+          return a.price - b.price; // COMPRA: Price ascending (cheapest first)
+        } else {
+          return b.price - a.price; // VENTA: Price descending (highest first)
+        }
+      }
+      
+      // Finally by Cantidad (desc) - absolute values for comparison
+      return Math.abs(b.quantity) - Math.abs(a.quantity);
     });
 };
 
 const buildRows = (operations = [], side = 'BUY', { expirationLabels } = {}) => {
   const sign = side === 'SELL' ? -1 : 1;
+  const isBuy = side === 'BUY';
 
-  return operations.map((operation, index) => {
+  const rows = operations.map((operation, index) => {
     const isOption = OPTION_OPERATION_TYPES.has(operation.optionType);
     const normalizedFallback = normalizeSymbol(operation.symbol ?? '');
     const rawSymbol = isOption ? extractOptionToken(operation) : (operation.symbol ?? '');
@@ -533,6 +554,28 @@ const buildRows = (operations = [], side = 'BUY', { expirationLabels } = {}) => 
       category: operation.category || 'bonds',
       side, // Add side to the row
     };
+  });
+
+  // Sort rows: Symbol (asc), Plazo (asc), then Price based on side, then Cantidad (desc)
+  return rows.sort((a, b) => {
+    // Sort by Simbolo (asc)
+    if (a.symbol !== b.symbol) {
+      return a.symbol.localeCompare(b.symbol);
+    }
+    // Then by Plazo/settlement (asc)
+    if (a.settlement !== b.settlement) {
+      return a.settlement.localeCompare(b.settlement);
+    }
+    // Then by Precio - ASC for COMPRA, DESC for VENTA
+    if (a.price !== b.price) {
+      if (isBuy) {
+        return a.price - b.price; // COMPRA: Price ascending (cheapest first)
+      } else {
+        return b.price - a.price; // VENTA: Price descending (highest first)
+      }
+    }
+    // Finally by Cantidad (desc) - absolute values for comparison
+    return Math.abs(b.quantity) - Math.abs(a.quantity);
   });
 };
 

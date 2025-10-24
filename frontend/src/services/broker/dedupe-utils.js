@@ -23,16 +23,30 @@ function generateUUID() {
 export function normalizeOperation(raw, source) {
   const now = Date.now();
   
+  // Extract symbol from nested instrumentId structure for broker data
+  const symbolValue = raw.symbol || raw.instrumentId?.symbol || '';
+  
+  // For broker operations, preserve the raw object so JsonDataSource can process it
+  if (source === 'broker') {
+    return {
+      ...raw, // Preserve all raw fields
+      id: generateUUID(),
+      source,
+      importTimestamp: now,
+    };
+  }
+  
+  // For CSV operations, perform full normalization
   return {
     id: generateUUID(),
-    order_id: raw.order_id || null,
-    operation_id: raw.operation_id || null,
-    symbol: (raw.symbol || '').toUpperCase().trim(),
+    order_id: raw.order_id || raw.clOrdId || null,
+    operation_id: raw.operation_id || raw.execId || raw.execID || raw.transactTime || null,
+    symbol: symbolValue.toUpperCase().trim(),
     underlying: raw.underlying ? raw.underlying.toUpperCase().trim() : null,
     optionType: raw.optionType || raw.option_type || 'stock',
     action: (raw.action || raw.side || '').toLowerCase(),
-    quantity: Number(raw.quantity || raw.last_qty || 0),
-    price: Number(raw.price || raw.last_price || 0),
+    quantity: Number(raw.quantity || raw.last_qty || raw.lastQty || 0),
+    price: Number(raw.price || raw.last_price || raw.lastPx || 0),
     tradeTimestamp: raw.tradeTimestamp || raw.trade_timestamp || now,
     strike: raw.strike !== undefined && raw.strike !== null ? Number(raw.strike) : null,
     expirationDate: raw.expirationDate || raw.expiration_date || raw.expiration || null,
@@ -51,23 +65,47 @@ export function normalizeOperation(raw, source) {
  * @returns {boolean} True if duplicate
  */
 export function isDuplicate(existing, candidate) {
-  // Primary key match: order_id + operation_id (both must be present and equal)
-  if (existing.order_id && candidate.order_id && existing.operation_id && candidate.operation_id) {
-    return existing.order_id === candidate.order_id && existing.operation_id === candidate.operation_id;
+  // Extract clOrdId and execId for broker operations (raw format)
+  const existingOrderId = existing.order_id || existing.clOrdId || null;
+  const existingExecId = existing.operation_id || existing.execId || null;
+  const candidateOrderId = candidate.order_id || candidate.clOrdId || null;
+  const candidateExecId = candidate.operation_id || candidate.execId || null;
+  
+  // Primary key match: clOrdId + execId (both must be present and equal)
+  if (existingOrderId && candidateOrderId && existingExecId && candidateExecId) {
+    return existingOrderId === candidateOrderId && existingExecId === candidateExecId;
   }
 
   // Composite key with timestamp tolerance (1s bucket)
-  const timestampBucketExisting = Math.floor(existing.tradeTimestamp / 1000);
-  const timestampBucketCandidate = Math.floor(candidate.tradeTimestamp / 1000);
+  const existingTimestamp = existing.tradeTimestamp || existing.importTimestamp || 0;
+  const candidateTimestamp = candidate.tradeTimestamp || candidate.importTimestamp || 0;
+  const timestampBucketExisting = Math.floor(existingTimestamp / 1000);
+  const timestampBucketCandidate = Math.floor(candidateTimestamp / 1000);
+
+  // Extract symbols (handle broker nested format)
+  const existingSymbol = existing.symbol || existing.instrumentId?.symbol || '';
+  const candidateSymbol = candidate.symbol || candidate.instrumentId?.symbol || '';
+  
+  // Extract sides (handle broker format)
+  const existingAction = (existing.action || existing.side || '').toLowerCase();
+  const candidateAction = (candidate.action || candidate.side || '').toLowerCase();
+  
+  // Extract quantities (handle broker format)
+  const existingQty = existing.quantity || existing.lastQty || 0;
+  const candidateQty = candidate.quantity || candidate.lastQty || 0;
+  
+  // Extract prices (handle broker format)
+  const existingPrice = existing.price || existing.lastPx || 0;
+  const candidatePrice = candidate.price || candidate.lastPx || 0;
 
   return (
-    existing.symbol === candidate.symbol &&
+    existingSymbol === candidateSymbol &&
     existing.optionType === candidate.optionType &&
-    existing.action === candidate.action &&
+    existingAction === candidateAction &&
     existing.strike === candidate.strike &&
     existing.expirationDate === candidate.expirationDate &&
-    existing.quantity === candidate.quantity &&
-    existing.price === candidate.price &&
+    existingQty === candidateQty &&
+    existingPrice === candidatePrice &&
     timestampBucketExisting === timestampBucketCandidate
   );
 }

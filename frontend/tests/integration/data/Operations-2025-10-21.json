@@ -1,0 +1,4994 @@
+{
+    "status": "OK",
+    "orders": [
+        {
+            "orderId": "O0OveG8SHPVU-15290003",
+            "clOrdId": "499629440026021",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIQkPQv",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - TZXM6 - CI"
+            },
+            "price": 174.25,
+            "orderQty": 100000,
+            "ordType": "LIMIT",
+            "side": "SELL",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-14:57:20.149-0300",
+            "avgPx": 174.25000,
+            "lastPx": 174.25,
+            "lastQty": 100000,
+            "cumQty": 100000,
+            "leavesQty": 0,
+            "iceberg": "true",
+            "displayQty": 0,
+            "status": "FILLED",
+            "text": " ",
+            "numericOrderId": "15290003",
+            "secondaryTradeID": "00969385",
+            "originatingUsername": "ISV_PBCP"
+        },
+        {
+            "orderId": "O0OveG8SI5A9-16556513",
+            "clOrdId": "goYKyjpL99n5bVbz",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIQqVls",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - GFGC69343D - 24hs"
+            },
+            "price": 96,
+            "orderQty": 10,
+            "ordType": "LIMIT",
+            "side": "SELL",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-15:23:19.476-0300",
+            "avgPx": 96.000,
+            "lastPx": 96,
+            "lastQty": 10,
+            "cumQty": 10,
+            "leavesQty": 0,
+            "iceberg": "true",
+            "displayQty": 0,
+            "status": "FILLED",
+            "text": " ",
+            "numericOrderId": "16556513",
+            "secondaryTradeID": "01046276",
+            "originatingUsername": "ISV_MATRIZ4"
+        },
+        {
+            "orderId": "O0OveG8SIION-16919990",
+            "clOrdId": "499631580029547",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIQsE3b",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - TRAN - CI"
+            },
+            "price": 1870,
+            "orderQty": 500,
+            "ordType": "LIMIT",
+            "side": "SELL",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-15:33:00.213-0300",
+            "avgPx": 1870.000,
+            "lastPx": 1870,
+            "lastQty": 500,
+            "cumQty": 500,
+            "leavesQty": 0,
+            "iceberg": "true",
+            "displayQty": 0,
+            "status": "FILLED",
+            "text": " ",
+            "numericOrderId": "16919990",
+            "secondaryTradeID": "01070898",
+            "originatingUsername": "ISV_PBCP"
+        },
+        {
+            "orderId": "O0OveG8SBoyy-04471322",
+            "clOrdId": "3deA1KgLedhgAenn",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIPxacH",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - GFGC65343D - 24hs"
+            },
+            "price": 114.009,
+            "orderQty": 10,
+            "ordType": "LIMIT",
+            "side": "SELL",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-11:39:50.120-0300",
+            "avgPx": 114.009000,
+            "lastPx": 114.009,
+            "lastQty": 1,
+            "cumQty": 10,
+            "leavesQty": 0,
+            "iceberg": "true",
+            "displayQty": 0,
+            "status": "FILLED",
+            "text": " ",
+            "numericOrderId": "04471322",
+            "secondaryTradeID": "00329957",
+            "originatingUsername": "ISV_MATRIZ4"
+        },
+        {
+            "orderId": "O0OveG8SBKn1-03555660",
+            "clOrdId": "1z07YCdhAR8Duv0w",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIPr1P4",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - GFGV35777D - 24hs"
+            },
+            "price": 71.002,
+            "orderQty": 50,
+            "ordType": "LIMIT",
+            "side": "BUY",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-11:16:09.885-0300",
+            "avgPx": 71.002000,
+            "lastPx": 71.002,
+            "lastQty": 45,
+            "cumQty": 50,
+            "leavesQty": 0,
+            "iceberg": "true",
+            "displayQty": 0,
+            "status": "FILLED",
+            "text": " ",
+            "numericOrderId": "03555660",
+            "secondaryTradeID": "00239403",
+            "originatingUsername": "ISV_MATRIZ4"
+        },
+        {
+            "orderId": "O0OveG8SJ7jY-18352167",
+            "clOrdId": "499634028034158",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIQz9Kj",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - TRAN - CI"
+            },
+            "price": 1850,
+            "orderQty": 55,
+            "ordType": "LIMIT",
+            "side": "SELL",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-16:13:48.034-0300",
+            "avgPx": 1850.000,
+            "lastPx": 1850,
+            "lastQty": 55,
+            "cumQty": 55,
+            "leavesQty": 0,
+            "iceberg": "true",
+            "displayQty": 0,
+            "status": "FILLED",
+            "text": " ",
+            "numericOrderId": "18352167",
+            "secondaryTradeID": "01166115",
+            "originatingUsername": "ISV_PBCP"
+        },
+        {
+            "orderId": "O0OveG8SIHaL-16898802",
+            "clOrdId": "499631549029454",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIQs7dQ",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - TRAN - 24hs"
+            },
+            "price": 1866,
+            "orderQty": 101,
+            "ordType": "LIMIT",
+            "side": "BUY",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-15:32:29.935-0300",
+            "avgPx": 1866.000,
+            "lastPx": 1866,
+            "lastQty": 101,
+            "cumQty": 101,
+            "leavesQty": 0,
+            "iceberg": "true",
+            "displayQty": 0,
+            "status": "FILLED",
+            "text": " ",
+            "numericOrderId": "16898802",
+            "secondaryTradeID": "01069552",
+            "originatingUsername": "ISV_PBCP"
+        },
+        {
+            "orderId": "O0OveG8SIHaF-16898637",
+            "clOrdId": "499631549029438",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIQs7af",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - TRAN - CI"
+            },
+            "price": 1870,
+            "orderQty": 101,
+            "ordType": "LIMIT",
+            "side": "SELL",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-15:32:29.803-0300",
+            "avgPx": 1870.000,
+            "lastPx": 1870,
+            "lastQty": 101,
+            "cumQty": 101,
+            "leavesQty": 0,
+            "iceberg": "true",
+            "displayQty": 0,
+            "status": "FILLED",
+            "text": " ",
+            "numericOrderId": "16898637",
+            "secondaryTradeID": "01069547",
+            "originatingUsername": "ISV_PBCP"
+        },
+        {
+            "orderId": "O0OveG8SHU81-15420642",
+            "clOrdId": "499629646026864",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIQl2Wo",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - S16E6 - CI"
+            },
+            "price": 106.66,
+            "orderQty": 450346,
+            "ordType": "LIMIT",
+            "side": "SELL",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-15:00:46.972-0300",
+            "avgPx": 106.66000,
+            "lastPx": 106.66,
+            "lastQty": 450346,
+            "cumQty": 450346,
+            "leavesQty": 0,
+            "iceberg": "true",
+            "displayQty": 0,
+            "status": "FILLED",
+            "text": " ",
+            "numericOrderId": "15420642",
+            "secondaryTradeID": "00978352",
+            "originatingUsername": "ISV_PBCP"
+        },
+        {
+            "orderId": "O0OveG8SIIRy-16921750",
+            "clOrdId": "499631582029587",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIQsEZh",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - TRAN - CI"
+            },
+            "price": 1870,
+            "orderQty": 500,
+            "ordType": "LIMIT",
+            "side": "SELL",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-15:33:02.482-0300",
+            "avgPx": 1870.000,
+            "lastPx": 1870,
+            "lastQty": 500,
+            "cumQty": 500,
+            "leavesQty": 0,
+            "iceberg": "true",
+            "displayQty": 0,
+            "status": "FILLED",
+            "text": " ",
+            "numericOrderId": "16921750",
+            "secondaryTradeID": "01070984",
+            "originatingUsername": "ISV_PBCP"
+        },
+        {
+            "orderId": "O0OveG8SJuR6-19600124",
+            "clOrdId": "QtnIBMDIpjI82TcE",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIR5DNG",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - PESOS - 1D"
+            },
+            "price": 23.61,
+            "orderQty": 850000,
+            "ordType": "LIMIT",
+            "side": "BUY",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-16:51:14.541-0300",
+            "avgPx": 23.61000,
+            "lastPx": 23.61,
+            "lastQty": 850000,
+            "cumQty": 850000,
+            "leavesQty": 0,
+            "iceberg": "true",
+            "displayQty": 0,
+            "status": "FILLED",
+            "text": " ",
+            "numericOrderId": "19600124",
+            "secondaryTradeID": "01254147",
+            "originatingUsername": "ISV_MATRIZ4"
+        },
+        {
+            "orderId": "3327361404",
+            "clOrdId": "DWcg4qDM8GTfKyEc",
+            "proprietary": "ISV_PBCP",
+            "execId": "PTPT104528271",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "DLR/OCT25"
+            },
+            "price": 1483.5,
+            "orderQty": 18,
+            "ordType": "LIMIT",
+            "side": "SELL",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-10:50:27.030-0300",
+            "avgPx": 1483.5000,
+            "lastPx": 1483.5,
+            "lastQty": 18,
+            "cumQty": 18,
+            "leavesQty": 0,
+            "status": "FILLED",
+            "text": "Operada",
+            "originatingUsername": "12345678"
+        },
+        {
+            "orderId": "O0OveG8SJS4w-18923275",
+            "clOrdId": "ZodT6Hsfet9uRD78",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIR1uVN",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - PESOS - 1D"
+            },
+            "price": 24,
+            "orderQty": 100000,
+            "ordType": "LIMIT",
+            "side": "SELL",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-16:27:03.144-0300",
+            "avgPx": 24.000,
+            "lastPx": 24,
+            "lastQty": 100000,
+            "cumQty": 100000,
+            "leavesQty": 0,
+            "iceberg": "true",
+            "displayQty": 0,
+            "status": "FILLED",
+            "text": " ",
+            "numericOrderId": "18923275",
+            "secondaryTradeID": "01202609",
+            "originatingUsername": "ISV_MATRIZ4"
+        },
+        {
+            "orderId": "O0OveG8SBnVT-04429533",
+            "clOrdId": "z8L47GARsC4n5Wzh",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIPv2LE",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - GFGC59558D - 24hs"
+            },
+            "price": 225,
+            "orderQty": 50,
+            "ordType": "LIMIT",
+            "side": "BUY",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-11:29:02.770-0300",
+            "avgPx": 225.000,
+            "lastPx": 225,
+            "lastQty": 18,
+            "cumQty": 50,
+            "leavesQty": 0,
+            "iceberg": "true",
+            "displayQty": 0,
+            "status": "FILLED",
+            "text": " ",
+            "numericOrderId": "04429533",
+            "secondaryTradeID": "00296931",
+            "originatingUsername": "ISV_MATRIZ4"
+        },
+        {
+            "orderId": null,
+            "clOrdId": "499633177032030",
+            "proprietary": "ISV_PBCP",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - S16E6 - CI"
+            },
+            "price": 108.3,
+            "orderQty": 500000,
+            "side": "SELL",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-15:59:37.122-0300",
+            "status": "PENDING_CANCEL",
+            "text": "Pendiente de Cancelacion",
+            "origClOrdId": "499633177032009"
+        },
+        {
+            "orderId": "O0OveG8SDxvd-08726150",
+            "clOrdId": "499620852016326",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIQF9kT",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - PFE - CI"
+            },
+            "price": 9840,
+            "orderQty": 3,
+            "ordType": "LIMIT",
+            "side": "SELL",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-12:34:12.230-0300",
+            "avgPx": 9840.000,
+            "lastPx": 9840,
+            "lastQty": 3,
+            "cumQty": 3,
+            "leavesQty": 0,
+            "iceberg": "true",
+            "displayQty": 0,
+            "status": "FILLED",
+            "text": " ",
+            "numericOrderId": "08726150",
+            "secondaryTradeID": "00554622",
+            "originatingUsername": "ISV_PBCP"
+        },
+        {
+            "orderId": "O0OveG8SHO3c-15244152",
+            "clOrdId": "499629382025840",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIQkBxI",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - TZXM6 - CI"
+            },
+            "price": 174.25,
+            "orderQty": 100000,
+            "ordType": "LIMIT",
+            "side": "SELL",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-14:56:22.217-0300",
+            "avgPx": 174.25000,
+            "lastPx": 174.25,
+            "lastQty": 100000,
+            "cumQty": 100000,
+            "leavesQty": 0,
+            "iceberg": "true",
+            "displayQty": 0,
+            "status": "FILLED",
+            "text": " ",
+            "numericOrderId": "15244152",
+            "secondaryTradeID": "00966832",
+            "originatingUsername": "ISV_PBCP"
+        },
+        {
+            "orderId": null,
+            "clOrdId": "499633173032002",
+            "proprietary": "ISV_PBCP",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - S16E6 - CI"
+            },
+            "price": 108.3,
+            "orderQty": 500000,
+            "side": "SELL",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-15:59:33.240-0300",
+            "status": "PENDING_CANCEL",
+            "text": "Pendiente de Cancelacion",
+            "origClOrdId": "499633173031999"
+        },
+        {
+            "orderId": "O0OveG8SCDSd-05295065",
+            "clOrdId": "1xQh2ROIKMGM21Z5",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIQ4shB",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - GFGV41777D - 24hs"
+            },
+            "price": 164.999,
+            "orderQty": 25,
+            "ordType": "LIMIT",
+            "side": "SELL",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-12:01:27.673-0300",
+            "avgPx": 164.999000,
+            "lastPx": 164.999,
+            "lastQty": 6,
+            "cumQty": 25,
+            "leavesQty": 0,
+            "iceberg": "true",
+            "displayQty": 0,
+            "status": "FILLED",
+            "text": " ",
+            "numericOrderId": "05295065",
+            "secondaryTradeID": "00426319",
+            "originatingUsername": "ISV_MATRIZ4"
+        },
+        {
+            "orderId": "O0OveG8SFQRq-11166026",
+            "clOrdId": "yYz744Oco1fVNxnY",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIQR7Lc",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - GFGV31777D - 24hs"
+            },
+            "price": 38.5,
+            "orderQty": 50,
+            "ordType": "LIMIT",
+            "side": "SELL",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-13:37:00.003-0300",
+            "avgPx": 0,
+            "lastPx": 0,
+            "lastQty": 0,
+            "cumQty": 0,
+            "leavesQty": 50,
+            "iceberg": "true",
+            "displayQty": 5,
+            "status": "CANCELLED",
+            "text": "REPLACED",
+            "originatingUsername": "ISV_MATRIZ4"
+        },
+        {
+            "orderId": "O0OveG8SH6w8-14735405",
+            "clOrdId": "499628818025387",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIQhmeH",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - S16E6 - 24hs"
+            },
+            "price": 106.2,
+            "orderQty": 282522,
+            "ordType": "LIMIT",
+            "side": "BUY",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-14:46:58.624-0300",
+            "avgPx": 106.2000,
+            "lastPx": 106.2,
+            "lastQty": 282522,
+            "cumQty": 282522,
+            "leavesQty": 0,
+            "iceberg": "true",
+            "displayQty": 0,
+            "status": "FILLED",
+            "text": " ",
+            "numericOrderId": "14735405",
+            "secondaryTradeID": "00938777",
+            "originatingUsername": "ISV_PBCP"
+        },
+        {
+            "orderId": "O0OveG8SDpP2-08469488",
+            "clOrdId": "sm2cspTXxA4RBazV",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIQKOqM",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - GFGC65343D - 24hs"
+            },
+            "price": 125,
+            "orderQty": 10,
+            "ordType": "LIMIT",
+            "side": "SELL",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-13:00:04.565-0300",
+            "avgPx": 125.000,
+            "lastPx": 125,
+            "lastQty": 6,
+            "cumQty": 10,
+            "leavesQty": 0,
+            "iceberg": "true",
+            "displayQty": 0,
+            "status": "FILLED",
+            "text": " ",
+            "numericOrderId": "08469488",
+            "secondaryTradeID": "00638198",
+            "originatingUsername": "ISV_MATRIZ4"
+        },
+        {
+            "orderId": "O0OveG8SHMk7-15199137",
+            "clOrdId": "499629344025754",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIQjylC",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - TZXM6 - 24hs"
+            },
+            "price": 174.2,
+            "orderQty": 100000,
+            "ordType": "LIMIT",
+            "side": "BUY",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-14:55:44.838-0300",
+            "avgPx": 174.2000,
+            "lastPx": 174.2,
+            "lastQty": 100000,
+            "cumQty": 100000,
+            "leavesQty": 0,
+            "iceberg": "true",
+            "displayQty": 0,
+            "status": "FILLED",
+            "text": " ",
+            "numericOrderId": "15199137",
+            "secondaryTradeID": "00964341",
+            "originatingUsername": "ISV_PBCP"
+        },
+        {
+            "orderId": "O0OveG8SBdPO-04129395",
+            "clOrdId": "499616589008410",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIPtKCZ",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - PFE - CI"
+            },
+            "price": 9730,
+            "orderQty": 78,
+            "ordType": "LIMIT",
+            "side": "SELL",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-11:23:09.196-0300",
+            "avgPx": 9730.000,
+            "lastPx": 9730,
+            "lastQty": 78,
+            "cumQty": 78,
+            "leavesQty": 0,
+            "iceberg": "true",
+            "displayQty": 0,
+            "status": "FILLED",
+            "text": " ",
+            "numericOrderId": "04129395",
+            "secondaryTradeID": "00271994",
+            "originatingUsername": "ISV_PBCP"
+        },
+        {
+            "orderId": "O0OveG8SHMj6-15198957",
+            "clOrdId": "499629344025742",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIQjyhK",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - TZXM6 - CI"
+            },
+            "price": 174.25,
+            "orderQty": 100000,
+            "ordType": "LIMIT",
+            "side": "SELL",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-14:55:44.736-0300",
+            "avgPx": 174.25000,
+            "lastPx": 174.25,
+            "lastQty": 100000,
+            "cumQty": 100000,
+            "leavesQty": 0,
+            "iceberg": "true",
+            "displayQty": 0,
+            "status": "FILLED",
+            "text": " ",
+            "numericOrderId": "15198957",
+            "secondaryTradeID": "00964302",
+            "originatingUsername": "ISV_PBCP"
+        },
+        {
+            "orderId": "O0OveG8SDcS5-08004897",
+            "clOrdId": "499620105015326",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIQBkk8",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - S16E6 - CI"
+            },
+            "price": 108,
+            "orderQty": 175000,
+            "ordType": "LIMIT",
+            "side": "SELL",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-12:21:45.759-0300",
+            "avgPx": 108.000,
+            "lastPx": 108,
+            "lastQty": 175000,
+            "cumQty": 175000,
+            "leavesQty": 0,
+            "iceberg": "true",
+            "displayQty": 0,
+            "status": "FILLED",
+            "text": " ",
+            "numericOrderId": "08004897",
+            "secondaryTradeID": "00510227",
+            "originatingUsername": "ISV_PBCP"
+        },
+        {
+            "orderId": "O0OveG8SATq0-01830686",
+            "clOrdId": "ZAFPLlg5SYzAJ1Cy",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIPpFn6",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - GFGV38777D - 24hs"
+            },
+            "price": 116,
+            "orderQty": 4,
+            "ordType": "LIMIT",
+            "side": "BUY",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-11:11:31.233-0300",
+            "avgPx": 116.000,
+            "lastPx": 116,
+            "lastQty": 4,
+            "cumQty": 4,
+            "leavesQty": 0,
+            "iceberg": "true",
+            "displayQty": 0,
+            "status": "FILLED",
+            "text": " ",
+            "numericOrderId": "01830686",
+            "secondaryTradeID": "00214153",
+            "originatingUsername": "ISV_MATRIZ4"
+        },
+        {
+            "orderId": "O0OveG8SHMvK-15204726",
+            "clOrdId": "499629349025784",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIQk0PI",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - TZXM6 - CI"
+            },
+            "price": 174.25,
+            "orderQty": 100000,
+            "ordType": "LIMIT",
+            "side": "SELL",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-14:55:49.435-0300",
+            "avgPx": 174.25000,
+            "lastPx": 174.25,
+            "lastQty": 100000,
+            "cumQty": 100000,
+            "leavesQty": 0,
+            "iceberg": "true",
+            "displayQty": 0,
+            "status": "FILLED",
+            "text": " ",
+            "numericOrderId": "15204726",
+            "secondaryTradeID": "00964672",
+            "originatingUsername": "ISV_PBCP"
+        },
+        {
+            "orderId": "NONE",
+            "clOrdId": "499632979031794",
+            "proprietary": "ISV_PBCP",
+            "execId": "251021090025-fix-6bf966ccf9-hmgc9-9295",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - S16E6 - CI"
+            },
+            "price": 108.3,
+            "orderQty": 500000,
+            "side": "SELL",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-15:56:19.037-0300",
+            "avgPx": 0,
+            "cumQty": 0,
+            "leavesQty": 0,
+            "status": "REJECTED",
+            "text": "Stock insuficiente. Cantidad disponible para venta de S16E6 - CI = -343956.00000000000000. TamaÃ±o de lote: 1.000000",
+            "originatingUsername": "12345678"
+        },
+        {
+            "orderId": "O0OveG8SIlml-17764838",
+            "clOrdId": "499632976031772",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIQwI6X",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - S16E6 - CI"
+            },
+            "price": 108.3,
+            "orderQty": 500000,
+            "ordType": "LIMIT",
+            "side": "SELL",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-15:56:16.742-0300",
+            "avgPx": 108.3000,
+            "lastPx": 108.3,
+            "lastQty": 500000,
+            "cumQty": 500000,
+            "leavesQty": 0,
+            "iceberg": "true",
+            "displayQty": 0,
+            "status": "FILLED",
+            "text": " ",
+            "numericOrderId": "17764838",
+            "secondaryTradeID": "01126578",
+            "originatingUsername": "ISV_PBCP"
+        },
+        {
+            "orderId": "O0OveG8SBlRu-04371705",
+            "clOrdId": "p8EBRI10Df09erGl",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIPuh8z",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - GFGV50343D - 24hs"
+            },
+            "price": 456.918,
+            "orderQty": 50,
+            "ordType": "LIMIT",
+            "side": "SELL",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-11:27:40.521-0300",
+            "avgPx": 0,
+            "lastPx": 0,
+            "lastQty": 0,
+            "cumQty": 0,
+            "leavesQty": 50,
+            "iceberg": "true",
+            "displayQty": 5,
+            "status": "CANCELLED",
+            "text": "CANCELED",
+            "originatingUsername": "ISV_MATRIZ4"
+        },
+        {
+            "orderId": "O0OveG8SIIJc-16918094",
+            "clOrdId": "499631577029529",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIQsDTy",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - TRAN - 24hs"
+            },
+            "price": 1865,
+            "orderQty": 500,
+            "ordType": "LIMIT",
+            "side": "BUY",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-15:32:58.007-0300",
+            "avgPx": 1865.000,
+            "lastPx": 1865,
+            "lastQty": 500,
+            "cumQty": 500,
+            "leavesQty": 0,
+            "iceberg": "true",
+            "displayQty": 0,
+            "status": "FILLED",
+            "text": " ",
+            "numericOrderId": "16918094",
+            "secondaryTradeID": "01070746",
+            "originatingUsername": "ISV_PBCP"
+        },
+        {
+            "orderId": "O0OveG8SHR0M-15332667",
+            "clOrdId": "N51drHSKVVzO16wW",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIQkutj",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - PESOS - 1D"
+            },
+            "price": 23.44,
+            "orderQty": 2000000,
+            "ordType": "LIMIT",
+            "side": "SELL",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-15:00:04.737-0300",
+            "avgPx": 23.44000,
+            "lastPx": 23.44,
+            "lastQty": 2000000,
+            "cumQty": 2000000,
+            "leavesQty": 0,
+            "iceberg": "true",
+            "displayQty": 0,
+            "status": "FILLED",
+            "text": " ",
+            "numericOrderId": "15332667",
+            "secondaryTradeID": "00976747",
+            "originatingUsername": "ISV_MATRIZ4"
+        },
+        {
+            "orderId": null,
+            "clOrdId": "499632979031807",
+            "proprietary": "ISV_PBCP",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - S16E6 - CI"
+            },
+            "price": 108.3,
+            "orderQty": 500000,
+            "side": "SELL",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-15:56:19.131-0300",
+            "status": "PENDING_CANCEL",
+            "text": "Pendiente de Cancelacion",
+            "origClOrdId": "499632979031794"
+        },
+        {
+            "orderId": "O0OveG8SFw3T-12232672",
+            "clOrdId": "yOmR4wICnWVAjBkH",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIQW0dD",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - PESOS - 1D"
+            },
+            "price": 24.2,
+            "orderQty": 2000000,
+            "ordType": "LIMIT",
+            "side": "BUY",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-13:58:17.261-0300",
+            "avgPx": 24.2000,
+            "lastPx": 24.2,
+            "lastQty": 2000000,
+            "cumQty": 2000000,
+            "leavesQty": 0,
+            "iceberg": "true",
+            "displayQty": 0,
+            "status": "FILLED",
+            "text": " ",
+            "numericOrderId": "12232672",
+            "secondaryTradeID": "00804449",
+            "originatingUsername": "ISV_MATRIZ4"
+        },
+        {
+            "orderId": "O0OveG8SJee4-19277934",
+            "clOrdId": "zQkBo0g429VoUKqm",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIR3obp",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - GFGC65343D - 24hs"
+            },
+            "price": 140.9,
+            "orderQty": 100,
+            "ordType": "LIMIT",
+            "side": "SELL",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-16:37:58.552-0300",
+            "avgPx": 0,
+            "lastPx": 0,
+            "lastQty": 0,
+            "cumQty": 0,
+            "leavesQty": 100,
+            "iceberg": "true",
+            "displayQty": 0,
+            "status": "CANCELLED",
+            "text": "Cancelled by Owner",
+            "numericOrderId": "19277934",
+            "origClOrdId": "PrsJRwJjLVUPj0ks",
+            "originatingUsername": "ISV_MATRIZ4"
+        },
+        {
+            "orderId": "O0OveG8SC0kN-04881201",
+            "clOrdId": "499617415009241",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIPwssJ",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - S16E6 - 24hs"
+            },
+            "price": 108,
+            "orderQty": 259974,
+            "ordType": "LIMIT",
+            "side": "BUY",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-11:36:55.902-0300",
+            "avgPx": 108.000,
+            "lastPx": 108,
+            "lastQty": 259974,
+            "cumQty": 259974,
+            "leavesQty": 0,
+            "iceberg": "true",
+            "displayQty": 0,
+            "status": "FILLED",
+            "text": " ",
+            "numericOrderId": "04881201",
+            "secondaryTradeID": "00320520",
+            "originatingUsername": "ISV_PBCP"
+        },
+        {
+            "orderId": "O0OveG8SFwFK-12240799",
+            "clOrdId": "HRGnlhean8shPOVB",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIQW2x4",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - PESOS - 1D"
+            },
+            "price": 24.2,
+            "orderQty": 1000000,
+            "ordType": "LIMIT",
+            "side": "BUY",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-13:58:23.494-0300",
+            "avgPx": 24.2000,
+            "lastPx": 24.2,
+            "lastQty": 1000000,
+            "cumQty": 1000000,
+            "leavesQty": 0,
+            "iceberg": "true",
+            "displayQty": 0,
+            "status": "FILLED",
+            "text": " ",
+            "numericOrderId": "12240799",
+            "secondaryTradeID": "00804834",
+            "originatingUsername": "ISV_MATRIZ4"
+        },
+        {
+            "orderId": "O0OveG8SC10w-04889950",
+            "clOrdId": "499617423009267",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIPwvRv",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - S16E6 - 24hs"
+            },
+            "price": 108.281,
+            "orderQty": 91948,
+            "ordType": "LIMIT",
+            "side": "BUY",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-11:37:03.249-0300",
+            "avgPx": 108.275000,
+            "lastPx": 108.275,
+            "lastQty": 91948,
+            "cumQty": 91948,
+            "leavesQty": 0,
+            "iceberg": "true",
+            "displayQty": 0,
+            "status": "FILLED",
+            "text": " ",
+            "numericOrderId": "04889950",
+            "secondaryTradeID": "00321028",
+            "originatingUsername": "ISV_PBCP"
+        },
+        {
+            "orderId": "O0OveG8SEe57-09890404",
+            "clOrdId": "fa0Y0Nguo5z5hrmn",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIQLtRm",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - GFGC65343D - 24hs"
+            },
+            "price": 135,
+            "orderQty": 10,
+            "ordType": "LIMIT",
+            "side": "SELL",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-13:07:53.882-0300",
+            "avgPx": 135.000,
+            "lastPx": 135,
+            "lastQty": 10,
+            "cumQty": 10,
+            "leavesQty": 0,
+            "iceberg": "true",
+            "displayQty": 0,
+            "status": "FILLED",
+            "text": " ",
+            "numericOrderId": "09890404",
+            "secondaryTradeID": "00662657",
+            "originatingUsername": "ISV_MATRIZ4"
+        },
+        {
+            "orderId": "O0OveG8SJRoC-18915397",
+            "clOrdId": "jMiJCwEFMv5gNyQp",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIR1s8p",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - PESOS - 1D"
+            },
+            "price": 24,
+            "orderQty": 10000000,
+            "ordType": "LIMIT",
+            "side": "SELL",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-16:26:49.930-0300",
+            "avgPx": 24.000,
+            "lastPx": 24,
+            "lastQty": 10000000,
+            "cumQty": 10000000,
+            "leavesQty": 0,
+            "iceberg": "true",
+            "displayQty": 0,
+            "status": "FILLED",
+            "text": " ",
+            "numericOrderId": "18915397",
+            "secondaryTradeID": "01202103",
+            "originatingUsername": "ISV_MATRIZ4"
+        },
+        {
+            "orderId": "O0OveG8SJi6f-19326165",
+            "clOrdId": "afoPYpZ0A33UrwvB",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIR4KV2",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - GFGC65343D - 24hs"
+            },
+            "price": 140.9,
+            "orderQty": 50,
+            "ordType": "LIMIT",
+            "side": "SELL",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-16:42:08.698-0300",
+            "avgPx": 140.9000,
+            "lastPx": 140.9,
+            "lastQty": 5,
+            "cumQty": 5,
+            "leavesQty": 45,
+            "iceberg": "true",
+            "displayQty": 5,
+            "status": "CANCELLED",
+            "text": "CANCELED",
+            "originatingUsername": "ISV_MATRIZ4"
+        },
+        {
+            "orderId": "O0OveG8SHQR0-15316701",
+            "clOrdId": "8KIQ7xmg4qkNZ76v",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIQka3r",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - PESOS - 1D"
+            },
+            "price": 23.49,
+            "orderQty": 3000000,
+            "ordType": "LIMIT",
+            "side": "SELL",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-14:58:15.790-0300",
+            "avgPx": 0,
+            "lastPx": 0,
+            "lastQty": 0,
+            "cumQty": 0,
+            "leavesQty": 3000000,
+            "status": "CANCELLED",
+            "text": "CANCELED",
+            "originatingUsername": "ISV_MATRIZ4"
+        },
+        {
+            "orderId": "O0OveG8SIHXd-16897556",
+            "clOrdId": "499631547029424",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIQs7GJ",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - TRAN - 24hs"
+            },
+            "price": 1866,
+            "orderQty": 500,
+            "ordType": "LIMIT",
+            "side": "BUY",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-15:32:27.520-0300",
+            "avgPx": 1866.000,
+            "lastPx": 1866,
+            "lastQty": 500,
+            "cumQty": 500,
+            "leavesQty": 0,
+            "iceberg": "true",
+            "displayQty": 0,
+            "status": "FILLED",
+            "text": " ",
+            "numericOrderId": "16897556",
+            "secondaryTradeID": "01069474",
+            "originatingUsername": "ISV_PBCP"
+        },
+        {
+            "orderId": "O0OveG8SEUWq-09627279",
+            "clOrdId": "kfc30OAd9o2BXLUN",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIQLFhh",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - GFGC65343D - 24hs"
+            },
+            "price": 130,
+            "orderQty": 10,
+            "ordType": "LIMIT",
+            "side": "SELL",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-13:04:23.174-0300",
+            "avgPx": 130.000,
+            "lastPx": 130,
+            "lastQty": 10,
+            "cumQty": 10,
+            "leavesQty": 0,
+            "iceberg": "true",
+            "displayQty": 0,
+            "status": "FILLED",
+            "text": " ",
+            "numericOrderId": "09627279",
+            "secondaryTradeID": "00651195",
+            "originatingUsername": "ISV_MATRIZ4"
+        },
+        {
+            "orderId": "O0OveG8SIIVj-16923591",
+            "clOrdId": "499631584029602",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIQsF74",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - TRAN - CI"
+            },
+            "price": 1870,
+            "orderQty": 189,
+            "ordType": "LIMIT",
+            "side": "SELL",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-15:33:04.837-0300",
+            "avgPx": 1870.000,
+            "lastPx": 1870,
+            "lastQty": 3,
+            "cumQty": 189,
+            "leavesQty": 0,
+            "iceberg": "true",
+            "displayQty": 0,
+            "status": "FILLED",
+            "text": " ",
+            "numericOrderId": "16923591",
+            "secondaryTradeID": "01071094",
+            "originatingUsername": "ISV_PBCP"
+        },
+        {
+            "orderId": "O0OveG8SITLQ-17247235",
+            "clOrdId": "499632096031187",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIQtnDb",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - S16E6 - 24hs"
+            },
+            "price": 106.2,
+            "orderQty": 500000,
+            "ordType": "LIMIT",
+            "side": "BUY",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-15:41:36.865-0300",
+            "avgPx": 106.2000,
+            "lastPx": 106.2,
+            "lastQty": 500000,
+            "cumQty": 500000,
+            "leavesQty": 0,
+            "iceberg": "true",
+            "displayQty": 0,
+            "status": "FILLED",
+            "text": " ",
+            "numericOrderId": "17247235",
+            "secondaryTradeID": "01091769",
+            "originatingUsername": "ISV_PBCP"
+        },
+        {
+            "orderId": "O0OveG8SJxTr-19653539",
+            "clOrdId": "rub6vNZvH6b85cjs",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIR5hD8",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - GFGC69343D - 24hs"
+            },
+            "price": 98,
+            "orderQty": 20,
+            "ordType": "LIMIT",
+            "side": "SELL",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-16:56:40.571-0300",
+            "avgPx": 98.000,
+            "lastPx": 98,
+            "lastQty": 20,
+            "cumQty": 20,
+            "leavesQty": 0,
+            "iceberg": "true",
+            "displayQty": 0,
+            "status": "FILLED",
+            "text": " ",
+            "numericOrderId": "19653539",
+            "secondaryTradeID": "01265335",
+            "originatingUsername": "ISV_MATRIZ4"
+        },
+        {
+            "orderId": "O0OveG8SHiSn-15893122",
+            "clOrdId": "OFyXdk3PJeMvfYwX",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIQo4Sr",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - GFGC69343D - 24hs"
+            },
+            "price": 91,
+            "orderQty": 10,
+            "ordType": "LIMIT",
+            "side": "SELL",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-15:14:47.986-0300",
+            "avgPx": 91.000,
+            "lastPx": 91,
+            "lastQty": 10,
+            "cumQty": 10,
+            "leavesQty": 0,
+            "iceberg": "true",
+            "displayQty": 0,
+            "status": "FILLED",
+            "text": " ",
+            "numericOrderId": "15893122",
+            "secondaryTradeID": "01016234",
+            "originatingUsername": "ISV_MATRIZ4"
+        },
+        {
+            "orderId": "O0OveG8SJzd6-19699128",
+            "clOrdId": "JEenAgZGQdjTbfFK",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIR5kpM",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - GFGC61558D - 24hs"
+            },
+            "price": 239.999,
+            "orderQty": 19,
+            "ordType": "LIMIT",
+            "side": "SELL",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-16:57:18.294-0300",
+            "avgPx": 0,
+            "lastPx": 0,
+            "lastQty": 0,
+            "cumQty": 0,
+            "leavesQty": 19,
+            "status": "CANCELLED",
+            "text": "REPLACED",
+            "originatingUsername": "ISV_MATRIZ4"
+        },
+        {
+            "orderId": "O0OveG8SAajQ-02033122",
+            "clOrdId": "S9i1sb57rhtZME3O",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIPkiMa",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - GFGV44777D - 24hs"
+            },
+            "price": 266,
+            "orderQty": 4,
+            "ordType": "LIMIT",
+            "side": "SELL",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-11:01:19.317-0300",
+            "avgPx": 266.000,
+            "lastPx": 266,
+            "lastQty": 4,
+            "cumQty": 4,
+            "leavesQty": 0,
+            "iceberg": "true",
+            "displayQty": 0,
+            "status": "FILLED",
+            "text": " ",
+            "numericOrderId": "02033122",
+            "secondaryTradeID": "00154959",
+            "originatingUsername": "ISV_MATRIZ4"
+        },
+        {
+            "orderId": "O0OveG8SGWp9-13491507",
+            "clOrdId": "499627453023070",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIQbwNY",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - TZXM6 - 24hs"
+            },
+            "price": 174.55,
+            "orderQty": 100000,
+            "ordType": "LIMIT",
+            "side": "BUY",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-14:24:13.726-0300",
+            "avgPx": 174.55000,
+            "lastPx": 174.55,
+            "lastQty": 100000,
+            "cumQty": 100000,
+            "leavesQty": 0,
+            "iceberg": "true",
+            "displayQty": 0,
+            "status": "FILLED",
+            "text": " ",
+            "numericOrderId": "13491507",
+            "secondaryTradeID": "00875007",
+            "originatingUsername": "ISV_PBCP"
+        },
+        {
+            "orderId": "O0OveG8SCEmE-05339871",
+            "clOrdId": "DFAY8T5r7DavUb5U",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIPz4fc",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - GFGV38777D - 24hs"
+            },
+            "price": 111.011,
+            "orderQty": 25,
+            "ordType": "LIMIT",
+            "side": "BUY",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-11:45:40.584-0300",
+            "avgPx": 0,
+            "lastPx": 0,
+            "lastQty": 0,
+            "cumQty": 0,
+            "leavesQty": 25,
+            "status": "CANCELLED",
+            "text": "REPLACED",
+            "originatingUsername": "ISV_MATRIZ4"
+        },
+        {
+            "orderId": "O0OveG8SEUWq-09619880",
+            "clOrdId": "lh3qcup17W6b406F",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIQJW2p",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - GFGC65343D - 24hs"
+            },
+            "price": 127,
+            "orderQty": 10,
+            "ordType": "LIMIT",
+            "side": "SELL",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-12:55:25.838-0300",
+            "avgPx": 0,
+            "lastPx": 0,
+            "lastQty": 0,
+            "cumQty": 0,
+            "leavesQty": 10,
+            "status": "CANCELLED",
+            "text": "REPLACED",
+            "originatingUsername": "ISV_MATRIZ4"
+        },
+        {
+            "orderId": "O0OveG8SHODa-15248865",
+            "clOrdId": "499629390025925",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIQkDKg",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - TZXM6 - CI"
+            },
+            "price": 174.25,
+            "orderQty": 100000,
+            "ordType": "LIMIT",
+            "side": "SELL",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-14:56:30.712-0300",
+            "avgPx": 174.25000,
+            "lastPx": 174.25,
+            "lastQty": 100000,
+            "cumQty": 100000,
+            "leavesQty": 0,
+            "iceberg": "true",
+            "displayQty": 0,
+            "status": "FILLED",
+            "text": " ",
+            "numericOrderId": "15248865",
+            "secondaryTradeID": "00967105",
+            "originatingUsername": "ISV_PBCP"
+        },
+        {
+            "orderId": "O0OveG8SJee4-19277934",
+            "clOrdId": "PrsJRwJjLVUPj0ks",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIR3obp",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - GFGC65343D - 24hs"
+            },
+            "price": 140.9,
+            "orderQty": 100,
+            "ordType": "LIMIT",
+            "side": "SELL",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-16:37:58.552-0300",
+            "avgPx": 0,
+            "lastPx": 0,
+            "lastQty": 0,
+            "cumQty": 0,
+            "leavesQty": 100,
+            "iceberg": "true",
+            "displayQty": 10,
+            "status": "CANCELLED",
+            "text": "CANCELED",
+            "originatingUsername": "ISV_MATRIZ4"
+        },
+        {
+            "orderId": "O0OveG8SFQRq-11665178",
+            "clOrdId": "Vqp36MtJ8a0RFTJj",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIQUMp2",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - GFGV31777D - 24hs"
+            },
+            "price": 38.6,
+            "orderQty": 50,
+            "ordType": "LIMIT",
+            "side": "SELL",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-13:52:16.089-0300",
+            "avgPx": 38.4333,
+            "lastPx": 0,
+            "lastQty": 0,
+            "cumQty": 15,
+            "leavesQty": 35,
+            "iceberg": "true",
+            "displayQty": 0,
+            "status": "CANCELLED",
+            "text": "Cancelled by Owner",
+            "numericOrderId": "11665178",
+            "origClOrdId": "p001dXtb02L2EtC6",
+            "originatingUsername": "ISV_MATRIZ4"
+        },
+        {
+            "orderId": "O0OveG8SHu1x-16219286",
+            "clOrdId": "VBf78ZyfTTfDR01T",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIQoqSQ",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - GFGC61558D - 24hs"
+            },
+            "price": 219.39,
+            "orderQty": 50,
+            "ordType": "LIMIT",
+            "side": "BUY",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-15:17:13.203-0300",
+            "avgPx": 219.39000,
+            "lastPx": 219.39,
+            "lastQty": 50,
+            "cumQty": 50,
+            "leavesQty": 0,
+            "iceberg": "true",
+            "displayQty": 0,
+            "status": "FILLED",
+            "text": " ",
+            "numericOrderId": "16219286",
+            "secondaryTradeID": "01026566",
+            "originatingUsername": "ISV_MATRIZ4"
+        },
+        {
+            "orderId": "O0OveG8SHMnm-15200626",
+            "clOrdId": "499629347025762",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIQjzD0",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - TZXM6 - CI"
+            },
+            "price": 174.25,
+            "orderQty": 100000,
+            "ordType": "LIMIT",
+            "side": "SELL",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-14:55:47.048-0300",
+            "avgPx": 174.25000,
+            "lastPx": 174.25,
+            "lastQty": 100000,
+            "cumQty": 100000,
+            "leavesQty": 0,
+            "iceberg": "true",
+            "displayQty": 0,
+            "status": "FILLED",
+            "text": " ",
+            "numericOrderId": "15200626",
+            "secondaryTradeID": "00964440",
+            "originatingUsername": "ISV_PBCP"
+        },
+        {
+            "orderId": "O0OveG8SHPbb-15292806",
+            "clOrdId": "499629444026090",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIQkQHi",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - TZXM6 - CI"
+            },
+            "price": 174.25,
+            "orderQty": 78932,
+            "ordType": "LIMIT",
+            "side": "SELL",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-14:57:24.678-0300",
+            "avgPx": 174.25000,
+            "lastPx": 174.25,
+            "lastQty": 78932,
+            "cumQty": 78932,
+            "leavesQty": 0,
+            "iceberg": "true",
+            "displayQty": 0,
+            "status": "FILLED",
+            "text": " ",
+            "numericOrderId": "15292806",
+            "secondaryTradeID": "00969627",
+            "originatingUsername": "ISV_PBCP"
+        },
+        {
+            "orderId": "O0OveG8SIIS5-16921803",
+            "clOrdId": "499631582029594",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIQsEab",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - TRAN - 24hs"
+            },
+            "price": 1865,
+            "orderQty": 500,
+            "ordType": "LIMIT",
+            "side": "BUY",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-15:33:02.572-0300",
+            "avgPx": 1865.000,
+            "lastPx": 1865,
+            "lastQty": 500,
+            "cumQty": 500,
+            "leavesQty": 0,
+            "iceberg": "true",
+            "displayQty": 0,
+            "status": "FILLED",
+            "text": " ",
+            "numericOrderId": "16921803",
+            "secondaryTradeID": "01070986",
+            "originatingUsername": "ISV_PBCP"
+        },
+        {
+            "orderId": "O0OveG8SAajQ-02022901",
+            "clOrdId": "jzjvHbgwg6KUMv7S",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIPjPbB",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - GFGV44777D - 24hs"
+            },
+            "price": 265,
+            "orderQty": 4,
+            "ordType": "LIMIT",
+            "side": "SELL",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-10:57:47.467-0300",
+            "avgPx": 0,
+            "lastPx": 0,
+            "lastQty": 0,
+            "cumQty": 0,
+            "leavesQty": 4,
+            "status": "CANCELLED",
+            "text": "REPLACED",
+            "originatingUsername": "ISV_MATRIZ4"
+        },
+        {
+            "orderId": "O0OveG8SJvLt-19610184",
+            "clOrdId": "1FpkUidJWHcwYKrn",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIR5GTS",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - DOLAR - 1D"
+            },
+            "price": 0.7,
+            "orderQty": 82700,
+            "ordType": "LIMIT",
+            "side": "SELL",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-16:51:48.031-0300",
+            "avgPx": 0.7000,
+            "lastPx": 0.7,
+            "lastQty": 34810,
+            "cumQty": 82700,
+            "leavesQty": 0,
+            "iceberg": "true",
+            "displayQty": 0,
+            "status": "FILLED",
+            "text": " ",
+            "numericOrderId": "19610184",
+            "secondaryTradeID": "01255357",
+            "originatingUsername": "ISV_MATRIZ4"
+        },
+        {
+            "orderId": "O0OveG8SIlms-17764889",
+            "clOrdId": "499632976031790",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIQwI7T",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - S16E6 - 24hs"
+            },
+            "price": 106.2,
+            "orderQty": 500000,
+            "ordType": "LIMIT",
+            "side": "BUY",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-15:56:16.864-0300",
+            "avgPx": 106.2000,
+            "lastPx": 106.2,
+            "lastQty": 500000,
+            "cumQty": 500000,
+            "leavesQty": 0,
+            "iceberg": "true",
+            "displayQty": 0,
+            "status": "FILLED",
+            "text": " ",
+            "numericOrderId": "17764889",
+            "secondaryTradeID": "01126583",
+            "originatingUsername": "ISV_PBCP"
+        },
+        {
+            "orderId": "O0OveG8SGWrR-13492511",
+            "clOrdId": "499627456023087",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIQbwgZ",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - TZXM6 - 24hs"
+            },
+            "price": 174.55,
+            "orderQty": 62955,
+            "ordType": "LIMIT",
+            "side": "BUY",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-14:24:16.233-0300",
+            "avgPx": 174.55000,
+            "lastPx": 174.55,
+            "lastQty": 62955,
+            "cumQty": 62955,
+            "leavesQty": 0,
+            "iceberg": "true",
+            "displayQty": 0,
+            "status": "FILLED",
+            "text": " ",
+            "numericOrderId": "13492511",
+            "secondaryTradeID": "00875106",
+            "originatingUsername": "ISV_PBCP"
+        },
+        {
+            "orderId": "O0OveG8SJQE5-18875719",
+            "clOrdId": "499634758034680",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIR1fzV",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - D31O5 - 24hs"
+            },
+            "price": 142910,
+            "orderQty": 2000,
+            "ordType": "LIMIT",
+            "side": "BUY",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-16:25:58.596-0300",
+            "avgPx": 142910.000,
+            "lastPx": 142910,
+            "lastQty": 2000,
+            "cumQty": 2000,
+            "leavesQty": 0,
+            "iceberg": "true",
+            "displayQty": 0,
+            "status": "FILLED",
+            "text": " ",
+            "numericOrderId": "18875719",
+            "secondaryTradeID": "01199536",
+            "originatingUsername": "ISV_PBCP"
+        },
+        {
+            "orderId": "O0OveG8SAbxs-02086942",
+            "clOrdId": "rvjLa3oHRJmw41z3",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIPkNlt",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - GFGV38777D - 24hs"
+            },
+            "price": 122,
+            "orderQty": 26,
+            "ordType": "LIMIT",
+            "side": "SELL",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-11:00:29.772-0300",
+            "avgPx": 122.000,
+            "lastPx": 122,
+            "lastQty": 4,
+            "cumQty": 26,
+            "leavesQty": 0,
+            "iceberg": "true",
+            "displayQty": 0,
+            "status": "FILLED",
+            "text": " ",
+            "numericOrderId": "02086942",
+            "secondaryTradeID": "00151707",
+            "originatingUsername": "ISV_MATRIZ4"
+        },
+        {
+            "orderId": "O0OveG8SHNMN-15217949",
+            "clOrdId": "499629359025834",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIQk4MX",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - TZXM6 - 24hs"
+            },
+            "price": 174.25,
+            "orderQty": 100000,
+            "ordType": "LIMIT",
+            "side": "BUY",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-14:55:59.879-0300",
+            "avgPx": 174.25000,
+            "lastPx": 174.25,
+            "lastQty": 100000,
+            "cumQty": 100000,
+            "leavesQty": 0,
+            "iceberg": "true",
+            "displayQty": 0,
+            "status": "FILLED",
+            "text": " ",
+            "numericOrderId": "15217949",
+            "secondaryTradeID": "00965573",
+            "originatingUsername": "ISV_PBCP"
+        },
+        {
+            "orderId": "NONE",
+            "clOrdId": "499633173031999",
+            "proprietary": "ISV_PBCP",
+            "execId": "251021090025-fix-6bf966ccf9-hmgc9-9320",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - S16E6 - CI"
+            },
+            "price": 108.3,
+            "orderQty": 500000,
+            "side": "SELL",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-15:59:33.153-0300",
+            "avgPx": 0,
+            "cumQty": 0,
+            "leavesQty": 0,
+            "status": "REJECTED",
+            "text": "Stock insuficiente. Cantidad disponible para venta de S16E6 - CI = -343956.00000000000000. TamaÃ±o de lote: 1.000000",
+            "originatingUsername": "12345678"
+        },
+        {
+            "orderId": "O0OveG8SJeSG-19273714",
+            "clOrdId": "499635405035415",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIR3akZ",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - TRAN - 24hs"
+            },
+            "price": 1848,
+            "orderQty": 500,
+            "ordType": "LIMIT",
+            "side": "BUY",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-16:36:45.869-0300",
+            "avgPx": 1848.000,
+            "lastPx": 1848,
+            "lastQty": 500,
+            "cumQty": 500,
+            "leavesQty": 0,
+            "iceberg": "true",
+            "displayQty": 0,
+            "status": "FILLED",
+            "text": " ",
+            "numericOrderId": "19273714",
+            "secondaryTradeID": "01223853",
+            "originatingUsername": "ISV_PBCP"
+        },
+        {
+            "orderId": "O0OveG8SJSaa-18938177",
+            "clOrdId": "499634850034781",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIR1yuA",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - D31O5 - CI"
+            },
+            "price": 143090,
+            "orderQty": 151,
+            "ordType": "LIMIT",
+            "side": "SELL",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-16:27:30.301-0300",
+            "avgPx": 143090.000,
+            "lastPx": 143090,
+            "lastQty": 151,
+            "cumQty": 151,
+            "leavesQty": 0,
+            "iceberg": "true",
+            "displayQty": 0,
+            "status": "FILLED",
+            "text": " ",
+            "numericOrderId": "18938177",
+            "secondaryTradeID": "01203511",
+            "originatingUsername": "ISV_PBCP"
+        },
+        {
+            "orderId": "O0OveG8SG8e0-12659610",
+            "clOrdId": "LLCzCVOhIbBT35AE",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIQjR9b",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - GFGV31777D - 24hs"
+            },
+            "price": 38.999,
+            "orderQty": 15,
+            "ordType": "LIMIT",
+            "side": "SELL",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-14:53:16.229-0300",
+            "avgPx": 38.999000,
+            "lastPx": 38.999,
+            "lastQty": 3,
+            "cumQty": 3,
+            "leavesQty": 12,
+            "iceberg": "true",
+            "displayQty": 12,
+            "status": "CANCELLED",
+            "text": "CANCELED",
+            "originatingUsername": "ISV_MATRIZ4"
+        },
+        {
+            "orderId": "O0OveG8SFSCn-11364133",
+            "clOrdId": "9eM7TbuKVpgwzW3z",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIQdLpn",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - GFGV35777D - 24hs"
+            },
+            "price": 70.001,
+            "orderQty": 50,
+            "ordType": "LIMIT",
+            "side": "BUY",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-14:30:10.280-0300",
+            "avgPx": 70.000345,
+            "lastPx": 70.001,
+            "lastQty": 5,
+            "cumQty": 29,
+            "leavesQty": 21,
+            "iceberg": "true",
+            "displayQty": 5,
+            "status": "CANCELLED",
+            "text": "CANCELED",
+            "originatingUsername": "ISV_MATRIZ4"
+        },
+        {
+            "orderId": "O0OveG8SHOBf-15247866",
+            "clOrdId": "499629388025902",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIQkD2i",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - TZXM6 - 24hs"
+            },
+            "price": 174.2,
+            "orderQty": 100000,
+            "ordType": "LIMIT",
+            "side": "BUY",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-14:56:28.465-0300",
+            "avgPx": 174.2000,
+            "lastPx": 174.2,
+            "lastQty": 100000,
+            "cumQty": 100000,
+            "leavesQty": 0,
+            "iceberg": "true",
+            "displayQty": 0,
+            "status": "FILLED",
+            "text": " ",
+            "numericOrderId": "15247866",
+            "secondaryTradeID": "00967048",
+            "originatingUsername": "ISV_PBCP"
+        },
+        {
+            "orderId": "O0OveG8SI5fo-16573972",
+            "clOrdId": "RdG3HqauPjbVhUDQ",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIR59bg",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - GFGC69343D - 24hs"
+            },
+            "price": 98,
+            "orderQty": 10,
+            "ordType": "LIMIT",
+            "side": "SELL",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-16:50:38.816-0300",
+            "avgPx": 0,
+            "lastPx": 0,
+            "lastQty": 0,
+            "cumQty": 0,
+            "leavesQty": 10,
+            "iceberg": "true",
+            "displayQty": 0,
+            "status": "CANCELLED",
+            "text": "Cancelled by Owner",
+            "numericOrderId": "16573972",
+            "origClOrdId": "D19eIE8EYAok4sDh",
+            "originatingUsername": "ISV_MATRIZ4"
+        },
+        {
+            "orderId": "O0OveG8SH6vu-14735320",
+            "clOrdId": "499628818025364",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIQhmcZ",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - S16E6 - CI"
+            },
+            "price": 106.2,
+            "orderQty": 282522,
+            "ordType": "LIMIT",
+            "side": "SELL",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-14:46:58.513-0300",
+            "avgPx": 106.2000,
+            "lastPx": 106.2,
+            "lastQty": 282522,
+            "cumQty": 282522,
+            "leavesQty": 0,
+            "iceberg": "true",
+            "displayQty": 0,
+            "status": "FILLED",
+            "text": " ",
+            "numericOrderId": "14735320",
+            "secondaryTradeID": "00938767",
+            "originatingUsername": "ISV_PBCP"
+        },
+        {
+            "orderId": "O0OveG8SFQRq-11665178",
+            "clOrdId": "p001dXtb02L2EtC6",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIQUMp2",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - GFGV31777D - 24hs"
+            },
+            "price": 38.6,
+            "orderQty": 50,
+            "ordType": "LIMIT",
+            "side": "SELL",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-13:52:16.089-0300",
+            "avgPx": 38.4333,
+            "lastPx": 38.6,
+            "lastQty": 1,
+            "cumQty": 15,
+            "leavesQty": 35,
+            "iceberg": "true",
+            "displayQty": 5,
+            "status": "CANCELLED",
+            "text": "CANCELED",
+            "originatingUsername": "ISV_MATRIZ4"
+        },
+        {
+            "orderId": "O0OveG8SHKIw-15136412",
+            "clOrdId": "zE4mk66S9J33tLSF",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIQk6xm",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - GFGC63343D - 24hs"
+            },
+            "price": 173,
+            "orderQty": 10,
+            "ordType": "LIMIT",
+            "side": "SELL",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-14:56:06.396-0300",
+            "avgPx": 173.000,
+            "lastPx": 173,
+            "lastQty": 10,
+            "cumQty": 10,
+            "leavesQty": 0,
+            "iceberg": "true",
+            "displayQty": 0,
+            "status": "FILLED",
+            "text": " ",
+            "numericOrderId": "15136412",
+            "secondaryTradeID": "00966067",
+            "originatingUsername": "ISV_MATRIZ4"
+        },
+        {
+            "orderId": "O0OveG8SITLO-17247203",
+            "clOrdId": "499632096031181",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIQtnD3",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - S16E6 - CI"
+            },
+            "price": 106.2,
+            "orderQty": 500000,
+            "ordType": "LIMIT",
+            "side": "SELL",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-15:41:36.747-0300",
+            "avgPx": 106.2000,
+            "lastPx": 106.2,
+            "lastQty": 500000,
+            "cumQty": 500000,
+            "leavesQty": 0,
+            "iceberg": "true",
+            "displayQty": 0,
+            "status": "FILLED",
+            "text": " ",
+            "numericOrderId": "17247203",
+            "secondaryTradeID": "01091767",
+            "originatingUsername": "ISV_PBCP"
+        },
+        {
+            "orderId": "O0OveG8SGWr6-13492329",
+            "clOrdId": "499627455023072",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIQbwdL",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - TZXM6 - CI"
+            },
+            "price": 174.55,
+            "orderQty": 62955,
+            "ordType": "LIMIT",
+            "side": "SELL",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-14:24:15.924-0300",
+            "avgPx": 174.55000,
+            "lastPx": 174.55,
+            "lastQty": 62955,
+            "cumQty": 62955,
+            "leavesQty": 0,
+            "iceberg": "true",
+            "displayQty": 0,
+            "status": "FILLED",
+            "text": " ",
+            "numericOrderId": "13492329",
+            "secondaryTradeID": "00875096",
+            "originatingUsername": "ISV_PBCP"
+        },
+        {
+            "orderId": "O0OveG8SHPXF-15290637",
+            "clOrdId": "499629442026053",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIQkPdI",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - TZXM6 - CI"
+            },
+            "price": 174.25,
+            "orderQty": 100000,
+            "ordType": "LIMIT",
+            "side": "SELL",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-14:57:22.419-0300",
+            "avgPx": 174.25000,
+            "lastPx": 174.25,
+            "lastQty": 100000,
+            "cumQty": 100000,
+            "leavesQty": 0,
+            "iceberg": "true",
+            "displayQty": 0,
+            "status": "FILLED",
+            "text": " ",
+            "numericOrderId": "15290637",
+            "secondaryTradeID": "00969450",
+            "originatingUsername": "ISV_PBCP"
+        },
+        {
+            "orderId": "O0OveG8SJvqz-19619694",
+            "clOrdId": "9eyJA2ugjyAPvsAW",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIR5xQu",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - GFGC61558D - 24hs"
+            },
+            "price": 228.5,
+            "orderQty": 20,
+            "ordType": "LIMIT",
+            "side": "BUY",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-17:34:00.016-0300",
+            "avgPx": 228.5000,
+            "lastPx": 0,
+            "lastQty": 0,
+            "cumQty": 19,
+            "leavesQty": 1,
+            "iceberg": "true",
+            "displayQty": 0,
+            "status": "EXPIRED",
+            "text": "Expired (end of day)",
+            "numericOrderId": "19619694",
+            "originatingUsername": "ISV_MATRIZ4"
+        },
+        {
+            "orderId": "O0OveG8SJzd6-19698649",
+            "clOrdId": "q5tTdTVMoU52yfCX",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIR5jGR",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - GFGC61558D - 24hs"
+            },
+            "price": 240,
+            "orderQty": 19,
+            "ordType": "LIMIT",
+            "side": "SELL",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-16:56:58.941-0300",
+            "avgPx": 0,
+            "lastPx": 0,
+            "lastQty": 0,
+            "cumQty": 0,
+            "leavesQty": 19,
+            "status": "CANCELLED",
+            "text": "REPLACED",
+            "originatingUsername": "ISV_MATRIZ4"
+        },
+        {
+            "orderId": "O0OveG8SBlRu-04371705",
+            "clOrdId": "fbm2xOwUzoRqhQjR",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIPuh8z",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - GFGV50343D - 24hs"
+            },
+            "price": 456.918,
+            "orderQty": 50,
+            "ordType": "LIMIT",
+            "side": "SELL",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-11:27:40.521-0300",
+            "avgPx": 0,
+            "lastPx": 0,
+            "lastQty": 0,
+            "cumQty": 0,
+            "leavesQty": 50,
+            "iceberg": "true",
+            "displayQty": 0,
+            "status": "CANCELLED",
+            "text": "Cancelled by Owner",
+            "numericOrderId": "04371705",
+            "origClOrdId": "p8EBRI10Df09erGl",
+            "originatingUsername": "ISV_MATRIZ4"
+        },
+        {
+            "orderId": "O0OveG8SJQE0-18875679",
+            "clOrdId": "499634758034667",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIR1fyi",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - D31O5 - CI"
+            },
+            "price": 142900,
+            "orderQty": 2000,
+            "ordType": "LIMIT",
+            "side": "SELL",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-16:25:58.419-0300",
+            "avgPx": 142900.000,
+            "lastPx": 142900,
+            "lastQty": 2000,
+            "cumQty": 2000,
+            "leavesQty": 0,
+            "iceberg": "true",
+            "displayQty": 0,
+            "status": "FILLED",
+            "text": " ",
+            "numericOrderId": "18875679",
+            "secondaryTradeID": "01199532",
+            "originatingUsername": "ISV_PBCP"
+        },
+        {
+            "orderId": "O0OveG8SHMvg-15204939",
+            "clOrdId": "499629349025799",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIQk4IG",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - TZXM6 - 24hs"
+            },
+            "price": 174.2,
+            "orderQty": 100000,
+            "ordType": "LIMIT",
+            "side": "BUY",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-14:55:59.665-0300",
+            "avgPx": 0,
+            "lastPx": 0,
+            "lastQty": 0,
+            "cumQty": 0,
+            "leavesQty": 100000,
+            "status": "CANCELLED",
+            "text": "CANCELED",
+            "originatingUsername": "12345678"
+        },
+        {
+            "orderId": "O0OveG8SJuR6-19594530",
+            "clOrdId": "11htt4uJvfK08AVN",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIR5Bjc",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - PESOS - 1D"
+            },
+            "price": 23.3,
+            "orderQty": 850000,
+            "ordType": "LIMIT",
+            "side": "BUY",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-16:50:57.236-0300",
+            "avgPx": 0,
+            "lastPx": 0,
+            "lastQty": 0,
+            "cumQty": 0,
+            "leavesQty": 850000,
+            "status": "CANCELLED",
+            "text": "REPLACED",
+            "originatingUsername": "ISV_MATRIZ4"
+        },
+        {
+            "orderId": "O0OveG8SHR9z-15336385",
+            "clOrdId": "isgyPNkvSNVzXWvx",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIQkutl",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - PESOS - 1D"
+            },
+            "price": 23.44,
+            "orderQty": 500000,
+            "ordType": "LIMIT",
+            "side": "SELL",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-15:00:04.737-0300",
+            "avgPx": 23.44000,
+            "lastPx": 23.44,
+            "lastQty": 500000,
+            "cumQty": 500000,
+            "leavesQty": 0,
+            "iceberg": "true",
+            "displayQty": 0,
+            "status": "FILLED",
+            "text": " ",
+            "numericOrderId": "15336385",
+            "secondaryTradeID": "00976748",
+            "originatingUsername": "ISV_MATRIZ4"
+        },
+        {
+            "orderId": "O0OveG8SIHXW-16897542",
+            "clOrdId": "499631547029418",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIQs7Fv",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - TRAN - CI"
+            },
+            "price": 1870,
+            "orderQty": 500,
+            "ordType": "LIMIT",
+            "side": "SELL",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-15:32:27.410-0300",
+            "avgPx": 1870.000,
+            "lastPx": 1870,
+            "lastQty": 500,
+            "cumQty": 500,
+            "leavesQty": 0,
+            "iceberg": "true",
+            "displayQty": 0,
+            "status": "FILLED",
+            "text": " ",
+            "numericOrderId": "16897542",
+            "secondaryTradeID": "01069471",
+            "originatingUsername": "ISV_PBCP"
+        },
+        {
+            "orderId": "O0OveG8SBobg-04460682",
+            "clOrdId": "JA3USnHRHelAh8bM",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIQ7U2m",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - GFGC63343D - 24hs"
+            },
+            "price": 145.999,
+            "orderQty": 10,
+            "ordType": "LIMIT",
+            "side": "SELL",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-12:07:23.770-0300",
+            "avgPx": 0,
+            "lastPx": 0,
+            "lastQty": 0,
+            "cumQty": 0,
+            "leavesQty": 10,
+            "iceberg": "true",
+            "displayQty": 0,
+            "status": "CANCELLED",
+            "text": "Cancelled by Owner",
+            "numericOrderId": "04460682",
+            "origClOrdId": "606pbDn30laIoKCn",
+            "originatingUsername": "ISV_MATRIZ4"
+        },
+        {
+            "orderId": "O0OveG8SHODc-15248883",
+            "clOrdId": "499629390025927",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIQkDKz",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - TZXM6 - 24hs"
+            },
+            "price": 174.2,
+            "orderQty": 100000,
+            "ordType": "LIMIT",
+            "side": "BUY",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-14:56:30.863-0300",
+            "avgPx": 174.2000,
+            "lastPx": 174.2,
+            "lastQty": 100000,
+            "cumQty": 100000,
+            "leavesQty": 0,
+            "iceberg": "true",
+            "displayQty": 0,
+            "status": "FILLED",
+            "text": " ",
+            "numericOrderId": "15248883",
+            "secondaryTradeID": "00967106",
+            "originatingUsername": "ISV_PBCP"
+        },
+        {
+            "orderId": "O0OveG8SJhbi-19318407",
+            "clOrdId": "ImBZzX15D7W8PZet",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIR3nkb",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - GFGC65343D - 24hs"
+            },
+            "price": 138,
+            "orderQty": 30,
+            "ordType": "LIMIT",
+            "side": "SELL",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-16:37:52.680-0300",
+            "avgPx": 138.000,
+            "lastPx": 138,
+            "lastQty": 30,
+            "cumQty": 30,
+            "leavesQty": 0,
+            "iceberg": "true",
+            "displayQty": 0,
+            "status": "FILLED",
+            "text": " ",
+            "numericOrderId": "19318407",
+            "secondaryTradeID": "01226436",
+            "originatingUsername": "ISV_MATRIZ4"
+        },
+        {
+            "orderId": "O0OveG8SFvdK-12218519",
+            "clOrdId": "Db4PkAmFzPfriH3d",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIQVwSg",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - PESOS - 1D"
+            },
+            "price": 24.2,
+            "orderQty": 10000000,
+            "ordType": "LIMIT",
+            "side": "BUY",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-13:58:02.824-0300",
+            "avgPx": 24.2000,
+            "lastPx": 24.2,
+            "lastQty": 10000000,
+            "cumQty": 10000000,
+            "leavesQty": 0,
+            "iceberg": "true",
+            "displayQty": 0,
+            "status": "FILLED",
+            "text": " ",
+            "numericOrderId": "12218519",
+            "secondaryTradeID": "00803516",
+            "originatingUsername": "ISV_MATRIZ4"
+        },
+        {
+            "orderId": "O0OveG8SFSCn-11225349",
+            "clOrdId": "sKgg3nrMGq47J0l7",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIQRuje",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - GFGV35777D - 24hs"
+            },
+            "price": 70,
+            "orderQty": 50,
+            "ordType": "LIMIT",
+            "side": "BUY",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-13:41:45.985-0300",
+            "avgPx": 70.000,
+            "lastPx": 70,
+            "lastQty": 1,
+            "cumQty": 19,
+            "leavesQty": 31,
+            "iceberg": "true",
+            "displayQty": 4,
+            "status": "CANCELLED",
+            "text": "REPLACED",
+            "originatingUsername": "ISV_MATRIZ4"
+        },
+        {
+            "orderId": "O0OveG8SJyfB-19680985",
+            "clOrdId": "2XI1ruRe5NXwF5pg",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIR5ctu",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - GFGV31777D - 24hs"
+            },
+            "price": 37.5,
+            "orderQty": 2,
+            "ordType": "LIMIT",
+            "side": "SELL",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-16:55:38.041-0300",
+            "avgPx": 37.5000,
+            "lastPx": 37.5,
+            "lastQty": 2,
+            "cumQty": 2,
+            "leavesQty": 0,
+            "iceberg": "true",
+            "displayQty": 0,
+            "status": "FILLED",
+            "text": " ",
+            "numericOrderId": "19680985",
+            "secondaryTradeID": "01263671",
+            "originatingUsername": "ISV_MATRIZ4"
+        },
+        {
+            "orderId": "O0OveG8SJxOY-19651963",
+            "clOrdId": "wv7D99ePSobZAN1z",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIR5gFs",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - GFGC65343D - 24hs"
+            },
+            "price": 145,
+            "orderQty": 15,
+            "ordType": "LIMIT",
+            "side": "SELL",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-16:56:28.149-0300",
+            "avgPx": 145.000,
+            "lastPx": 145,
+            "lastQty": 2,
+            "cumQty": 15,
+            "leavesQty": 0,
+            "iceberg": "true",
+            "displayQty": 0,
+            "status": "FILLED",
+            "text": " ",
+            "numericOrderId": "19651963",
+            "secondaryTradeID": "01264955",
+            "originatingUsername": "ISV_MATRIZ4"
+        },
+        {
+            "orderId": "O0OveG8SHO5t-15245162",
+            "clOrdId": "499629384025872",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIQkCFe",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - TZXM6 - CI"
+            },
+            "price": 174.25,
+            "orderQty": 100000,
+            "ordType": "LIMIT",
+            "side": "SELL",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-14:56:24.709-0300",
+            "avgPx": 174.25000,
+            "lastPx": 174.25,
+            "lastQty": 100000,
+            "cumQty": 100000,
+            "leavesQty": 0,
+            "iceberg": "true",
+            "displayQty": 0,
+            "status": "FILLED",
+            "text": " ",
+            "numericOrderId": "15245162",
+            "secondaryTradeID": "00966893",
+            "originatingUsername": "ISV_PBCP"
+        },
+        {
+            "orderId": "O0OveG8SFSCn-11364133",
+            "clOrdId": "hkfpP844rbxxST81",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIQdLpn",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - GFGV35777D - 24hs"
+            },
+            "price": 70.001,
+            "orderQty": 50,
+            "ordType": "LIMIT",
+            "side": "BUY",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-14:30:10.280-0300",
+            "avgPx": 70.000345,
+            "lastPx": 0,
+            "lastQty": 0,
+            "cumQty": 29,
+            "leavesQty": 21,
+            "iceberg": "true",
+            "displayQty": 0,
+            "status": "CANCELLED",
+            "text": "Cancelled by Owner",
+            "numericOrderId": "11364133",
+            "origClOrdId": "9eM7TbuKVpgwzW3z",
+            "originatingUsername": "ISV_MATRIZ4"
+        },
+        {
+            "orderId": "O0OveG8SHO9K-15247247",
+            "clOrdId": "499629387025901",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIQkCsD",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - TZXM6 - CI"
+            },
+            "price": 174.25,
+            "orderQty": 100000,
+            "ordType": "LIMIT",
+            "side": "SELL",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-14:56:27.527-0300",
+            "avgPx": 174.25000,
+            "lastPx": 174.25,
+            "lastQty": 100000,
+            "cumQty": 100000,
+            "leavesQty": 0,
+            "iceberg": "true",
+            "displayQty": 0,
+            "status": "FILLED",
+            "text": " ",
+            "numericOrderId": "15247247",
+            "secondaryTradeID": "00967031",
+            "originatingUsername": "ISV_PBCP"
+        },
+        {
+            "orderId": "O0OveG8SHPXP-15290654",
+            "clOrdId": "499629442026065",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIQkPdn",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - TZXM6 - 24hs"
+            },
+            "price": 174.25,
+            "orderQty": 100000,
+            "ordType": "LIMIT",
+            "side": "BUY",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-14:57:22.512-0300",
+            "avgPx": 174.25000,
+            "lastPx": 174.25,
+            "lastQty": 100000,
+            "cumQty": 100000,
+            "leavesQty": 0,
+            "iceberg": "true",
+            "displayQty": 0,
+            "status": "FILLED",
+            "text": " ",
+            "numericOrderId": "15290654",
+            "secondaryTradeID": "00969460",
+            "originatingUsername": "ISV_PBCP"
+        },
+        {
+            "orderId": "O0OveG8SHQR0-15316701",
+            "clOrdId": "61gFEw3P3QoHj5qk",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIQka3r",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - PESOS - 1D"
+            },
+            "price": 23.49,
+            "orderQty": 3000000,
+            "ordType": "LIMIT",
+            "side": "SELL",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-14:58:15.790-0300",
+            "avgPx": 0,
+            "lastPx": 0,
+            "lastQty": 0,
+            "cumQty": 0,
+            "leavesQty": 3000000,
+            "iceberg": "true",
+            "displayQty": 0,
+            "status": "CANCELLED",
+            "text": "Cancelled by Owner",
+            "numericOrderId": "15316701",
+            "origClOrdId": "8KIQ7xmg4qkNZ76v",
+            "originatingUsername": "ISV_MATRIZ4"
+        },
+        {
+            "orderId": "O0OveG8SATq0-01762346",
+            "clOrdId": "iTOzOadbZ32x0YUq",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIPiTN0",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - GFGV38777D - 24hs"
+            },
+            "price": 115,
+            "orderQty": 4,
+            "ordType": "LIMIT",
+            "side": "BUY",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-10:55:03.962-0300",
+            "avgPx": 0,
+            "lastPx": 0,
+            "lastQty": 0,
+            "cumQty": 0,
+            "leavesQty": 4,
+            "status": "CANCELLED",
+            "text": "REPLACED",
+            "originatingUsername": "ISV_MATRIZ4"
+        },
+        {
+            "orderId": "O0OveG8SBIyG-03500269",
+            "clOrdId": "ru2cgCs8ZAfZ0cMi",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIPr1FH",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - GFGV38777D - 24hs"
+            },
+            "price": 111,
+            "orderQty": 6,
+            "ordType": "LIMIT",
+            "side": "BUY",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-11:16:08.940-0300",
+            "avgPx": 111.000,
+            "lastPx": 111,
+            "lastQty": 6,
+            "cumQty": 6,
+            "leavesQty": 0,
+            "iceberg": "true",
+            "displayQty": 0,
+            "status": "FILLED",
+            "text": " ",
+            "numericOrderId": "03500269",
+            "secondaryTradeID": "00239353",
+            "originatingUsername": "ISV_MATRIZ4"
+        },
+        {
+            "orderId": "O0OveG8SIpvq-17872333",
+            "clOrdId": "499633205032070",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIQwoqg",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - S16E6 - CI"
+            },
+            "price": 108.3,
+            "orderQty": 156044,
+            "ordType": "LIMIT",
+            "side": "SELL",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-16:00:05.827-0300",
+            "avgPx": 108.3000,
+            "lastPx": 108.3,
+            "lastQty": 156044,
+            "cumQty": 156044,
+            "leavesQty": 0,
+            "iceberg": "true",
+            "displayQty": 0,
+            "status": "FILLED",
+            "text": " ",
+            "numericOrderId": "17872333",
+            "secondaryTradeID": "01134813",
+            "originatingUsername": "ISV_PBCP"
+        },
+        {
+            "orderId": "O0OveG8SHP3t-15275183",
+            "clOrdId": "499629423025999",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIQkMv8",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - TRAN - CI"
+            },
+            "price": 1910,
+            "orderQty": 20,
+            "ordType": "LIMIT",
+            "side": "SELL",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-14:57:03.611-0300",
+            "avgPx": 0,
+            "lastPx": 0,
+            "lastQty": 0,
+            "cumQty": 0,
+            "leavesQty": 20,
+            "iceberg": "true",
+            "displayQty": 0,
+            "status": "CANCELLED",
+            "text": "Cancelled by Owner",
+            "numericOrderId": "15275183",
+            "origClOrdId": "499629413025966",
+            "originatingUsername": "ISV_PBCP"
+        },
+        {
+            "orderId": "O0OveG8SHKRB-15140154",
+            "clOrdId": "0sUFBV53GjhT6pEA",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIQl83B",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - GFGC65343D - 24hs"
+            },
+            "price": 135.9,
+            "orderQty": 10,
+            "ordType": "LIMIT",
+            "side": "SELL",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-15:01:26.268-0300",
+            "avgPx": 135.9000,
+            "lastPx": 135.9,
+            "lastQty": 2,
+            "cumQty": 10,
+            "leavesQty": 0,
+            "iceberg": "true",
+            "displayQty": 0,
+            "status": "FILLED",
+            "text": " ",
+            "numericOrderId": "15140154",
+            "secondaryTradeID": "00979699",
+            "originatingUsername": "ISV_MATRIZ4"
+        },
+        {
+            "orderId": "O0OveG8SJuR6-19595824",
+            "clOrdId": "HhjEDjMOyhLu11Yv",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIR5D8s",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - PESOS - 1D"
+            },
+            "price": 23.31,
+            "orderQty": 850000,
+            "ordType": "LIMIT",
+            "side": "BUY",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-16:51:11.320-0300",
+            "avgPx": 0,
+            "lastPx": 0,
+            "lastQty": 0,
+            "cumQty": 0,
+            "leavesQty": 850000,
+            "status": "CANCELLED",
+            "text": "REPLACED",
+            "originatingUsername": "ISV_MATRIZ4"
+        },
+        {
+            "orderId": "O0OveG8SBdPW-04129477",
+            "clOrdId": "499616589008414",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIPtKDy",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - PFE - 24hs"
+            },
+            "price": 9715,
+            "orderQty": 78,
+            "ordType": "LIMIT",
+            "side": "BUY",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-11:23:09.361-0300",
+            "avgPx": 9715.000,
+            "lastPx": 9715,
+            "lastQty": 78,
+            "cumQty": 78,
+            "leavesQty": 0,
+            "iceberg": "true",
+            "displayQty": 0,
+            "status": "FILLED",
+            "text": " ",
+            "numericOrderId": "04129477",
+            "secondaryTradeID": "00271996",
+            "originatingUsername": "ISV_PBCP"
+        },
+        {
+            "orderId": null,
+            "clOrdId": "499633208032092",
+            "proprietary": "ISV_PBCP",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - S16E6 - CI"
+            },
+            "price": 108.3,
+            "orderQty": 156044,
+            "side": "SELL",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-16:00:08.189-0300",
+            "status": "PENDING_CANCEL",
+            "text": "Pendiente de Cancelacion",
+            "origClOrdId": "499633208032090"
+        },
+        {
+            "orderId": "O0OveG8SJi6f-19326165",
+            "clOrdId": "BoZ7hew8kwDAcbRd",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIR4KV2",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - GFGC65343D - 24hs"
+            },
+            "price": 140.9,
+            "orderQty": 50,
+            "ordType": "LIMIT",
+            "side": "SELL",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-16:42:08.698-0300",
+            "avgPx": 140.9000,
+            "lastPx": 0,
+            "lastQty": 0,
+            "cumQty": 5,
+            "leavesQty": 45,
+            "iceberg": "true",
+            "displayQty": 0,
+            "status": "CANCELLED",
+            "text": "Cancelled by Owner",
+            "numericOrderId": "19326165",
+            "origClOrdId": "afoPYpZ0A33UrwvB",
+            "originatingUsername": "ISV_MATRIZ4"
+        },
+        {
+            "orderId": "O0OveG8SITO7-17248363",
+            "clOrdId": "499632099031233",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIQtnZ1",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - S16E6 - CI"
+            },
+            "price": 106.2,
+            "orderQty": 441619,
+            "ordType": "LIMIT",
+            "side": "SELL",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-15:41:39.055-0300",
+            "avgPx": 106.2000,
+            "lastPx": 106.2,
+            "lastQty": 441619,
+            "cumQty": 441619,
+            "leavesQty": 0,
+            "iceberg": "true",
+            "displayQty": 0,
+            "status": "FILLED",
+            "text": " ",
+            "numericOrderId": "17248363",
+            "secondaryTradeID": "01091837",
+            "originatingUsername": "ISV_PBCP"
+        },
+        {
+            "orderId": "O0OveG8SGWp5-13491486",
+            "clOrdId": "499627453023055",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIQbwN8",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - TZXM6 - CI"
+            },
+            "price": 174.55,
+            "orderQty": 100000,
+            "ordType": "LIMIT",
+            "side": "SELL",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-14:24:13.636-0300",
+            "avgPx": 174.55000,
+            "lastPx": 174.55,
+            "lastQty": 100000,
+            "cumQty": 100000,
+            "leavesQty": 0,
+            "iceberg": "true",
+            "displayQty": 0,
+            "status": "FILLED",
+            "text": " ",
+            "numericOrderId": "13491486",
+            "secondaryTradeID": "00875003",
+            "originatingUsername": "ISV_PBCP"
+        },
+        {
+            "orderId": "O0OveG8SHOHA-15251110",
+            "clOrdId": "499629393025956",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIQkDzR",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - TZXM6 - 24hs"
+            },
+            "price": 174.2,
+            "orderQty": 16068,
+            "ordType": "LIMIT",
+            "side": "BUY",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-14:56:33.152-0300",
+            "avgPx": 174.2000,
+            "lastPx": 174.2,
+            "lastQty": 16068,
+            "cumQty": 16068,
+            "leavesQty": 0,
+            "iceberg": "true",
+            "displayQty": 0,
+            "status": "FILLED",
+            "text": " ",
+            "numericOrderId": "15251110",
+            "secondaryTradeID": "00967228",
+            "originatingUsername": "ISV_PBCP"
+        },
+        {
+            "orderId": "O0OveG8SHOGx-15250816",
+            "clOrdId": "499629393025944",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIQkDtr",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - TZXM6 - CI"
+            },
+            "price": 174.25,
+            "orderQty": 16068,
+            "ordType": "LIMIT",
+            "side": "SELL",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-14:56:33.043-0300",
+            "avgPx": 174.25000,
+            "lastPx": 174.25,
+            "lastQty": 16068,
+            "cumQty": 16068,
+            "leavesQty": 0,
+            "iceberg": "true",
+            "displayQty": 0,
+            "status": "FILLED",
+            "text": " ",
+            "numericOrderId": "15250816",
+            "secondaryTradeID": "00967210",
+            "originatingUsername": "ISV_PBCP"
+        },
+        {
+            "orderId": "O0OveG8SI19j-16433990",
+            "clOrdId": "iNPMFUiyQEs26dbP",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIQqLdd",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - GFGC69343D - 24hs"
+            },
+            "price": 95,
+            "orderQty": 10,
+            "ordType": "LIMIT",
+            "side": "SELL",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-15:22:35.881-0300",
+            "avgPx": 95.000,
+            "lastPx": 95,
+            "lastQty": 10,
+            "cumQty": 10,
+            "leavesQty": 0,
+            "iceberg": "true",
+            "displayQty": 0,
+            "status": "FILLED",
+            "text": " ",
+            "numericOrderId": "16433990",
+            "secondaryTradeID": "01044472",
+            "originatingUsername": "ISV_MATRIZ4"
+        },
+        {
+            "orderId": "O0OveG8SBOW5-03653885",
+            "clOrdId": "lZfWH4uDjcwZtGkJ",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIPrjiS",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - GFGV31777D - 24hs"
+            },
+            "price": 35.001,
+            "orderQty": 50,
+            "ordType": "LIMIT",
+            "side": "SELL",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-11:18:18.675-0300",
+            "avgPx": 35.001000,
+            "lastPx": 35.001,
+            "lastQty": 13,
+            "cumQty": 50,
+            "leavesQty": 0,
+            "iceberg": "true",
+            "displayQty": 0,
+            "status": "FILLED",
+            "text": " ",
+            "numericOrderId": "03653885",
+            "secondaryTradeID": "00250088",
+            "originatingUsername": "ISV_MATRIZ4"
+        },
+        {
+            "orderId": "O0OveG8SITOA-17248371",
+            "clOrdId": "499632099031246",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIQtnZC",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - S16E6 - 24hs"
+            },
+            "price": 106.2,
+            "orderQty": 441619,
+            "ordType": "LIMIT",
+            "side": "BUY",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-15:41:39.148-0300",
+            "avgPx": 106.2000,
+            "lastPx": 106.2,
+            "lastQty": 441619,
+            "cumQty": 441619,
+            "leavesQty": 0,
+            "iceberg": "true",
+            "displayQty": 0,
+            "status": "FILLED",
+            "text": " ",
+            "numericOrderId": "17248371",
+            "secondaryTradeID": "01091838",
+            "originatingUsername": "ISV_PBCP"
+        },
+        {
+            "orderId": "O0OveG8SAgf3-02269990",
+            "clOrdId": "U74b8925urvlvZ9E",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIPko3K",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - GFGV38777D - 24hs"
+            },
+            "price": 127,
+            "orderQty": 10,
+            "ordType": "LIMIT",
+            "side": "SELL",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-11:01:31.740-0300",
+            "avgPx": 127.000,
+            "lastPx": 127,
+            "lastQty": 10,
+            "cumQty": 10,
+            "leavesQty": 0,
+            "iceberg": "true",
+            "displayQty": 0,
+            "status": "FILLED",
+            "text": " ",
+            "numericOrderId": "02269990",
+            "secondaryTradeID": "00155857",
+            "originatingUsername": "ISV_MATRIZ4"
+        },
+        {
+            "orderId": "O0OveG8SJQHK-18877007",
+            "clOrdId": "499634761034703",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIR1gOL",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - D31O5 - CI"
+            },
+            "price": 142900,
+            "orderQty": 595,
+            "ordType": "LIMIT",
+            "side": "SELL",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-16:26:01.034-0300",
+            "avgPx": 142900.000,
+            "lastPx": 142900,
+            "lastQty": 500,
+            "cumQty": 595,
+            "leavesQty": 0,
+            "iceberg": "true",
+            "displayQty": 0,
+            "status": "FILLED",
+            "text": " ",
+            "numericOrderId": "18877007",
+            "secondaryTradeID": "01199657",
+            "originatingUsername": "ISV_PBCP"
+        },
+        {
+            "orderId": "O0OveG8SFvkA-12222400",
+            "clOrdId": "Wfp1JTcRwIdsa2kd",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIQVxbH",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - PESOS - 1D"
+            },
+            "price": 24.2,
+            "orderQty": 10000000,
+            "ordType": "LIMIT",
+            "side": "BUY",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-13:58:07.495-0300",
+            "avgPx": 24.2000,
+            "lastPx": 24.2,
+            "lastQty": 10000000,
+            "cumQty": 10000000,
+            "leavesQty": 0,
+            "iceberg": "true",
+            "displayQty": 0,
+            "status": "FILLED",
+            "text": " ",
+            "numericOrderId": "12222400",
+            "secondaryTradeID": "00803764",
+            "originatingUsername": "ISV_MATRIZ4"
+        },
+        {
+            "orderId": "O0OveG8SJSae-18938196",
+            "clOrdId": "499634850034791",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIR1yuZ",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - D31O5 - 24hs"
+            },
+            "price": 142990,
+            "orderQty": 151,
+            "ordType": "LIMIT",
+            "side": "BUY",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-16:27:30.391-0300",
+            "avgPx": 142990.000,
+            "lastPx": 142990,
+            "lastQty": 151,
+            "cumQty": 151,
+            "leavesQty": 0,
+            "iceberg": "true",
+            "displayQty": 0,
+            "status": "FILLED",
+            "text": " ",
+            "numericOrderId": "18938196",
+            "secondaryTradeID": "01203515",
+            "originatingUsername": "ISV_PBCP"
+        },
+        {
+            "orderId": "O0OveG8SHO5v-15245171",
+            "clOrdId": "499629384025883",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIQkCFr",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - TZXM6 - 24hs"
+            },
+            "price": 174.2,
+            "orderQty": 100000,
+            "ordType": "LIMIT",
+            "side": "BUY",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-14:56:24.819-0300",
+            "avgPx": 174.2000,
+            "lastPx": 174.2,
+            "lastQty": 100000,
+            "cumQty": 100000,
+            "leavesQty": 0,
+            "iceberg": "true",
+            "displayQty": 0,
+            "status": "FILLED",
+            "text": " ",
+            "numericOrderId": "15245171",
+            "secondaryTradeID": "00966896",
+            "originatingUsername": "ISV_PBCP"
+        },
+        {
+            "orderId": "O0OveG8SJzd6-19703288",
+            "clOrdId": "a9PmzGEDTpb6G1Bh",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIR5kpN",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - GFGC61558D - 24hs"
+            },
+            "price": 237,
+            "orderQty": 19,
+            "ordType": "LIMIT",
+            "side": "SELL",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-16:57:18.294-0300",
+            "avgPx": 237.000,
+            "lastPx": 237,
+            "lastQty": 19,
+            "cumQty": 19,
+            "leavesQty": 0,
+            "iceberg": "true",
+            "displayQty": 0,
+            "status": "FILLED",
+            "text": " ",
+            "numericOrderId": "19703288",
+            "secondaryTradeID": "01266940",
+            "originatingUsername": "ISV_MATRIZ4"
+        },
+        {
+            "orderId": "O0OveG8SASTo-01783100",
+            "clOrdId": "TeLUke77iVZqELYh",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIPiHn9",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - GFGV41777D - 24hs"
+            },
+            "price": 174.8,
+            "orderQty": 50,
+            "ordType": "LIMIT",
+            "side": "SELL",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-10:54:19.357-0300",
+            "avgPx": 0,
+            "lastPx": 0,
+            "lastQty": 0,
+            "cumQty": 0,
+            "leavesQty": 50,
+            "iceberg": "true",
+            "displayQty": 0,
+            "status": "CANCELLED",
+            "text": "Cancelled by Owner",
+            "numericOrderId": "01783100",
+            "origClOrdId": "gYZC00nahcRTkZSz",
+            "originatingUsername": "ISV_MATRIZ4"
+        },
+        {
+            "orderId": "O0OveG8SHP3t-15275183",
+            "clOrdId": "499629413025966",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIQkMv8",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - TRAN - CI"
+            },
+            "price": 1910,
+            "orderQty": 20,
+            "ordType": "LIMIT",
+            "side": "SELL",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-14:57:03.611-0300",
+            "avgPx": 0,
+            "lastPx": 0,
+            "lastQty": 0,
+            "cumQty": 0,
+            "leavesQty": 20,
+            "status": "CANCELLED",
+            "text": "CANCELED",
+            "originatingUsername": "12345678"
+        },
+        {
+            "orderId": "O0OveG8SHPVX-15290020",
+            "clOrdId": "499629440026031",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIQkPRK",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - TZXM6 - 24hs"
+            },
+            "price": 174.25,
+            "orderQty": 100000,
+            "ordType": "LIMIT",
+            "side": "BUY",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-14:57:20.236-0300",
+            "avgPx": 174.25000,
+            "lastPx": 174.25,
+            "lastQty": 100000,
+            "cumQty": 100000,
+            "leavesQty": 0,
+            "iceberg": "true",
+            "displayQty": 0,
+            "status": "FILLED",
+            "text": " ",
+            "numericOrderId": "15290020",
+            "secondaryTradeID": "00969388",
+            "originatingUsername": "ISV_PBCP"
+        },
+        {
+            "orderId": "O0OveG8SDcSK-08005023",
+            "clOrdId": "499620105015327",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIQBkmN",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - S16E6 - 24hs"
+            },
+            "price": 107,
+            "orderQty": 175000,
+            "ordType": "LIMIT",
+            "side": "BUY",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-12:21:45.968-0300",
+            "avgPx": 107.000,
+            "lastPx": 107,
+            "lastQty": 175000,
+            "cumQty": 175000,
+            "leavesQty": 0,
+            "iceberg": "true",
+            "displayQty": 0,
+            "status": "FILLED",
+            "text": " ",
+            "numericOrderId": "08005023",
+            "secondaryTradeID": "00510231",
+            "originatingUsername": "ISV_PBCP"
+        },
+        {
+            "orderId": "O0OveG8SFQRq-11196708",
+            "clOrdId": "ZX9AbX5zqMp6yr3d",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIQTLeS",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - GFGV31777D - 24hs"
+            },
+            "price": 38.35,
+            "orderQty": 50,
+            "ordType": "LIMIT",
+            "side": "SELL",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-13:47:28.626-0300",
+            "avgPx": 38.35000,
+            "lastPx": 38.35,
+            "lastQty": 1,
+            "cumQty": 10,
+            "leavesQty": 40,
+            "iceberg": "true",
+            "displayQty": 5,
+            "status": "CANCELLED",
+            "text": "REPLACED",
+            "originatingUsername": "ISV_MATRIZ4"
+        },
+        {
+            "orderId": "O0OveG8SASTo-01783100",
+            "clOrdId": "gYZC00nahcRTkZSz",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIPiHn9",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - GFGV41777D - 24hs"
+            },
+            "price": 174.8,
+            "orderQty": 50,
+            "ordType": "LIMIT",
+            "side": "SELL",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-10:54:19.357-0300",
+            "avgPx": 0,
+            "lastPx": 0,
+            "lastQty": 0,
+            "cumQty": 0,
+            "leavesQty": 50,
+            "iceberg": "true",
+            "displayQty": 5,
+            "status": "CANCELLED",
+            "text": "CANCELED",
+            "originatingUsername": "ISV_MATRIZ4"
+        },
+        {
+            "orderId": "NONE",
+            "clOrdId": "499633177032009",
+            "proprietary": "ISV_PBCP",
+            "execId": "251021090025-fix-6bf966ccf9-hmgc9-9324",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - S16E6 - CI"
+            },
+            "price": 108.3,
+            "orderQty": 500000,
+            "side": "SELL",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-15:59:37.043-0300",
+            "avgPx": 0,
+            "cumQty": 0,
+            "leavesQty": 0,
+            "status": "REJECTED",
+            "text": "Stock insuficiente. Cantidad disponible para venta de S16E6 - CI = -343956.00000000000000. TamaÃ±o de lote: 1.000000",
+            "originatingUsername": "12345678"
+        },
+        {
+            "orderId": "O0OveG8SHMnr-15200664",
+            "clOrdId": "499629347025777",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIQjzDe",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - TZXM6 - 24hs"
+            },
+            "price": 174.2,
+            "orderQty": 100000,
+            "ordType": "LIMIT",
+            "side": "BUY",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-14:55:47.148-0300",
+            "avgPx": 174.2000,
+            "lastPx": 174.2,
+            "lastQty": 100000,
+            "cumQty": 100000,
+            "leavesQty": 0,
+            "iceberg": "true",
+            "displayQty": 0,
+            "status": "FILLED",
+            "text": " ",
+            "numericOrderId": "15200664",
+            "secondaryTradeID": "00964441",
+            "originatingUsername": "ISV_PBCP"
+        },
+        {
+            "orderId": "O0OveG8SIIW9-16923888",
+            "clOrdId": "499631584029622",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIQsFCP",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - TRAN - 24hs"
+            },
+            "price": 1865,
+            "orderQty": 189,
+            "ordType": "LIMIT",
+            "side": "BUY",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-15:33:04.952-0300",
+            "avgPx": 1865.000,
+            "lastPx": 1865,
+            "lastQty": 189,
+            "cumQty": 189,
+            "leavesQty": 0,
+            "iceberg": "true",
+            "displayQty": 0,
+            "status": "FILLED",
+            "text": " ",
+            "numericOrderId": "16923888",
+            "secondaryTradeID": "01071109",
+            "originatingUsername": "ISV_PBCP"
+        },
+        {
+            "orderId": "O0OveG8SJkTz-19372820",
+            "clOrdId": "ApzaPDIzxXSFsNp3",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIR442q",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - GFGV38777D - 24hs"
+            },
+            "price": 116.5,
+            "orderQty": 75,
+            "ordType": "LIMIT",
+            "side": "BUY",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-16:39:50.345-0300",
+            "avgPx": 116.5000,
+            "lastPx": 116.5,
+            "lastQty": 75,
+            "cumQty": 75,
+            "leavesQty": 0,
+            "iceberg": "true",
+            "displayQty": 0,
+            "status": "FILLED",
+            "text": " ",
+            "numericOrderId": "19372820",
+            "secondaryTradeID": "01230214",
+            "originatingUsername": "ISV_MATRIZ4"
+        },
+        {
+            "orderId": "O0OveG8SIIOR-16920044",
+            "clOrdId": "499631580029565",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIQsE4V",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - TRAN - 24hs"
+            },
+            "price": 1865,
+            "orderQty": 500,
+            "ordType": "LIMIT",
+            "side": "BUY",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-15:33:00.316-0300",
+            "avgPx": 1865.000,
+            "lastPx": 1865,
+            "lastQty": 500,
+            "cumQty": 500,
+            "leavesQty": 0,
+            "iceberg": "true",
+            "displayQty": 0,
+            "status": "FILLED",
+            "text": " ",
+            "numericOrderId": "16920044",
+            "secondaryTradeID": "01070899",
+            "originatingUsername": "ISV_PBCP"
+        },
+        {
+            "orderId": "O0OveG8SHKvS-15151548",
+            "clOrdId": "rxcvUfTFXb0hfqK7",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIQjkYs",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - GFGC63343D - 24hs"
+            },
+            "price": 171.002,
+            "orderQty": 10,
+            "ordType": "LIMIT",
+            "side": "SELL",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-14:54:32.989-0300",
+            "avgPx": 171.002000,
+            "lastPx": 171.002,
+            "lastQty": 10,
+            "cumQty": 10,
+            "leavesQty": 0,
+            "iceberg": "true",
+            "displayQty": 0,
+            "status": "FILLED",
+            "text": " ",
+            "numericOrderId": "15151548",
+            "secondaryTradeID": "00961359",
+            "originatingUsername": "ISV_MATRIZ4"
+        },
+        {
+            "orderId": "O0OveG8SHMvg-15204939",
+            "clOrdId": "499629359025813",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIQk4IG",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - TZXM6 - 24hs"
+            },
+            "price": 174.2,
+            "orderQty": 100000,
+            "ordType": "LIMIT",
+            "side": "BUY",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-14:55:59.665-0300",
+            "avgPx": 0,
+            "lastPx": 0,
+            "lastQty": 0,
+            "cumQty": 0,
+            "leavesQty": 100000,
+            "iceberg": "true",
+            "displayQty": 0,
+            "status": "CANCELLED",
+            "text": "Cancelled by Owner",
+            "numericOrderId": "15204939",
+            "origClOrdId": "499629349025799",
+            "originatingUsername": "ISV_PBCP"
+        },
+        {
+            "orderId": "O0OveG8SFx4V-12262808",
+            "clOrdId": "7QtnIAxhxA2urcTR",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIQW9YP",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - PESOS - 1D"
+            },
+            "price": 24.2,
+            "orderQty": 500000,
+            "ordType": "LIMIT",
+            "side": "BUY",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-13:58:42.216-0300",
+            "avgPx": 24.2000,
+            "lastPx": 24.2,
+            "lastQty": 500000,
+            "cumQty": 500000,
+            "leavesQty": 0,
+            "iceberg": "true",
+            "displayQty": 0,
+            "status": "FILLED",
+            "text": " ",
+            "numericOrderId": "12262808",
+            "secondaryTradeID": "00806688",
+            "originatingUsername": "ISV_MATRIZ4"
+        },
+        {
+            "orderId": "O0OveG8SHKJV-15136738",
+            "clOrdId": "499629235025676",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIQjfp1",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - TZXM6 - 24hs"
+            },
+            "price": 174.2,
+            "orderQty": 5000,
+            "ordType": "LIMIT",
+            "side": "BUY",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-14:53:55.145-0300",
+            "avgPx": 174.2000,
+            "lastPx": 174.2,
+            "lastQty": 5000,
+            "cumQty": 5000,
+            "leavesQty": 0,
+            "iceberg": "true",
+            "displayQty": 0,
+            "status": "FILLED",
+            "text": " ",
+            "numericOrderId": "15136738",
+            "secondaryTradeID": "00960047",
+            "originatingUsername": "ISV_PBCP"
+        },
+        {
+            "orderId": "O0OveG8SHO3k-15244195",
+            "clOrdId": "499629382025858",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIQkByC",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - TZXM6 - 24hs"
+            },
+            "price": 174.2,
+            "orderQty": 100000,
+            "ordType": "LIMIT",
+            "side": "BUY",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-14:56:22.391-0300",
+            "avgPx": 174.2000,
+            "lastPx": 174.2,
+            "lastQty": 100000,
+            "cumQty": 100000,
+            "leavesQty": 0,
+            "iceberg": "true",
+            "displayQty": 0,
+            "status": "FILLED",
+            "text": " ",
+            "numericOrderId": "15244195",
+            "secondaryTradeID": "00966838",
+            "originatingUsername": "ISV_PBCP"
+        },
+        {
+            "orderId": "O0OveG8SIpvs-17872339",
+            "clOrdId": "499633205032088",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIQwoqq",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - S16E6 - 24hs"
+            },
+            "price": 106.2,
+            "orderQty": 156044,
+            "ordType": "LIMIT",
+            "side": "BUY",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-16:00:05.921-0300",
+            "avgPx": 106.2000,
+            "lastPx": 106.2,
+            "lastQty": 156044,
+            "cumQty": 156044,
+            "leavesQty": 0,
+            "iceberg": "true",
+            "displayQty": 0,
+            "status": "FILLED",
+            "text": " ",
+            "numericOrderId": "17872339",
+            "secondaryTradeID": "01134814",
+            "originatingUsername": "ISV_PBCP"
+        },
+        {
+            "orderId": "O0OveG8SHLbb-15165406",
+            "clOrdId": "G234LUp1S56mdfUy",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIQk5nd",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - GFGC63343D - 24hs"
+            },
+            "price": 172.5,
+            "orderQty": 10,
+            "ordType": "LIMIT",
+            "side": "SELL",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-14:56:02.735-0300",
+            "avgPx": 172.5000,
+            "lastPx": 172.5,
+            "lastQty": 3,
+            "cumQty": 10,
+            "leavesQty": 0,
+            "iceberg": "true",
+            "displayQty": 0,
+            "status": "FILLED",
+            "text": " ",
+            "numericOrderId": "15165406",
+            "secondaryTradeID": "00965852",
+            "originatingUsername": "ISV_MATRIZ4"
+        },
+        {
+            "orderId": "O0OveG8SC0k1-04881077",
+            "clOrdId": "499617415009222",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIPwspz",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - S16E6 - CI"
+            },
+            "price": 108.299,
+            "orderQty": 259974,
+            "ordType": "LIMIT",
+            "side": "SELL",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-11:36:55.803-0300",
+            "avgPx": 108.299000,
+            "lastPx": 108.299,
+            "lastQty": 259974,
+            "cumQty": 259974,
+            "leavesQty": 0,
+            "iceberg": "true",
+            "displayQty": 0,
+            "status": "FILLED",
+            "text": " ",
+            "numericOrderId": "04881077",
+            "secondaryTradeID": "00320508",
+            "originatingUsername": "ISV_PBCP"
+        },
+        {
+            "orderId": "O0OveG8SJ7jh-18352251",
+            "clOrdId": "499634028034163",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIQz9MB",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - TRAN - 24hs"
+            },
+            "price": 1846,
+            "orderQty": 55,
+            "ordType": "LIMIT",
+            "side": "BUY",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-16:13:48.147-0300",
+            "avgPx": 1846.000,
+            "lastPx": 1846,
+            "lastQty": 55,
+            "cumQty": 55,
+            "leavesQty": 0,
+            "iceberg": "true",
+            "displayQty": 0,
+            "status": "FILLED",
+            "text": " ",
+            "numericOrderId": "18352251",
+            "secondaryTradeID": "01166119",
+            "originatingUsername": "ISV_PBCP"
+        },
+        {
+            "orderId": "O0OveG8SCQCI-05715163",
+            "clOrdId": "09GKLzEsNfSWfGL4",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIQ1hpm",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - GFGV31777D - 24hs"
+            },
+            "price": 40,
+            "orderQty": 50,
+            "ordType": "LIMIT",
+            "side": "SELL",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-11:53:51.299-0300",
+            "avgPx": 40.000,
+            "lastPx": 40,
+            "lastQty": 45,
+            "cumQty": 50,
+            "leavesQty": 0,
+            "iceberg": "true",
+            "displayQty": 0,
+            "status": "FILLED",
+            "text": " ",
+            "numericOrderId": "05715163",
+            "secondaryTradeID": "00383151",
+            "originatingUsername": "ISV_MATRIZ4"
+        },
+        {
+            "orderId": "O0OveG8SGLG9-13085326",
+            "clOrdId": "MZeszUlKUahxdnMc",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIQa5Xc",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - GFGV30777D - 24hs"
+            },
+            "price": 29.1,
+            "orderQty": 100,
+            "ordType": "LIMIT",
+            "side": "BUY",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-14:15:29.556-0300",
+            "avgPx": 0,
+            "lastPx": 0,
+            "lastQty": 0,
+            "cumQty": 0,
+            "leavesQty": 100,
+            "iceberg": "true",
+            "displayQty": 10,
+            "status": "CANCELLED",
+            "text": "CANCELED",
+            "originatingUsername": "ISV_MATRIZ4"
+        },
+        {
+            "orderId": "3327361079",
+            "clOrdId": "3sX1vwe4PBnDMd4R",
+            "proprietary": "ISV_PBCP",
+            "execId": "PTP251021110128-fix-internal-30377",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "DLR/OCT25"
+            },
+            "price": 1485.5,
+            "orderQty": 24,
+            "ordType": "LIMIT",
+            "side": "SELL",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-10:50:27.032-0300",
+            "avgPx": 1485.5000,
+            "lastPx": 0,
+            "lastQty": 0,
+            "cumQty": 6,
+            "leavesQty": 18,
+            "status": "CANCELLED",
+            "text": "Reemplazada",
+            "originatingUsername": "12345678"
+        },
+        {
+            "orderId": "O0OveG8SHLnt-15171424",
+            "clOrdId": "NmTif5xQN4OanrCo",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIQkHY2",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - GFGC65343D - 24hs"
+            },
+            "price": 134.5,
+            "orderQty": 10,
+            "ordType": "LIMIT",
+            "side": "SELL",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-14:56:42.075-0300",
+            "avgPx": 134.5000,
+            "lastPx": 134.5,
+            "lastQty": 4,
+            "cumQty": 10,
+            "leavesQty": 0,
+            "iceberg": "true",
+            "displayQty": 0,
+            "status": "FILLED",
+            "text": " ",
+            "numericOrderId": "15171424",
+            "secondaryTradeID": "00967924",
+            "originatingUsername": "ISV_MATRIZ4"
+        },
+        {
+            "orderId": "O0OveG8SHPbl-15292884",
+            "clOrdId": "499629444026094",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIQkQJE",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - TZXM6 - 24hs"
+            },
+            "price": 174.25,
+            "orderQty": 78932,
+            "ordType": "LIMIT",
+            "side": "BUY",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-14:57:24.770-0300",
+            "avgPx": 174.25000,
+            "lastPx": 174.25,
+            "lastQty": 78932,
+            "cumQty": 78932,
+            "leavesQty": 0,
+            "iceberg": "true",
+            "displayQty": 0,
+            "status": "FILLED",
+            "text": " ",
+            "numericOrderId": "15292884",
+            "secondaryTradeID": "00969634",
+            "originatingUsername": "ISV_PBCP"
+        },
+        {
+            "orderId": "O0OveG8SASTo-01711912",
+            "clOrdId": "HWjUEsysKuixS3gN",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIPiFih",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - GFGV41777D - 24hs"
+            },
+            "price": 174.5,
+            "orderQty": 50,
+            "ordType": "LIMIT",
+            "side": "SELL",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-10:54:11.800-0300",
+            "avgPx": 0,
+            "lastPx": 0,
+            "lastQty": 0,
+            "cumQty": 0,
+            "leavesQty": 50,
+            "iceberg": "true",
+            "displayQty": 5,
+            "status": "CANCELLED",
+            "text": "REPLACED",
+            "originatingUsername": "ISV_MATRIZ4"
+        },
+        {
+            "orderId": "NONE",
+            "clOrdId": "499633208032090",
+            "proprietary": "ISV_PBCP",
+            "execId": "251021090025-fix-6bf966ccf9-hmgc9-9329",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - S16E6 - CI"
+            },
+            "price": 108.3,
+            "orderQty": 156044,
+            "side": "SELL",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-16:00:08.103-0300",
+            "avgPx": 0,
+            "cumQty": 0,
+            "leavesQty": 0,
+            "status": "REJECTED",
+            "text": "Stock insuficiente. Cantidad disponible para venta de S16E6 - CI = -156044.00000000000000. TamaÃ±o de lote: 1.000000",
+            "originatingUsername": "12345678"
+        },
+        {
+            "orderId": "O0OveG8SFwYB-12250208",
+            "clOrdId": "V0Q5eevBlcuo3X7j",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIQW5il",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - PESOS - 1D"
+            },
+            "price": 24.2,
+            "orderQty": 1000000,
+            "ordType": "LIMIT",
+            "side": "BUY",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-13:58:31.324-0300",
+            "avgPx": 24.2000,
+            "lastPx": 24.2,
+            "lastQty": 1000000,
+            "cumQty": 1000000,
+            "leavesQty": 0,
+            "iceberg": "true",
+            "displayQty": 0,
+            "status": "FILLED",
+            "text": " ",
+            "numericOrderId": "12250208",
+            "secondaryTradeID": "00805452",
+            "originatingUsername": "ISV_MATRIZ4"
+        },
+        {
+            "orderId": "O0OveG8SCEmE-05343829",
+            "clOrdId": "TfTzP5x8OPK9KUVD",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIQ13FK",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - GFGV38777D - 24hs"
+            },
+            "price": 111.015,
+            "orderQty": 25,
+            "ordType": "LIMIT",
+            "side": "BUY",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-11:52:13.078-0300",
+            "avgPx": 111.015000,
+            "lastPx": 111.015,
+            "lastQty": 2,
+            "cumQty": 25,
+            "leavesQty": 0,
+            "iceberg": "true",
+            "displayQty": 0,
+            "status": "FILLED",
+            "text": " ",
+            "numericOrderId": "05343829",
+            "secondaryTradeID": "00375500",
+            "originatingUsername": "ISV_MATRIZ4"
+        },
+        {
+            "orderId": "O0OveG8SHU8K-15420740",
+            "clOrdId": "499629647026878",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIQl2Yn",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - S16E6 - 24hs"
+            },
+            "price": 106.2,
+            "orderQty": 450346,
+            "ordType": "LIMIT",
+            "side": "BUY",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-15:00:47.078-0300",
+            "avgPx": 106.2000,
+            "lastPx": 106.2,
+            "lastQty": 450346,
+            "cumQty": 450346,
+            "leavesQty": 0,
+            "iceberg": "true",
+            "displayQty": 0,
+            "status": "FILLED",
+            "text": " ",
+            "numericOrderId": "15420740",
+            "secondaryTradeID": "00978361",
+            "originatingUsername": "ISV_PBCP"
+        },
+        {
+            "orderId": "O0OveG8SI5fo-16573972",
+            "clOrdId": "D19eIE8EYAok4sDh",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIR59bg",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - GFGC69343D - 24hs"
+            },
+            "price": 98,
+            "orderQty": 10,
+            "ordType": "LIMIT",
+            "side": "SELL",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-16:50:38.816-0300",
+            "avgPx": 0,
+            "lastPx": 0,
+            "lastQty": 0,
+            "cumQty": 0,
+            "leavesQty": 10,
+            "status": "CANCELLED",
+            "text": "CANCELED",
+            "originatingUsername": "ISV_MATRIZ4"
+        },
+        {
+            "orderId": "O0OveG8SBiTS-04279813",
+            "clOrdId": "dDjtPpwWAlU7d1CA",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIPuZ5O",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - GFGV31777D - 24hs"
+            },
+            "price": 35.25,
+            "orderQty": 50,
+            "ordType": "LIMIT",
+            "side": "SELL",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-11:27:14.687-0300",
+            "avgPx": 35.25000,
+            "lastPx": 35.25,
+            "lastQty": 1,
+            "cumQty": 50,
+            "leavesQty": 0,
+            "iceberg": "true",
+            "displayQty": 0,
+            "status": "FILLED",
+            "text": " ",
+            "numericOrderId": "04279813",
+            "secondaryTradeID": "00289939",
+            "originatingUsername": "ISV_MATRIZ4"
+        },
+        {
+            "orderId": "O0OveG8SJQHQ-18877043",
+            "clOrdId": "499634761034713",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIR1gP3",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - D31O5 - 24hs"
+            },
+            "price": 142910,
+            "orderQty": 595,
+            "ordType": "LIMIT",
+            "side": "BUY",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-16:26:01.164-0300",
+            "avgPx": 142910.000,
+            "lastPx": 142910,
+            "lastQty": 595,
+            "cumQty": 595,
+            "leavesQty": 0,
+            "iceberg": "true",
+            "displayQty": 0,
+            "status": "FILLED",
+            "text": " ",
+            "numericOrderId": "18877043",
+            "secondaryTradeID": "01199661",
+            "originatingUsername": "ISV_PBCP"
+        },
+        {
+            "orderId": "O0OveG8SJbyK-19217546",
+            "clOrdId": "K6JhvsN1EKD3tRMU",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIR3K34",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - GFGC63343D - 24hs"
+            },
+            "price": 175.01,
+            "orderQty": 50,
+            "ordType": "LIMIT",
+            "side": "SELL",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-16:34:55.424-0300",
+            "avgPx": 175.01000,
+            "lastPx": 175.01,
+            "lastQty": 50,
+            "cumQty": 50,
+            "leavesQty": 0,
+            "iceberg": "true",
+            "displayQty": 0,
+            "status": "FILLED",
+            "text": " ",
+            "numericOrderId": "19217546",
+            "secondaryTradeID": "01220402",
+            "originatingUsername": "ISV_MATRIZ4"
+        },
+        {
+            "orderId": "O0OveG8SIIJQ-16918052",
+            "clOrdId": "499631577029515",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIQsDT9",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - TRAN - CI"
+            },
+            "price": 1870,
+            "orderQty": 500,
+            "ordType": "LIMIT",
+            "side": "SELL",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-15:32:57.909-0300",
+            "avgPx": 1870.000,
+            "lastPx": 1870,
+            "lastQty": 500,
+            "cumQty": 500,
+            "leavesQty": 0,
+            "iceberg": "true",
+            "displayQty": 0,
+            "status": "FILLED",
+            "text": " ",
+            "numericOrderId": "16918052",
+            "secondaryTradeID": "01070742",
+            "originatingUsername": "ISV_PBCP"
+        },
+        {
+            "orderId": "O0OveG8SDp84-08461722",
+            "clOrdId": "m03T1mjg0fati3IL",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIQJ810",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - GFGC65343D - 24hs"
+            },
+            "price": 120,
+            "orderQty": 10,
+            "ordType": "LIMIT",
+            "side": "SELL",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-12:52:49.673-0300",
+            "avgPx": 120.000,
+            "lastPx": 120,
+            "lastQty": 1,
+            "cumQty": 10,
+            "leavesQty": 0,
+            "iceberg": "true",
+            "displayQty": 0,
+            "status": "FILLED",
+            "text": " ",
+            "numericOrderId": "08461722",
+            "secondaryTradeID": "00617614",
+            "originatingUsername": "ISV_MATRIZ4"
+        },
+        {
+            "orderId": "O0OveG8SBobg-04460682",
+            "clOrdId": "606pbDn30laIoKCn",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIQ7U2m",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - GFGC63343D - 24hs"
+            },
+            "price": 145.999,
+            "orderQty": 10,
+            "ordType": "LIMIT",
+            "side": "SELL",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-12:07:23.770-0300",
+            "avgPx": 0,
+            "lastPx": 0,
+            "lastQty": 0,
+            "cumQty": 0,
+            "leavesQty": 10,
+            "status": "CANCELLED",
+            "text": "CANCELED",
+            "originatingUsername": "ISV_MATRIZ4"
+        },
+        {
+            "orderId": "O0OveG8SHKJK-15136669",
+            "clOrdId": "499629234025657",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIQjfnd",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - TZXM6 - CI"
+            },
+            "price": 174.25,
+            "orderQty": 5000,
+            "ordType": "LIMIT",
+            "side": "SELL",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-14:53:54.881-0300",
+            "avgPx": 174.25000,
+            "lastPx": 174.25,
+            "lastQty": 5000,
+            "cumQty": 5000,
+            "leavesQty": 0,
+            "iceberg": "true",
+            "displayQty": 0,
+            "status": "FILLED",
+            "text": " ",
+            "numericOrderId": "15136669",
+            "secondaryTradeID": "00960042",
+            "originatingUsername": "ISV_PBCP"
+        },
+        {
+            "orderId": "O0OveG8SJeRm-19273601",
+            "clOrdId": "499635405035407",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIR3aiV",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - TRAN - CI"
+            },
+            "price": 1855,
+            "orderQty": 500,
+            "ordType": "LIMIT",
+            "side": "SELL",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-16:36:45.705-0300",
+            "avgPx": 1855.000,
+            "lastPx": 1855,
+            "lastQty": 500,
+            "cumQty": 500,
+            "leavesQty": 0,
+            "iceberg": "true",
+            "displayQty": 0,
+            "status": "FILLED",
+            "text": " ",
+            "numericOrderId": "19273601",
+            "secondaryTradeID": "01223842",
+            "originatingUsername": "ISV_PBCP"
+        },
+        {
+            "orderId": "O0OveG8SG8e0-12659610",
+            "clOrdId": "x5ElrzG796UByBfa",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIQjR9b",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - GFGV31777D - 24hs"
+            },
+            "price": 38.999,
+            "orderQty": 15,
+            "ordType": "LIMIT",
+            "side": "SELL",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-14:53:16.229-0300",
+            "avgPx": 38.999000,
+            "lastPx": 0,
+            "lastQty": 0,
+            "cumQty": 3,
+            "leavesQty": 12,
+            "iceberg": "true",
+            "displayQty": 0,
+            "status": "CANCELLED",
+            "text": "Cancelled by Owner",
+            "numericOrderId": "12659610",
+            "origClOrdId": "LLCzCVOhIbBT35AE",
+            "originatingUsername": "ISV_MATRIZ4"
+        },
+        {
+            "orderId": "O0OveG8SC10p-04889900",
+            "clOrdId": "499617423009253",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIPwvQz",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - S16E6 - CI"
+            },
+            "price": 108.299,
+            "orderQty": 91948,
+            "ordType": "LIMIT",
+            "side": "SELL",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-11:37:03.152-0300",
+            "avgPx": 108.299000,
+            "lastPx": 108.299,
+            "lastQty": 91948,
+            "cumQty": 91948,
+            "leavesQty": 0,
+            "iceberg": "true",
+            "displayQty": 0,
+            "status": "FILLED",
+            "text": " ",
+            "numericOrderId": "04889900",
+            "secondaryTradeID": "00321023",
+            "originatingUsername": "ISV_PBCP"
+        },
+        {
+            "orderId": "O0OveG8SGLG9-13085326",
+            "clOrdId": "ZuQUmokTjXA1XocA",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIQa5Xc",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - GFGV30777D - 24hs"
+            },
+            "price": 29.1,
+            "orderQty": 100,
+            "ordType": "LIMIT",
+            "side": "BUY",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-14:15:29.556-0300",
+            "avgPx": 0,
+            "lastPx": 0,
+            "lastQty": 0,
+            "cumQty": 0,
+            "leavesQty": 100,
+            "iceberg": "true",
+            "displayQty": 0,
+            "status": "CANCELLED",
+            "text": "Cancelled by Owner",
+            "numericOrderId": "13085326",
+            "origClOrdId": "MZeszUlKUahxdnMc",
+            "originatingUsername": "ISV_MATRIZ4"
+        },
+        {
+            "orderId": "O0OveG8SDxvr-08726306",
+            "clOrdId": "499620852016335",
+            "proprietary": "ISV_PBCP",
+            "execId": "MERVE0OveBIQF9n4",
+            "accountId": {
+                "id": "17825"
+            },
+            "instrumentId": {
+                "marketId": "ROFX",
+                "symbol": "MERV - XMEV - PFE - 24hs"
+            },
+            "price": 9820,
+            "orderQty": 3,
+            "ordType": "LIMIT",
+            "side": "BUY",
+            "timeInForce": "DAY",
+            "transactTime": "20251021-12:34:12.324-0300",
+            "avgPx": 9820.000,
+            "lastPx": 9820,
+            "lastQty": 3,
+            "cumQty": 3,
+            "leavesQty": 0,
+            "iceberg": "true",
+            "displayQty": 0,
+            "status": "FILLED",
+            "text": " ",
+            "numericOrderId": "08726306",
+            "secondaryTradeID": "00554624",
+            "originatingUsername": "ISV_PBCP"
+        }
+    ]
+}
