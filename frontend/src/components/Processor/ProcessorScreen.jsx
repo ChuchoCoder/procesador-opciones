@@ -917,6 +917,9 @@ const ProcessorScreen = () => {
     setReport(null);
   }, [isAuthenticated, syncedOperations, brokerAuth, resetGroupSelections]);
 
+  const lastSyncTimestampRef = useRef(null);
+  const pendingRefreshRef = useRef(false);
+
   const handleBrokerRefresh = useCallback(async () => {
     if (!isAuthenticated || syncInProgress) {
       return;
@@ -929,17 +932,33 @@ const ProcessorScreen = () => {
       setReport(null);
     }
     
-    const result = await triggerSync({ authOverride: brokerAuth, mode: 'refresh', brokerApiUrl });
-    
-    // If viewing broker data and sync was successful, re-process with updated operations
-    if (result?.success && wasViewingBrokerData) {
-      // Re-trigger broker data selection to use updated syncedOperations
-      // Use queueMicrotask to ensure state has settled
-      queueMicrotask(() => handleBrokerDataSelected());
+    // Mark that we're expecting new operations
+    if (wasViewingBrokerData) {
+      pendingRefreshRef.current = true;
+      lastSyncTimestampRef.current = sync?.lastSyncTimestamp;
     }
     
+    const result = await triggerSync({ authOverride: brokerAuth, mode: 'refresh', brokerApiUrl });
+    
     return result;
-  }, [isAuthenticated, syncInProgress, triggerSync, brokerAuth, brokerApiUrl, selectedDataSource?.type, handleBrokerDataSelected]);
+  }, [isAuthenticated, syncInProgress, triggerSync, brokerAuth, brokerApiUrl, selectedDataSource?.type, sync?.lastSyncTimestamp]);
+
+  // Effect to re-process broker data when operations are updated after a refresh
+  useEffect(() => {
+    if (!pendingRefreshRef.current) {
+      return;
+    }
+    
+    // Check if sync timestamp has changed (indicating new operations were committed)
+    const currentSyncTimestamp = sync?.lastSyncTimestamp;
+    if (currentSyncTimestamp && currentSyncTimestamp !== lastSyncTimestampRef.current) {
+      pendingRefreshRef.current = false;
+      lastSyncTimestampRef.current = null;
+      
+      // Re-trigger broker data selection with updated operations
+      handleBrokerDataSelected();
+    }
+  }, [sync?.lastSyncTimestamp, handleBrokerDataSelected]);
 
   // Auto-process when a data source is selected
   useEffect(() => {
