@@ -76,7 +76,8 @@ const normalizeGroupExpiration = (value = '') => normalizeExpirationToken(value)
 
 const SETTLEMENT_TOKENS = new Set([
   'CI', 'CONTADO', '24HS', '48HS', '72HS', '24H', '48H', '72H', 'T0', 'T1', 'T2', 'T+1', 'T+2',
-  '1D', '2D', '3D', '4D', '5D', '6D', '7D', '8D', '9D', '10D', '11D', '12D', '13D', '14D', '15D',
+  // Note: Plazo tokens like '1D', '2D', '3D', etc. are NOT included here
+  // They are handled separately as caución plazo indicators in data-aggregation.js
 ]);
 
 const MARKET_TOKENS = new Set([
@@ -146,12 +147,31 @@ const splitInstrumentSymbol = (symbol = '') => {
     return segments[0];
   }
 
-  if (segments.length === 2 && MONTH_TOKENS.has(segments[1])) {
-    return segments.join(' ');
+  // Check for caución plazo pattern (e.g., "PESOS", "3D" or "DOLAR", "18D")
+  if (segments.length === 2) {
+    const last = segments[1];
+    // Match plazo pattern: digits followed by 'D' (e.g., "3D", "18D")
+    if (/^\d+D$/i.test(last)) {
+      // For cauciones, return "INSTRUMENT:PLAZO" format (e.g., "PESOS:3")
+      const plazoNumber = last.slice(0, -1); // Remove 'D'
+      return `${segments[0]}:${plazoNumber}`;
+    }
+    
+    if (MONTH_TOKENS.has(last)) {
+      return segments.join(' ');
+    }
   }
 
   if (segments.length >= 2) {
     const last = segments[segments.length - 1];
+    
+    // Check for caución plazo pattern in multi-segment symbols
+    if (/^\d+D$/i.test(last)) {
+      const plazoNumber = last.slice(0, -1);
+      const instrument = segments[segments.length - 2];
+      return `${instrument}:${plazoNumber}`;
+    }
+    
     if (MONTH_TOKENS.has(last)) {
       return `${segments[segments.length - 2]} ${last}`;
     }
