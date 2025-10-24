@@ -779,6 +779,8 @@ const normalizeParseMeta = (rows, meta = {}) => {
 
   return {
     rowCount,
+    totalOrders: meta.totalOrders,
+    excluded: meta.excluded,
     warningThresholdExceeded:
       meta.warningThresholdExceeded ?? rowCount > LARGE_FILE_WARNING_THRESHOLD,
     exceededMaxRows: meta.exceededMaxRows ?? rowCount > MAX_ROWS,
@@ -786,26 +788,23 @@ const normalizeParseMeta = (rows, meta = {}) => {
   };
 };
 
-const resolveRows = async ({ rows, file, parserConfig }) => {
-  if (Array.isArray(rows)) {
-    return {
-      rows,
-      meta: normalizeParseMeta(rows, { rowCount: rows.length }),
-    };
-  }
-
-  if (!file) {
-    throw new Error('Debes proporcionar un archivo CSV o filas procesadas para continuar.');
+const resolveRows = async ({ file, parserConfig, dataSource }) => {
+  // Data source adapter is required
+  if (!dataSource || typeof dataSource.parse !== 'function') {
+    throw new Error('Debes proporcionar un adaptador de fuente de datos (dataSource) válido.');
   }
 
   try {
-    const parsed = await parseOperationsCsv(file, parserConfig);
+    const parsed = await dataSource.parse(file, parserConfig);
     return {
       rows: parsed.rows,
       meta: normalizeParseMeta(parsed.rows, parsed.meta),
     };
   } catch (error) {
-    throw new Error('No pudimos leer el archivo CSV. Verificá que tenga encabezados y un separador válido.');
+    const sourceType = typeof dataSource.getSourceType === 'function' 
+      ? dataSource.getSourceType() 
+      : 'desconocido';
+    throw new Error(`Error al procesar datos desde fuente ${sourceType}: ${error.message}`);
   }
 };
 
@@ -897,10 +896,10 @@ const sanitizeConfiguration = (configuration) => {
 
 export const processOperations = async ({
   file,
-  rows,
   configuration,
   fileName,
   parserConfig,
+  dataSource,
 } = {}) => {
   const activeConfiguration = sanitizeConfiguration(configuration);
   
@@ -914,7 +913,11 @@ export const processOperations = async ({
   const startTime = getNow();
 
   const resolvedFileName = resolveFileName({ fileName, file });
-  const { rows: parsedRows, meta: parseMeta } = await resolveRows({ rows, file, parserConfig });
+  const { rows: parsedRows, meta: parseMeta } = await resolveRows({ 
+    file, 
+    parserConfig,
+    dataSource,
+  });
 
   logger.log(`Inicio de procesamiento - ${formatLogFileInfo(resolvedFileName, parseMeta.rowCount)}`);
 
