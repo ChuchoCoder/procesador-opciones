@@ -39,10 +39,10 @@ const strings = {
       averagingSwitch: 'Promediar por strike',
       instructions: {
         title: 'Instrucciones:',
-        step1: '✓ Descargá el archivo CSV desde Matriz (ej: https://matriz.cocos.xoms.com.ar/)',
-        step2: '✓ Usá el ícono de descarga a la derecha de "Reporte de operaciones" ("Descargar reporte de operaciones")',
-        step3: '✓ Seleccioná el archivo CSV descargado',
-        step4: '✓ Una vez procesado, podrás filtrar, copiar y descargar los resultados',
+        step1: '✅ Descargá el archivo CSV desde Matriz (ej: https://matriz.cocos.xoms.com.ar/)',
+        step2: '✅ Expandir el panel derecho de "Órdenes y operaciones", click en "Descargar reporte de operaciones" a la derecha de "Reporte de operaciones"',
+        step3: '✅ Seleccioná el archivo CSV descargado',
+        step4: '✅ Una vez procesado, podrás visualizar, filtrar, copiar y descargar los resultados',
       },
       orDivider: 'ó',
       chooseMethodTitle: 'Cargá tus operaciones',
@@ -56,6 +56,8 @@ const strings = {
       csvLabel: 'CSV',
       totalLabel: 'Total',
       otherLabel: 'Otros',
+      viewingSource: 'Visualizando',
+      currentView: 'Vista actual',
     },
     summary: {
       title: 'Resumen',

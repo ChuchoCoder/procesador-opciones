@@ -621,17 +621,26 @@ const ProcessorScreen = () => {
         setReport(result);
         setWarningCodes(result.summary.warnings ?? []);
         
-        // Only merge CSV operations into global state (broker ops already there)
+        // Handle CSV operations: remove previous CSV ops, keep broker ops, add new CSV ops
         if (
           fileOrDataSource.type === 'csv' &&
           typeof setOperations === 'function' &&
           Array.isArray(result.normalizedOperations) &&
           result.normalizedOperations.length > 0
         ) {
-          const incomingCsv = dedupeOperations(existingOperations, result.normalizedOperations);
+          // Remove all previous CSV operations, keep only broker operations
+          const brokerOnlyOps = existingOperations.filter(op => op?.source === 'broker');
+          
+          // Dedupe new CSV operations against broker ops only
+          const incomingCsv = dedupeOperations(brokerOnlyOps, result.normalizedOperations);
+          
           if (incomingCsv.length > 0) {
-            const { mergedOps } = mergeBrokerBatch(existingOperations, incomingCsv);
+            // Merge: broker ops + new CSV ops (previous CSV ops are now removed)
+            const { mergedOps } = mergeBrokerBatch(brokerOnlyOps, incomingCsv);
             setOperations(mergedOps);
+          } else {
+            // If all CSV operations were duplicates, just keep broker ops
+            setOperations(brokerOnlyOps);
           }
         }
         
@@ -860,14 +869,23 @@ const ProcessorScreen = () => {
 
   const handleFileSelected = (file) => {
     setSelectedFile(file);
-    setSelectedDataSource(file ? { type: 'csv', file, name: file.name } : null);
+    // Add timestamp to ensure each file selection creates a unique data source object
+    // This guarantees the auto-process effect will detect the change
+    setSelectedDataSource(file ? { 
+      type: 'csv', 
+      file, 
+      name: file.name,
+      timestamp: Date.now() // Ensure unique object reference
+    } : null);
     setProcessingError(null);
     setActionFeedback(null);
     setWarningCodes([]);
     setActivePreview(CLIPBOARD_SCOPES.CALLS);
     resetGroupSelections();
+    // Always clear the report when selecting a new file (even if not null)
+    // This ensures the auto-process effect will trigger
+    setReport(null);
     if (!file) {
-      setReport(null);
       removeItem(storageKeys.lastReport);
     }
   };
@@ -877,9 +895,12 @@ const ProcessorScreen = () => {
       return;
     }
     
+    // Filter to only broker operations
+    const brokerOnlyOperations = syncedOperations.filter(op => op?.source === 'broker');
+    
     const dataSource = {
       type: 'broker',
-      data: syncedOperations,
+      data: brokerOnlyOperations,
       name: `Broker-${brokerAuth?.accountId || 'Unknown'}`,
     };
     
@@ -1575,21 +1596,21 @@ const ProcessorScreen = () => {
                 dataSourcesPanel={
                   <DataSourcesPanel
                     brokerSource={
-                      isAuthenticated
+                      isAuthenticated && selectedDataSource?.type === 'broker'
                         ? {
                             connected: true,
                             accountId: brokerAuth?.accountId || 'N/A',
-                            operationCount: sourceCounts.broker,
+                            operationCount: report?.operations?.length || 0,
                             lastSyncTimestamp: syncState?.lastSyncTimestamp,
                             syncing: syncInProgress,
                           }
                         : null
                     }
                     csvSource={
-                      selectedFile
+                      selectedFile && selectedDataSource?.type === 'csv'
                         ? {
                             fileName: selectedFile.name,
-                            operationCount: sourceCounts.csv,
+                            operationCount: report?.operations?.length || 0,
                           }
                         : null
                     }

@@ -146,13 +146,13 @@ const DataSourceSelector = ({
                       </Typography>
                     </Stack>
                     <Typography variant="body2" color="text.secondary">
-                      {uploadStrings.instructions?.step1 || '✓ Descargá el archivo CSV desde Matriz'}
+                      {uploadStrings.instructions?.step1 || '✅ Descargá el archivo CSV desde Matriz'}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
-                      {uploadStrings.instructions?.step2 || '✓ Usá el ícono de descarga'}
+                      {uploadStrings.instructions?.step2 || '✅ Usá el ícono de descarga'}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
-                      {uploadStrings.instructions?.step3 || '✓ Seleccioná el archivo CSV'}
+                      {uploadStrings.instructions?.step3 || '✅ Seleccioná el archivo CSV'}
                     </Typography>
                   </Stack>
                 </Paper>
