@@ -604,7 +604,8 @@ const ProcessorScreen = () => {
 
       setIsProcessing(true);
       setProcessingError(null);
-      setActionFeedback(null);
+      // Don't clear actionFeedback during auto-reprocessing - preserve broker sync notifications
+      // setActionFeedback(null);
 
       try {
         const configurationPayload = buildConfiguration(overrides);
@@ -616,8 +617,15 @@ const ProcessorScreen = () => {
         
         if (fileOrDataSource.type === 'broker') {
           // Broker data source: use JsonDataSource with synced operations
+          // Always use the latest syncedOperations to ensure fresh data after refresh
           dataSource = new JsonDataSource();
-          file = fileOrDataSource.data || syncedOperations;
+          const brokerOnlyOperations = syncedOperations.filter(op => op?.source === 'broker');
+          console.log('[ProcessorScreen] Processing broker data:', {
+            totalSyncedOps: syncedOperations.length,
+            brokerOnlyOps: brokerOnlyOperations.length,
+            timestamp: fileOrDataSource.timestamp,
+          });
+          file = brokerOnlyOperations;
           fileName = fileOrDataSource.name || `Broker-${brokerAuth?.accountId || 'Unknown'}.json`;
         } else if (fileOrDataSource.type === 'csv') {
           // CSV data source: use CsvDataSource with file
@@ -708,9 +716,10 @@ const ProcessorScreen = () => {
         return { success: false, error: 'SYNC_IN_PROGRESS', mode };
       }
 
-      if (mode === 'refresh') {
-        setActionFeedback(null);
-      }
+      // Don't clear actionFeedback when starting refresh - let success/error messages persist
+      // if (mode === 'refresh') {
+      //   setActionFeedback(null);
+      // }
 
       const cancellationToken = { isCanceled: false };
       syncCancellationRef.current = cancellationToken;
@@ -925,12 +934,14 @@ const ProcessorScreen = () => {
       type: 'broker',
       data: brokerOnlyOperations,
       name: `Broker-${brokerAuth?.accountId || 'Unknown'}`,
+      timestamp: Date.now(), // Ensure unique object reference for re-processing
     };
     
     setSelectedFile(null); // Clear CSV file
     setSelectedDataSource(dataSource);
     setProcessingError(null);
-    setActionFeedback(null);
+    // Don't clear actionFeedback here - let success/error messages from sync show
+    // setActionFeedback(null);
     setWarningCodes([]);
     setActivePreview(CLIPBOARD_SCOPES.CALLS);
     resetGroupSelections();
@@ -947,6 +958,12 @@ const ProcessorScreen = () => {
     
     const wasViewingBrokerData = selectedDataSource?.type === 'broker';
     
+    console.log('[ProcessorScreen] handleBrokerRefresh called:', {
+      wasViewingBrokerData,
+      currentSyncTimestamp: sync?.lastSyncTimestamp,
+      syncedOpsCount: syncedOperations?.length,
+    });
+    
     // Clear report if viewing broker data to avoid showing stale data during refresh
     if (wasViewingBrokerData) {
       setReport(null);
@@ -956,12 +973,19 @@ const ProcessorScreen = () => {
     if (wasViewingBrokerData) {
       pendingRefreshRef.current = true;
       lastSyncTimestampRef.current = sync?.lastSyncTimestamp;
+      console.log('[ProcessorScreen] Set pendingRefresh=true, lastTimestamp:', lastSyncTimestampRef.current);
     }
     
     const result = await triggerSync({ authOverride: brokerAuth, mode: 'refresh', brokerApiUrl });
     
+    console.log('[ProcessorScreen] triggerSync result:', {
+      success: result?.success,
+      operationsAdded: result?.operationsAdded,
+      newSyncTimestamp: sync?.lastSyncTimestamp,
+    });
+    
     return result;
-  }, [isAuthenticated, syncInProgress, triggerSync, brokerAuth, brokerApiUrl, selectedDataSource?.type, sync?.lastSyncTimestamp]);
+  }, [isAuthenticated, syncInProgress, triggerSync, brokerAuth, brokerApiUrl, selectedDataSource?.type, sync?.lastSyncTimestamp, syncedOperations]);
 
   // Effect to re-process broker data when operations are updated after a refresh
   useEffect(() => {
@@ -969,16 +993,35 @@ const ProcessorScreen = () => {
       return;
     }
     
-    // Check if sync timestamp has changed (indicating new operations were committed)
+    // Check if sync timestamp has changed OR if operations count changed (indicating new operations were committed)
     const currentSyncTimestamp = sync?.lastSyncTimestamp;
-    if (currentSyncTimestamp && currentSyncTimestamp !== lastSyncTimestampRef.current) {
+    const currentOpsCount = syncedOperations?.length ?? 0;
+    
+    console.log('[ProcessorScreen] Refresh effect check:', {
+      pendingRefresh: pendingRefreshRef.current,
+      currentTimestamp: currentSyncTimestamp,
+      lastTimestamp: lastSyncTimestampRef.current,
+      syncedOpsCount: currentOpsCount,
+      timestampChanged: currentSyncTimestamp !== lastSyncTimestampRef.current,
+      hasTimestamp: !!currentSyncTimestamp,
+    });
+    
+    // Trigger re-process if timestamp changed (preferred) or just if we're pending and have operations
+    // This handles cases where timestamp might not be set
+    const shouldReprocess = 
+      (currentSyncTimestamp && currentSyncTimestamp !== lastSyncTimestampRef.current) ||
+      (currentOpsCount > 0 && !syncInProgress);
+    
+    if (shouldReprocess) {
+      console.log('[ProcessorScreen] Triggering re-process, reason:', 
+        currentSyncTimestamp !== lastSyncTimestampRef.current ? 'timestamp changed' : 'sync completed with ops');
       pendingRefreshRef.current = false;
       lastSyncTimestampRef.current = null;
       
       // Re-trigger broker data selection with updated operations
       handleBrokerDataSelected();
     }
-  }, [sync?.lastSyncTimestamp, handleBrokerDataSelected]);
+  }, [sync?.lastSyncTimestamp, handleBrokerDataSelected, syncedOperations, syncInProgress]);
 
   // Auto-process when a data source is selected
   useEffect(() => {
@@ -1658,7 +1701,7 @@ const ProcessorScreen = () => {
                           }
                         : null
                     }
-                    onRefreshBroker={() => triggerSync({ mode: 'refresh' })}
+                    onRefreshBroker={handleBrokerRefresh}
                     onRemoveCsv={() => setSelectedFile(null)}
                   />
                 }
