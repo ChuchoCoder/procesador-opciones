@@ -475,16 +475,33 @@ const ArbitrageTable = ({ data = [], strings = {}, onSort }) => {
     if (!data) return [];
     
     return [...data].sort((a, b) => {
-      const aValue = a[orderBy];
-      const bValue = b[orderBy];
+      // Always sort by Instrumento (asc) as primary
+      const instrumentoCompare = (a.instrumento || '').localeCompare(b.instrumento || '');
+      if (instrumentoCompare !== 0) return instrumentoCompare;
       
-      if (aValue === bValue) return 0;
+      // Then by Patron (asc) as secondary
+      const patronCompare = (a.patron || '').localeCompare(b.patron || '');
+      if (patronCompare !== 0) return patronCompare;
       
-      if (order === 'asc') {
-        return aValue < bValue ? -1 : 1;
-      } else {
-        return aValue > bValue ? -1 : 1;
+      // Then by Cantidad (desc) as tertiary
+      const cantidadCompare = (b.cantidad || 0) - (a.cantidad || 0);
+      if (cantidadCompare !== 0) return cantidadCompare;
+      
+      // Finally, if user selected a different column, apply that sort
+      if (orderBy !== 'instrumento' && orderBy !== 'patron' && orderBy !== 'cantidad') {
+        const aValue = a[orderBy];
+        const bValue = b[orderBy];
+        
+        if (aValue !== bValue) {
+          if (order === 'asc') {
+            return aValue < bValue ? -1 : 1;
+          } else {
+            return aValue > bValue ? -1 : 1;
+          }
+        }
       }
+      
+      return 0;
     });
   }, [data, orderBy, order]);
 

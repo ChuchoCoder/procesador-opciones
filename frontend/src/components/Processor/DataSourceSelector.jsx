@@ -8,6 +8,7 @@ import Button from '@mui/material/Button';
 import UploadFileIcon from '@mui/icons-material/UploadFile';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import CloudSyncIcon from '@mui/icons-material/CloudSync';
+import RefreshIcon from '@mui/icons-material/Refresh';
 
 import BrokerLogin from './BrokerLogin.jsx';
 
@@ -17,6 +18,8 @@ import BrokerLogin from './BrokerLogin.jsx';
 const DataSourceSelector = ({
   strings,
   onSelectFile,
+  onSelectBroker,
+  onBrokerRefresh,
   onBrokerLogin,
   onBrokerLogout,
   isBrokerLoginLoading,
@@ -25,6 +28,7 @@ const DataSourceSelector = ({
   syncInProgress,
   defaultApiUrl,
   brokerAccountId,
+  brokerOperationCount = 0,
 }) => {
   const handleFileSelection = (event) => {
     const file = event.target.files?.[0];
@@ -273,18 +277,46 @@ const DataSourceSelector = ({
                           Cuenta: {brokerAccountId}
                         </Typography>
                       )}
-                      <Typography variant="body2" color="text.secondary">
-                        Tus operaciones se sincronizarán automáticamente
-                      </Typography>
-                      <Button
-                        variant="outlined"
-                        color="error"
-                        onClick={onBrokerLogout}
-                        disabled={syncInProgress}
-                        fullWidth
-                      >
-                        Cerrar sesión
-                      </Button>
+                      {brokerOperationCount > 0 && (
+                        <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 500 }}>
+                          {brokerOperationCount} operaciones sincronizadas
+                        </Typography>
+                      )}
+                      
+                      <Stack direction="column" spacing={1} sx={{ width: '100%' }}>
+                        {brokerOperationCount > 0 && onSelectBroker && (
+                          <Button
+                            variant="contained"
+                            color="primary"
+                            onClick={onSelectBroker}
+                            disabled={syncInProgress}
+                            fullWidth
+                          >
+                            Ver operaciones del broker
+                          </Button>
+                        )}
+                        {onBrokerRefresh && (
+                          <Button
+                            variant="outlined"
+                            color="primary"
+                            onClick={onBrokerRefresh}
+                            disabled={syncInProgress}
+                            fullWidth
+                            startIcon={<RefreshIcon />}
+                          >
+                            Sincronizar
+                          </Button>
+                        )}
+                        <Button
+                          variant="outlined"
+                          color="error"
+                          onClick={onBrokerLogout}
+                          disabled={syncInProgress}
+                          fullWidth
+                        >
+                          Cerrar sesión
+                        </Button>
+                      </Stack>
                     </Stack>
                   </Paper>
                 )}
