@@ -9,6 +9,7 @@ import Typography from '@mui/material/Typography';
 
 import { processOperations } from '../../services/csv/process-operations.js';
 import { buildConsolidatedViews } from '../../services/csv/consolidator.js';
+import { CsvDataSource } from '../../services/data-sources/index.js';
 import { login as brokerLogin, setBaseUrl } from '../../services/broker/jsrofex-client.js';
 import { startDailySync, refreshNewOperations } from '../../services/broker/sync-service.js';
 import { dedupeOperations, mergeBrokerBatch } from '../../services/broker/dedupe-utils.js';
@@ -585,7 +586,12 @@ const ProcessorScreen = () => {
 
       try {
         const configurationPayload = buildConfiguration(overrides);
+        
+        // Use CsvDataSource adapter for explicit data source handling
+        // This provides better testability and extensibility for future data sources
+        const dataSource = new CsvDataSource();
         const result = await processOperations({
+          dataSource,
           file,
           fileName: file.name,
           configuration: configurationPayload,

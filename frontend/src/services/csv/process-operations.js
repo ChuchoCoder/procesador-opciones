@@ -786,7 +786,8 @@ const normalizeParseMeta = (rows, meta = {}) => {
   };
 };
 
-const resolveRows = async ({ rows, file, parserConfig }) => {
+const resolveRows = async ({ rows, file, parserConfig, dataSource }) => {
+  // If rows are already provided, use them directly
   if (Array.isArray(rows)) {
     return {
       rows,
@@ -794,6 +795,23 @@ const resolveRows = async ({ rows, file, parserConfig }) => {
     };
   }
 
+  // If a data source adapter is provided, use it
+  if (dataSource && typeof dataSource.parse === 'function') {
+    try {
+      const parsed = await dataSource.parse(file, parserConfig);
+      return {
+        rows: parsed.rows,
+        meta: normalizeParseMeta(parsed.rows, parsed.meta),
+      };
+    } catch (error) {
+      const sourceType = typeof dataSource.getSourceType === 'function' 
+        ? dataSource.getSourceType() 
+        : 'desconocido';
+      throw new Error(`Error al procesar datos desde fuente ${sourceType}: ${error.message}`);
+    }
+  }
+
+  // Fallback to CSV parser for backward compatibility
   if (!file) {
     throw new Error('Debes proporcionar un archivo CSV o filas procesadas para continuar.');
   }
@@ -901,6 +919,7 @@ export const processOperations = async ({
   configuration,
   fileName,
   parserConfig,
+  dataSource,
 } = {}) => {
   const activeConfiguration = sanitizeConfiguration(configuration);
   
@@ -914,7 +933,12 @@ export const processOperations = async ({
   const startTime = getNow();
 
   const resolvedFileName = resolveFileName({ fileName, file });
-  const { rows: parsedRows, meta: parseMeta } = await resolveRows({ rows, file, parserConfig });
+  const { rows: parsedRows, meta: parseMeta } = await resolveRows({ 
+    rows, 
+    file, 
+    parserConfig,
+    dataSource,
+  });
 
   logger.log(`Inicio de procesamiento - ${formatLogFileInfo(resolvedFileName, parseMeta.rowCount)}`);
 
