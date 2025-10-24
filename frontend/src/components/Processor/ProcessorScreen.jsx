@@ -1582,7 +1582,7 @@ const ProcessorScreen = () => {
                 syncInProgress={syncInProgress}
                 defaultApiUrl={brokerApiUrl}
                 brokerAccountId={brokerAuth?.accountId}
-                brokerOperationCount={syncedOperations?.length || 0}
+                brokerOperationCount={syncedOperations?.filter(op => op?.source === 'broker').length || 0}
                 csvError={processingError}
               />
             </>
