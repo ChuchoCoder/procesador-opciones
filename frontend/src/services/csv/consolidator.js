@@ -114,9 +114,15 @@ export const consolidateOperations = (
     }
   });
 
-  const sortByStrike = (a, b) => a.strike - b.strike;
-  calls.sort(sortByStrike);
-  puts.sort(sortByStrike);
+  // Sort by Strike (asc) then Precio (desc)
+  const sortByStrikeThenPrice = (a, b) => {
+    if (a.strike !== b.strike) {
+      return a.strike - b.strike; // Strike ascending
+    }
+    return b.averagePrice - a.averagePrice; // Price descending
+  };
+  calls.sort(sortByStrikeThenPrice);
+  puts.sort(sortByStrikeThenPrice);
 
   return {
     calls,

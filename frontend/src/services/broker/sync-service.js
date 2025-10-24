@@ -97,6 +97,11 @@ export async function startDailySync({
       : [];
   const dedupePool = [...baselineOperations];
   const candidateOperations = [];
+  
+  // DEBUG: Log baseline for deduplication
+  // eslint-disable-next-line no-console
+  console.log(`[Sync ${mode}] Starting with ${baselineOperations.length} baseline operations`);
+  
   let pageToken = null;
   let pageIndex = 0;
   let totalRetries = 0;
@@ -150,7 +155,31 @@ export async function startDailySync({
 
       // Normalize operations with source attribution
       const rawOperations = pageResult.data.operations || [];
+      
+      // DEBUG: Check first raw operation from broker
+      if (pageIndex === 0 && rawOperations.length > 0) {
+        // eslint-disable-next-line no-console
+        console.log(`[Sync ${mode}] First RAW operation from broker:`, rawOperations[0]);
+        // eslint-disable-next-line no-console
+        console.log(`[Sync ${mode}] Raw operation keys:`, Object.keys(rawOperations[0]));
+      }
+      
       const normalized = rawOperations.map((op) => normalizeOperation(op, 'broker'));
+      
+      // DEBUG: Check first operation's deduplication keys
+      if (pageIndex === 0 && normalized.length > 0) {
+        const firstOp = normalized[0];
+        // eslint-disable-next-line no-console
+        console.log(`[Sync ${mode}] First NORMALIZED operation keys:`, {
+          order_id: firstOp.order_id,
+          operation_id: firstOp.operation_id,
+          symbol: firstOp.symbol,
+          tradeTimestamp: firstOp.tradeTimestamp,
+          price: firstOp.price,
+          quantity: firstOp.quantity,
+        });
+      }
+      
       const timestampFiltered = isNumber(minTimestamp)
         ? normalized.filter((op) => op.tradeTimestamp > minTimestamp)
         : normalized;
@@ -159,6 +188,8 @@ export async function startDailySync({
       let acceptedForPage = [];
       if (timestampFiltered.length > 0) {
         acceptedForPage = dedupeOperations(dedupePool, timestampFiltered);
+        // eslint-disable-next-line no-console
+        console.log(`[Sync ${mode}] Page ${pageIndex}: ${timestampFiltered.length} operations fetched, ${acceptedForPage.length} accepted after dedup`);
         if (acceptedForPage.length > 0) {
           candidateOperations.push(...acceptedForPage);
           dedupePool.push(...acceptedForPage);
@@ -199,6 +230,9 @@ export async function startDailySync({
       baselineOperations,
       candidateOperations,
     );
+    
+    // eslint-disable-next-line no-console
+    console.log(`[Sync ${mode}] Final merge: ${baselineOperations.length} baseline + ${candidateOperations.length} candidates = ${mergedOps.length} total (${newOpsCount} new)`);
 
     // Step 5: Atomic commit
     commitSync(mergedOps, {
