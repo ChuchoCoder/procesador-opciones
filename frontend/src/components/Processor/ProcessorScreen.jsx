@@ -1557,7 +1557,8 @@ const ProcessorScreen = () => {
     >
       {isProcessing && <LinearProgress />}
 
-      {processingError && <Alert severity="error" sx={{ mx: 3, mt: 2 }}>{processingError}</Alert>}
+      {/* Only show top-level error if we have a selected data source (during active processing) */}
+      {processingError && selectedDataSource && <Alert severity="error" sx={{ mx: 3, mt: 2 }}>{processingError}</Alert>}
 
       {warningMessages.map((message) => (
           <Alert severity="warning" key={message} sx={{ mx: 3, mt: 2 }}>
@@ -1582,6 +1583,7 @@ const ProcessorScreen = () => {
                 defaultApiUrl={brokerApiUrl}
                 brokerAccountId={brokerAuth?.accountId}
                 brokerOperationCount={syncedOperations?.length || 0}
+                csvError={processingError}
               />
             </>
           ) : report ? (

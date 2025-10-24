@@ -1,3 +1,4 @@
+import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Divider from '@mui/material/Divider';
 import Grid from '@mui/material/Grid';
@@ -29,6 +30,7 @@ const DataSourceSelector = ({
   defaultApiUrl,
   brokerAccountId,
   brokerOperationCount = 0,
+  csvError = null,
 }) => {
   const handleFileSelection = (event) => {
     const file = event.target.files?.[0];
@@ -128,6 +130,12 @@ const DataSourceSelector = ({
                     onChange={handleFileSelection}
                   />
                 </Button>
+
+                {csvError && (
+                  <Alert severity="error" sx={{ width: '100%' }}>
+                    {csvError}
+                  </Alert>
+                )}
 
                 <Paper
                   variant="outlined"
