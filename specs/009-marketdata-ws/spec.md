@@ -101,9 +101,15 @@ Como usuario, quiero que la app reestablezca la conexión WebSocket y re-aplique
 
 ### Key Entities *(include if feature involves data)*
 
-- **SubscriptionMessage**: `{ type: 'smd', level: <number>, entries: [string], products: [{ symbol, marketId }], depth: <number> }`
-- **MarketDataMessage**: `{ type: 'Md', instrumentId: { marketId, symbol }, marketData: { <entry>: [ { price, size, ... } ] } }`
-- **WsSessionState**: `{ isConnected, lastConnectedAt, lastDisconnectedAt, lastSeqByInstrument?: {instrumentKey: sequence}, subscriptions: { currentProducts, entries, depth } }`
+### Non-Functional / Security
+
+- WebSocket connections MAY use either ws:// or wss://, and the session token MAY be provided in either the query parameter or header, as permitted by the server. This approach is chosen for compatibility with server defaults, but implementers should be aware of the security tradeoffs (token in URL can be logged/intercepted; ws:// is not encrypted).
+
+## Clarifications
+
+### Session 2025-10-25
+
+- Q: What is the required security posture for WebSocket authentication and token handling? → A: Allow both ws:// and wss://, token in query param or header.
 
 ## Success Criteria *(mandatory)*
 
