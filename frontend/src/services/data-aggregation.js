@@ -172,12 +172,30 @@ export function aggregateByInstrumentoPlazo(operations, cauciones, jornada) {
     const plazo = calculatePlazoFromDates(caucion.inicio, caucion.fin);
     const key = `${caucion.instrumento}:${plazo}`;
 
-    if (!grupos.has(key)) {
+    const existed = grupos.has(key);
+    if (!existed) {
       grupos.set(key, createGrupoInstrumentoPlazo(caucion.instrumento, plazo, jornada));
     }
 
     const grupo = grupos.get(key);
     grupo.cauciones.push(caucion);
+
+    // Diagnostic log: show where each caución was attached and why
+    try {
+      console.debug('[data-aggregation] attachCaucion', {
+        caucionId: caucion.id ?? null,
+        instrumento: caucion.instrumento ?? null,
+        plazo,
+        key,
+        attachedToExistingGrupo: existed,
+        grupoCounts: {
+          operaciones: (grupo.ventasCI?.length || 0) + (grupo.compras24h?.length || 0) + (grupo.comprasCI?.length || 0) + (grupo.ventas24h?.length || 0),
+          cauciones: grupo.cauciones.length,
+        },
+      });
+    } catch (e) {
+      // swallow logging errors
+    }
   });
   
   // Calculate weighted average TNA from ALL cauciones for use in P&L calculations

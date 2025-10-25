@@ -120,11 +120,25 @@ function calculatePatronVentaCICompra24h(grupo) {
 
   if (avgTNA > 0 && plazo > 0) {
     // Calculate financing INCOME (positive - you're lending and earning interest)
-    // P&L Caución = +monto * (TNA / 100) * (plazo / 365) - fees
-    const monto = resultado.precioPromedio * matchedQty;
+    // Principal (monto) must reflect the actual cash involved in the trade:
+    // For VentaCI -> Compra24h (colocadora): principal = OperationTotal - TradeFees - BrokerCommissions
+    // OperationTotal is the sale total (precioPromedio * matchedQty).
+    // We consider two fee sources attached to operations:
+    // - broker commissions (op.comisiones) -> already aggregated into totalComisionesVentas
+    // - exchange/byma & other fees computed by fee-enrichment (op.feeAmount)
+    const operationTotal = resultado.precioPromedio * matchedQty;
+
+    // Proportion of operation-side that was actually matched (already computed above)
+    // Use proportionVentas to scale any per-side aggregated values to matchedQty.
+    const proportionalBrokerCommissions = totalComisionesVentas; // already proportional
+
+    const totalOperationFeeAmount = ventasCI.reduce((sum, op) => sum + (op.feeAmount || 0), 0) * (matchedQty / (totalVentasCI || matchedQty));
+
+    const monto = operationTotal - proportionalBrokerCommissions - totalOperationFeeAmount;
+
     const interestIncome = monto * (avgTNA / 100) * (plazo / 365);
-    
-    // Subtract caución fees
+
+    // Subtract caución fees (repo-related fees)
     const caucionFees = caucionesFiltradas.reduce((sum, c) => sum + (c.feeAmount || 0), 0);
     resultado.pnl_caucion = interestIncome - caucionFees;
     resultado.estado = totalVentasCI === totalCompras24h ? ESTADOS.COMPLETO : ESTADOS.CANTIDADES_DESBALANCEADAS;
@@ -227,8 +241,16 @@ function calculatePatronCompraCIVenta24h(grupo) {
 
   if (avgTNA > 0 && plazo > 0) {
     // Calculate financing COST (negative - you're borrowing and paying interest)
-    // P&L Caución = -monto * (TNA / 100) * (plazo / 365) - fees
-    const monto = resultado.precioPromedio * matchedQty;
+    // For CompraCI -> Venta24h (tomadora): principal = OperationTotal + TradeFees + BrokerCommissions
+    const operationTotal = resultado.precioPromedio * matchedQty;
+
+    // proportionalBrokerCommissions for buys (already proportional)
+    const proportionalBrokerCommissions = totalComisionesCompras;
+
+    const totalOperationFeeAmount = comprasCI.reduce((sum, op) => sum + (op.feeAmount || 0), 0) * (matchedQty / (totalComprasCI || matchedQty));
+
+    const monto = operationTotal + proportionalBrokerCommissions + totalOperationFeeAmount;
+
     const interestCost = monto * (avgTNA / 100) * (plazo / 365);
     
     // Add caución fees (both interest cost and fees are negative)

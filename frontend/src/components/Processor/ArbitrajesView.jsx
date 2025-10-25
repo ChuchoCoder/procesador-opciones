@@ -16,6 +16,8 @@ import ArbitrageTable from './ArbitrageTable.jsx';
 import { parseOperations, parseCauciones, aggregateByInstrumentoPlazo } from '../../services/data-aggregation.js';
 import { calculatePnL } from '../../services/pnl-calculations.js';
 import { enrichArbitrageOperations, enrichCauciones } from '../../services/arbitrage-fee-enrichment.js';
+import { getRepoFeeConfig } from '../../services/storage-settings.js';
+import { LADOS } from '../../services/arbitrage-types.js';
 
 /**
  * Transform ResultadoPatron to table row format
@@ -88,16 +90,38 @@ const ArbitrajesView = ({
         // Enrich cauciones with fees
         const enrichedCauciones = await enrichCauciones(parsedCauciones);
 
+        // Debug: print a concise sample of enriched cauciones to help diagnose missing breakdowns
+        try {
+          const sample = (enrichedCauciones || []).slice(0, 6).map((c) => ({
+            id: c?.id ?? null,
+            instrumento: c?.instrumento ?? null,
+            monto: c?.monto ?? null,
+            tasa: c?.tasa ?? null,
+            tenorDias: c?.tenorDias ?? null,
+            feeAmount: c?.feeAmount ?? null,
+            hasFeeBreakdown: !!c?.feeBreakdown,
+            feeBreakdownKeys: c?.feeBreakdown ? Object.keys(c.feeBreakdown) : null,
+          }));
+          console.debug('[ArbitrajesView] enrichedCauciones sample', { total: enrichedCauciones.length, sample });
+        } catch (e) {
+          // ignore
+        }
+
         if (parsedOperations.length === 0) {
           console.warn('ArbitrajesView: No valid operations after parsing');
           setTableData([]);
           return;
         }
 
-        // Aggregate operations and cauciones
-        const grupos = aggregateByInstrumentoPlazo(parsedOperations, enrichedCauciones, jornada);
+  // Aggregate operations and cauciones
+  const grupos = aggregateByInstrumentoPlazo(parsedOperations, enrichedCauciones, jornada);
 
-        const filteredGrupos = Array.from(grupos.values());
+  const filteredGrupos = Array.from(grupos.values());
+
+  // Load repo fee config and repo fees calculator so we can estimate
+  // repo fees for grupos that don't have explicit cauciones attached.
+  const repoFeeConfig = await getRepoFeeConfig();
+  const { calculateRepoExpenseBreakdown, calculateAccruedInterest } = await import('../../services/fees/repo-fees.js');
 
         // Calculate P&L for each grupo and flatten to table rows
         const rows = [];
@@ -106,7 +130,113 @@ const ArbitrajesView = ({
           resultados.forEach((resultado) => {
             // Only include results with matched operations
             if (resultado.matchedQty > 0) {
-              rows.push(transformToTableRow(grupo, resultado));
+              const row = transformToTableRow(grupo, resultado);
+
+              // If grupo has no cauciones but we have an avgTNA, attempt to
+              // estimate repo fee breakdown using repoFeeConfig so the tooltip
+              // can show approximate arancel/derechos/iva instead of zeros.
+              try {
+                if ((!row.cauciones || row.cauciones.length === 0) && row.avgTNA > 0 && repoFeeConfig) {
+                  // Compute operation total and adjust principal by including/excluding
+                  // broker commissions and operation-level fees (feeAmount) just like P&L logic.
+                  const operationTotal = Number.isFinite(row.cantidad) && Number.isFinite(row.precioPromedio)
+                    ? row.cantidad * row.precioPromedio
+                    : (Number.isFinite(row.monto) ? row.monto : 0);
+                  const tenorDays = Number.isFinite(grupo.plazo) ? grupo.plazo : 0;
+                  const priceTNA = row.avgTNA;
+
+                  // Infer role from first operation side (sell => colocadora, buy => tomadora)
+                  let inferredRole = 'tomadora';
+                  const ops = Array.isArray(row.operations) ? row.operations : [];
+                  try {
+                    if (ops.length > 0) {
+                      const first = ops[0];
+                      const sideRaw = String(first?.lado ?? first?.side ?? '').toUpperCase();
+                      const isSell = sideRaw.startsWith('V') || sideRaw === 'SELL';
+                      const isBuy = sideRaw.startsWith('C') || sideRaw === 'BUY';
+                      if (isSell) inferredRole = 'colocadora';
+                      else if (isBuy) inferredRole = 'tomadora';
+                    }
+                  } catch (e) {
+                    // keep default
+                  }
+
+                  // Determine which operations contributed to the side that defines the principal
+                  const sideOps = ops.filter((op) => {
+                    try {
+                      const raw = String(op?.lado ?? op?.side ?? '').toUpperCase();
+                      const isSell = raw.startsWith('V') || raw === 'SELL';
+                      const isBuy = raw.startsWith('C') || raw === 'BUY';
+                      return inferredRole === 'colocadora' ? isSell : isBuy;
+                    } catch (e) {
+                      return false;
+                    }
+                  });
+
+                  const totalSideQuantity = sideOps.reduce((s, o) => s + (Number.isFinite(o?.cantidad) ? o.cantidad : (Number.isFinite(o?.last_qty) ? o.last_qty : 0)), 0) || row.cantidad || 0;
+                  const matchedQty = row.cantidad || 0;
+                  const proportion = totalSideQuantity > 0 ? (matchedQty / totalSideQuantity) : 1;
+
+                  const totalBrokerCommissionsSide = sideOps.reduce((s, o) => s + (Number.isFinite(o?.comisiones) ? o.comisiones : 0), 0) * proportion;
+                  const totalOperationFeeAmountSide = sideOps.reduce((s, o) => s + (Number.isFinite(o?.feeAmount) ? o.feeAmount : 0), 0) * proportion;
+
+                  // Principal used for interest calculation: operationTotal +/- (commissions + operation fees)
+                  const principal = inferredRole === 'colocadora'
+                    ? (operationTotal - totalBrokerCommissionsSide - totalOperationFeeAmountSide)
+                    : (operationTotal + totalBrokerCommissionsSide + totalOperationFeeAmountSide);
+
+                  const accrued = calculateAccruedInterest(principal, priceTNA, tenorDays);
+                  const baseAmount = principal + accrued;
+
+                  const repoOperationInput = {
+                    id: row.id,
+                    instrument: { cfiCode: 'RP', displayName: `${grupo.instrumento} ${tenorDays}D` },
+                    currency: 'ARS',
+                    role: inferredRole,
+                    principalAmount: principal,
+                    baseAmount,
+                    priceTNA,
+                    tenorDays,
+                  };
+
+                  const raw = calculateRepoExpenseBreakdown(repoOperationInput, repoFeeConfig);
+                  if (raw) {
+                    const normalized = {
+                      _raw: raw,
+                      principalAmount: raw.principalAmount,
+                      tenorDays: raw.tenorDays,
+                      baseAmount: raw.baseAmount,
+                      accruedInterest: raw.accruedInterest,
+                      arancel: raw.arancelAmount ?? raw.arancel ?? 0,
+                      derechos: raw.derechosMercadoAmount ?? raw.derechos ?? 0,
+                      gastos: raw.gastosGarantiaAmount ?? raw.gastos ?? 0,
+                      iva: raw.ivaAmount ?? raw.iva ?? 0,
+                      totalExpenses: raw.totalExpenses ?? 0,
+                      netSettlement: raw.netSettlement ?? raw.baseAmount ?? baseAmount,
+                      warnings: raw.warnings ?? [],
+                      status: raw.status ?? null,
+                    };
+
+                    // Attach both feeBreakdown and top-level fields so the tooltip
+                    // which checks row.arancelAmount / row.arancel etc can read them.
+                    // Also attach the principal used for estimation so the UI can
+                    // display the same Monto base used by the P&L calculation.
+                    row.principal = principal;
+                    row.feeBreakdown = normalized;
+                    row.arancel = normalized.arancel;
+                    row.derechosMercado = normalized.derechos;
+                    row.gastosGarantia = normalized.gastos;
+                    row.iva = normalized.iva;
+                    row.totalExpenses = normalized.totalExpenses;
+                    row.netSettlement = normalized.netSettlement;
+                  }
+                }
+              } catch (err) {
+                // don't block the UI if estimation fails
+                console.warn('[ArbitrajesView] failed to estimate repo fees for grupo', { grupo: grupo.instrumento, error: err });
+              }
+
+              rows.push(row);
             }
           });
         });
