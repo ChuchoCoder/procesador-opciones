@@ -98,6 +98,7 @@ Como usuario, quiero que la app reestablezca la conexión WebSocket y re-aplique
 - **FR-010**: El cliente MUST implementar backoff exponencial en reintentos de reconexión y limitar reintentos para evitar bucles continuos (configurable, valor por defecto sugerido: 5 reintentos con backoff creciente).
 - **FR-011**: El cliente MUST permitir suscribir múltiples instrumentos en un único mensaje `smd` (batch) y manejar respuestas de server-side que confirmen o indiquen errores por producto.
 - **FR-012**: Las pruebas automatizadas deben cubrir: conexión y autenticación, suscripción y recepción de `Md`, reconexión y re-suscripción, manejo de `entries` y `depth`, y deduplicación.
+- **FR-013**: El cliente de Market Data WebSocket DEBE implementarse en `frontend/src/services/broker/jsrofex-client.js`. Esta implementación DEBE usar el token de sesión autenticado (ya sea en header o en query parameter, según lo permita el servidor) al establecer la conexión WebSocket y al enviar mensajes de suscripción (`smd`).
 
 ### Key Entities *(include if feature involves data)*
 
