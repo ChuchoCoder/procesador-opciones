@@ -30,22 +30,27 @@
 ## Constitution Check
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
+*GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-[Gates determined based on constitution file]
+Gates (derived from constitution v2.0.1):
 
-Minimum Gates (sync with constitution v1.1.0):
-- Principle 1: Feature directly supports an end-user capability (justify if infrastructural).
-- Principle 2: Deterministic logic testable without DOM (list planned pure function units).
-- Principle 3: Test-first plan for any logic transformation (list initial test names).
-- Principle 4: Performance impact analysis (estimate added processing time / bundle delta).
-- Principle 5: Simplicity check (new dependencies? justification required).
-- Principle 6: All new UI text authored in Spanish (Argentina) (es-AR) and added to centralized strings module.
+- Strings centralization (Principle 5): The plan MUST declare whether the feature adds user-visible
+  strings and where they will be stored (path to centralized strings module) or explicitly state `N/A`.
+- Parsing & Idempotence (Principle 2 & Technical Constraints 8): If the feature touches option parsing
+  or text transforms, the plan MUST name the parsing module (or a plan to create one) and include the
+  intended validation approach (unit tests or documented manual validation per Principle 3).
+- Dependency policy (Principle 4): Any new dependency MUST include a short justification: benefit,
+  bundle size impact, and why lighter alternatives were rejected.
+- Minimal Surface (Principle 1): The plan MUST state the end-user outcome the feature enables and why
+  the change is not speculative. Avoid introducing abstractions without immediate reuse justification.
+
+GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.
 
 ## Project Structure
 
 ### Documentation (this feature)
 
-```
+```text
 specs/[###-feature]/
 ├── plan.md              # This file (/speckit.plan command output)
 ├── research.md          # Phase 0 output (/speckit.plan command)
@@ -63,7 +68,7 @@ specs/[###-feature]/
   not include Option labels.
 -->
 
-```
+```text
 # [REMOVE IF UNUSED] Option 1: Single project (DEFAULT)
 src/
 ├── models/
@@ -104,7 +109,7 @@ directories captured above]
 
 ## Complexity Tracking
 
-*Fill ONLY if Constitution Check has violations that must be justified*
+> **Fill ONLY if Constitution Check has violations that must be justified**
 
 | Violation | Why Needed | Simpler Alternative Rejected Because |
 |-----------|------------|-------------------------------------|
