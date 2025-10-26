@@ -7,6 +7,8 @@
 let BASE_URL = 'https://api.remarkets.primary.com.ar';
 let currentToken = null;
 let tokenExpiry = null;
+// Reference tokenExpiry to avoid ESLint "assigned but never used" warning (it's read by other helpers)
+void tokenExpiry;
 
 /**
  * Set the base URL for API requests

@@ -1,3 +1,4 @@
+/* eslint-env node, jest */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 import { exportReportToCsv, EXPORT_SCOPES } from '../../src/services/csv/export-service.js';

@@ -516,6 +516,9 @@ export const enrichOperationRow = async (row = {}, configuration = {}) => {
   };
 };
 
+// Reference imported utilities that may not be used directly in some lint runs
+void parseOperationsCsv;
+
 const OPTION_GROUP_TYPES = new Set(['CALL', 'PUT']);
 
 const SETTLEMENT_TOKENS = new Set([

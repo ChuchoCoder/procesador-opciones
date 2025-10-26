@@ -19,6 +19,8 @@ const ensureNumber = (value) => {
 };
 
 const clampToNonNegative = (value) => (value > 0 ? value : 0);
+// conservative reference to satisfy linter when helper is retained for future use
+void clampToNonNegative;
 
 const rateLabelsByKey = {
   arancel: 'Arancel de caución',

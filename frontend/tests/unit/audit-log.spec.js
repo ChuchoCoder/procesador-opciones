@@ -1,6 +1,7 @@
 /**
  * T072: Test for audit logging stub - verify SyncSession recorded post-sync
  */
+/* eslint-env node, jest */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { recordSyncSession, getSyncSessions, exportToCSV } from '../../src/services/broker/audit-log.js';
 

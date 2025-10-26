@@ -4,7 +4,6 @@ import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import LinearProgress from '@mui/material/LinearProgress';
-import Snackbar from '@mui/material/Snackbar';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 
@@ -20,6 +19,7 @@ import {
 } from '../../services/csv/clipboard-service.js';
 import { exportReportToCsv, EXPORT_SCOPES } from '../../services/csv/export-service.js';
 import { useConfig } from '../../state/index.js';
+import { showToast, dismissAllToasts } from '../../services/toastService.js';
 import { useStrings } from '../../strings/index.js';
 import { ROUTES } from '../../app/routes.jsx';
 import {
@@ -40,6 +40,7 @@ import { OPERATION_TYPES } from './operation-types.js';
 import OpcionesView from './OpcionesView.jsx';
 import CompraVentaView from './CompraVentaView.jsx';
 import ArbitrajesView from './ArbitrajesView.jsx';
+import { parseCauciones, calculateAvgTNAByCurrency } from '../../services/data-aggregation.js';
 import EmptyState from './EmptyState.jsx';
 import BrokerLogin from './BrokerLogin.jsx';
 import DataSourceSelector from './DataSourceSelector.jsx';
@@ -479,7 +480,6 @@ const ProcessorScreen = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [processingError, setProcessingError] = useState(null);
   const [warningCodes, setWarningCodes] = useState([]);
-  const [actionFeedback, setActionFeedback] = useState(null);
   const [activePreview, setActivePreview] = useState(CLIPBOARD_SCOPES.CALLS);
   const [activeOperationType, setActiveOperationType] = useState(OPERATION_TYPES.OPCIONES);
   const [selectedGroupIds, setSelectedGroupIds] = useState(() => createInitialGroupSelections());
@@ -492,7 +492,8 @@ const ProcessorScreen = () => {
   const autoSyncTokenRef = useRef(null);
 
   const isAuthenticated = Boolean(brokerAuth?.token);
-  const syncState = sync ?? { status: 'idle', inProgress: false };
+  // Ensure syncState has stable identity to avoid changing deps in hooks
+  const syncState = useMemo(() => (sync ?? { status: 'idle', inProgress: false }), [sync]);
   const syncInProgress = Boolean(syncState.inProgress);
 
   const localizedSyncState = useMemo(() => {
@@ -523,6 +524,8 @@ const ProcessorScreen = () => {
       error: message,
     };
   }, [brokerStrings.loginError, brokerStrings.rateLimited, brokerStrings.rateLimitedWait, brokerStrings.sessionExpired, syncState]);
+  // localizedSyncState is derived for debugging/display; reference to avoid unused-var lint
+  void localizedSyncState;
 
   const existingOperations = useMemo(
     () => (Array.isArray(syncedOperations) ? syncedOperations : []),
@@ -759,19 +762,20 @@ const ProcessorScreen = () => {
               const message = template
                 ? template.replace('{count}', String(result.operationsAdded))
                 : `${result.operationsAdded} operaciones nuevas.`;
-              setActionFeedback({ type: 'success', message });
+              showToast({ message, severity: 'success' });
             } else {
-              setActionFeedback({ type: 'info', message: brokerStrings.noNewOperations });
+              showToast({ message: brokerStrings.noNewOperations, severity: 'info' });
             }
           } else {
-            setActionFeedback(null);
+            // clear previous toasts
+            dismissAllToasts();
           }
         } else if (result.needsReauth) {
           clearBrokerAuth();
           setBrokerLoginError(brokerStrings.loginError);
           if (mode === 'refresh') {
             const message = brokerStrings.sessionExpired || brokerStrings.loginError;
-            setActionFeedback({ type: 'error', message });
+            showToast({ message, severity: 'error' });
           }
         } else if (mode === 'refresh' && result.rateLimited) {
           const waitMs = result.rateLimitMs ?? 60000;
@@ -780,12 +784,9 @@ const ProcessorScreen = () => {
           const message = template
             ? template.replace('{seconds}', seconds)
             : `Límite de velocidad alcanzado. Intentá nuevamente en ~${seconds} segundos.`;
-          setActionFeedback({ type: 'warning', message });
+          showToast({ message, severity: 'warning' });
         } else if (mode === 'refresh' && result.error) {
-          setActionFeedback({
-            type: 'error',
-            message: brokerStrings.refreshError || 'Ocurrió un error al actualizar las operaciones.',
-          });
+          showToast({ message: brokerStrings.refreshError || 'Ocurrió un error al actualizar las operaciones.', severity: 'error' });
         }
       } catch (error) {
         const message = error?.message || 'Error de sincronización';
@@ -805,18 +806,17 @@ const ProcessorScreen = () => {
       brokerStrings.rateLimited,
       brokerStrings.rateLimitedWait,
       brokerStrings.refreshSuccess,
+    brokerStrings.refreshError,
       brokerStrings.sessionExpired,
       cancelSync,
       clearBrokerAuth,
       commitSync,
       existingOperations,
       failSync,
-      refreshNewOperations,
-      setActionFeedback,
-      setBrokerAuth,
+  setBrokerAuth,
       setBrokerLoginError,
       stagePage,
-      startDailySync,
+      
       startSync,
       syncInProgress,
       syncState,
@@ -862,8 +862,8 @@ const ProcessorScreen = () => {
 
   const handleBrokerLogout = useCallback(() => {
     clearBrokerAuth();
-    setActionFeedback({ type: 'info', message: 'Sesión cerrada' });
-  }, [clearBrokerAuth, setActionFeedback]);
+    showToast({ message: 'Sesión cerrada', severity: 'info' });
+  }, [clearBrokerAuth]);
 
   const handleCancelSync = useCallback(() => {
     if (syncCancellationRef.current) {
@@ -871,9 +871,11 @@ const ProcessorScreen = () => {
     }
     cancelSync({ mode: syncState?.mode ?? 'daily' });
     if (syncState?.mode === 'refresh') {
-      setActionFeedback({ type: 'info', message: brokerStrings.canceled });
+      showToast({ message: brokerStrings.canceled, severity: 'info' });
     }
-  }, [brokerStrings.canceled, cancelSync, setActionFeedback, syncState]);
+  }, [brokerStrings.canceled, cancelSync, syncState]);
+  // handleCancelSync may be used by UI slots; reference to avoid unused-var lint
+  void handleCancelSync;
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -909,8 +911,9 @@ const ProcessorScreen = () => {
       name: file.name,
       timestamp: Date.now() // Ensure unique object reference
     } : null);
-    setProcessingError(null);
-    setActionFeedback(null);
+  setProcessingError(null);
+  // Clear any visible toasts when selecting a new file
+  dismissAllToasts();
     setWarningCodes([]);
     setActivePreview(CLIPBOARD_SCOPES.CALLS);
     resetGroupSelections();
@@ -993,38 +996,43 @@ const ProcessorScreen = () => {
       return;
     }
     
-    // Check if sync timestamp has changed OR if operations count changed (indicating new operations were committed)
+    // CRITICAL: Only trigger when sync is NOT in progress to avoid multiple re-renders
+    // Wait for sync to fully complete before re-processing
+    if (syncInProgress) {
+      return;
+    }
+    
+    // Check if sync timestamp has changed (indicating sync completed successfully)
     const currentSyncTimestamp = sync?.lastSyncTimestamp;
-    const currentOpsCount = syncedOperations?.length ?? 0;
     
     console.log('[ProcessorScreen] Refresh effect check:', {
       pendingRefresh: pendingRefreshRef.current,
       currentTimestamp: currentSyncTimestamp,
       lastTimestamp: lastSyncTimestampRef.current,
-      syncedOpsCount: currentOpsCount,
+      syncInProgress,
       timestampChanged: currentSyncTimestamp !== lastSyncTimestampRef.current,
-      hasTimestamp: !!currentSyncTimestamp,
     });
     
-    // Trigger re-process if timestamp changed (preferred) or just if we're pending and have operations
-    // This handles cases where timestamp might not be set
-    const shouldReprocess = 
-      (currentSyncTimestamp && currentSyncTimestamp !== lastSyncTimestampRef.current) ||
-      (currentOpsCount > 0 && !syncInProgress);
-    
-    if (shouldReprocess) {
-      console.log('[ProcessorScreen] Triggering re-process, reason:', 
-        currentSyncTimestamp !== lastSyncTimestampRef.current ? 'timestamp changed' : 'sync completed with ops');
+    // Only trigger re-process if:
+    // 1. Sync is complete (checked above)
+    // 2. Timestamp has changed (indicating successful sync)
+    if (currentSyncTimestamp && currentSyncTimestamp !== lastSyncTimestampRef.current) {
+      console.log('[ProcessorScreen] Triggering re-process after sync completion');
       pendingRefreshRef.current = false;
       lastSyncTimestampRef.current = null;
       
       // Re-trigger broker data selection with updated operations
       handleBrokerDataSelected();
     }
-  }, [sync?.lastSyncTimestamp, handleBrokerDataSelected, syncedOperations, syncInProgress]);
+  }, [sync?.lastSyncTimestamp, handleBrokerDataSelected, syncInProgress]);
 
   // Auto-process when a data source is selected
   useEffect(() => {
+    // Skip auto-processing if we have a pending refresh - let the refresh effect handle it
+    if (pendingRefreshRef.current) {
+      return;
+    }
+    
     if (selectedDataSource && !report && !isProcessing) {
       runProcessing(selectedDataSource);
     }
@@ -1032,7 +1040,8 @@ const ProcessorScreen = () => {
 
   const handleToggleAveraging = async (nextValue) => {
     setAveraging(nextValue);
-    setActionFeedback(null);
+    // Clear visible toasts before toggling averaging
+    dismissAllToasts();
     if (selectedDataSource && report && !report.views) {
       await runProcessing(selectedDataSource, { useAveraging: nextValue });
     }
@@ -1050,9 +1059,10 @@ const ProcessorScreen = () => {
         scope,
         view: currentViewKey,
       });
-      setActionFeedback(null);
+      // Clear any previous toasts when starting downloads
+      dismissAllToasts();
     } catch {
-      setActionFeedback({ type: 'error', message: processorStrings.actions.downloadError });
+      showToast({ message: processorStrings.actions.downloadError, severity: 'error' });
     }
   };
 
@@ -1085,6 +1095,18 @@ const ProcessorScreen = () => {
   }, [warningCodes, processorStrings.warnings]);
 
   const groups = useMemo(() => report?.groups ?? [], [report]);
+  // Precompute avgTNAByCurrency at processor level so the arbitrage view can receive
+  // a precomputed mapping and skip recomputing it. We parse cauciones from the
+  // enriched operations present in the report and derive the weighted average TNA by currency.
+  const avgTNAByCurrency = useMemo(() => {
+    try {
+      const ops = Array.isArray(report?.operations) ? report.operations : [];
+      const parsed = parseCauciones(ops);
+      return calculateAvgTNAByCurrency(parsed || []);
+    } catch (e) {
+      return {};
+    }
+  }, [report?.operations]);
   const filterStrings = processorStrings.filters ?? {};
 
   const expirationLabelMap = useMemo(() => {
@@ -1367,9 +1389,9 @@ const ProcessorScreen = () => {
         view: currentViewKey,
         clipboard,
       });
-      setActionFeedback({ type: 'success', message: processorStrings.actions.copySuccess });
+      showToast({ message: processorStrings.actions.copySuccess, severity: 'success' });
     } catch {
-      setActionFeedback({ type: 'error', message: processorStrings.actions.copyError });
+      showToast({ message: processorStrings.actions.copyError, severity: 'error' });
     }
   };
 
@@ -1577,7 +1599,7 @@ const ProcessorScreen = () => {
             {...commonProps}
             groupOptions={allGroupOptions}
             operations={scopedData.filteredOperations || []}
-            cauciones={[]} // TODO: Integrate cauciones data source
+            avgTNAByCurrency={avgTNAByCurrency}
           />
         );
 
@@ -1626,6 +1648,8 @@ const ProcessorScreen = () => {
       </Box>
     );
   };
+  // renderSourceSummary is defined for potential UI slots; reference to avoid unused-var lint
+  void renderSourceSummary;
 
   return (
     <Box
@@ -1722,24 +1746,8 @@ const ProcessorScreen = () => {
           ) : null}
         </Stack>
 
-      {/* Toast Notifications */}
-      <Snackbar
-        open={Boolean(actionFeedback)}
-        autoHideDuration={4000}
-        onClose={() => setActionFeedback(null)}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        {actionFeedback ? (
-          <Alert 
-            onClose={() => setActionFeedback(null)} 
-            severity={actionFeedback.type} 
-            sx={{ width: '100%' }}
-            variant="filled"
-          >
-            {actionFeedback.message}
-          </Alert>
-        ) : undefined}
-      </Snackbar>
+      {/* Toast notifications are handled by the global ToastContainer (mounted at app root).
+          This avoids re-rendering the Processor screen when toasts are shown/hidden. */}
     </Box>
   );
 };

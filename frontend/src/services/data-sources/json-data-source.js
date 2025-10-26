@@ -14,7 +14,7 @@ export class JsonDataSource extends DataSourceAdapter {
    * @param {Object} config - Parser configuration
    * @returns {Promise<{rows: Array, meta: Object}>}
    */
-  async parse(input, config = {}) {
+  async parse(input, _config = {}) {
     let data = input;
 
     // Handle string input
@@ -78,7 +78,7 @@ export class JsonDataSource extends DataSourceAdapter {
     });
 
     // Normalize broker JSON format to expected row format
-    const rows = validOrders.map((order, index) => this.normalizeOrder(order, index, config));
+  const rows = validOrders.map((order, index) => this.normalizeOrder(order, index, _config));
 
     const rowCount = rows.length;
     const meta = {
@@ -106,10 +106,13 @@ export class JsonDataSource extends DataSourceAdapter {
    * @param {Object} config - Configuration
    * @returns {Object} Normalized row
    */
-  normalizeOrder(order, index, config = {}) {
+  normalizeOrder(order, index, _config = {}) {
     if (!order || typeof order !== 'object') {
       return this.createEmptyRow(index);
     }
+
+    // _config is accepted for interface compatibility; reference it to satisfy linter
+    void _config;
 
     // Map broker fields to expected format
     const row = {

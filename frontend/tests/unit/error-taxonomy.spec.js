@@ -2,6 +2,7 @@
  * T051: Unit tests for error taxonomy
  * Verify error classification and retry decisions
  */
+/* eslint-env node, jest */
 import { describe, it, expect } from 'vitest';
 import {
   ERROR_CATEGORIES,

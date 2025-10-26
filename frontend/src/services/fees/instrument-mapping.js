@@ -39,7 +39,7 @@ function buildCfiCodeMap(instrumentsData) {
   const detailsMap = new Map();
   
   if (!Array.isArray(instrumentsData)) {
-    // eslint-disable-next-line no-console
+     
     console.error('PO: instrument-data-invalid', typeof instrumentsData);
     return { cfiMap: map, detailsMap };
   }
@@ -84,7 +84,7 @@ function buildCfiCodeMap(instrumentsData) {
     }
   }
 
-  // eslint-disable-next-line no-console
+   
   console.info('PO: instrument-mapping-built', { totalCodes: map.size, totalSymbols: detailsMap.size });
   return { cfiMap: map, detailsMap };
 }
@@ -111,7 +111,7 @@ export function loadInstrumentMapping(instrumentsData) {
  */
 export function resolveCfiCategory(cfiCode) {
   if (!_cfiCodeMap) {
-    // eslint-disable-next-line no-console
+     
     console.warn('PO: mapping-not-loaded', { cfiCode });
     return 'bonds'; // safe fallback
   }
@@ -138,7 +138,7 @@ export function resolveCfiCategory(cfiCode) {
  */
 export function getInstrumentDetails(symbol) {
   if (!_instrumentDetailsMap) {
-    // eslint-disable-next-line no-console
+     
     console.warn('PO: mapping-not-loaded-for-symbol', { symbol });
     return null;
   }
