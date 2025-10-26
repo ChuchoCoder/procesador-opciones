@@ -6,7 +6,7 @@
 
 import { enrichOperationWithFee } from './fees/fee-enrichment.js';
 import { getEffectiveRates } from './bootstrap-defaults.js';
-import { getRepoFeeConfig } from './storage-settings.js';
+import { getRepoFeeConfig } from './fees/broker-fees-storage.js';
 import { getInstrumentDetails } from './fees/instrument-mapping.js';
 
 function resolveInstrumentDetails(operation) {
@@ -121,6 +121,8 @@ export async function enrichArbitrageOperations(operations) {
   // Get fee configurations (same as process-operations.js)
   const effectiveRates = getEffectiveRates();
   const repoFeeConfig = await getRepoFeeConfig();
+  // repoFeeConfig is intentionally unused for arbitrage operations flow; reference to satisfy linter
+  void repoFeeConfig;
   
   const enriched = operations.map(op => 
     enrichArbitrageOperation(op, effectiveRates)
@@ -137,8 +139,9 @@ export async function enrichArbitrageOperations(operations) {
     }));
     const pesosRows = enriched.filter((o) => (String(o?.symbol ?? o?.instrumento ?? '').toUpperCase().includes('PESOS'))).length;
     console.debug('[arbitrage-fee-enrichment] enrichArbitrageOperations: enriched count', { total: enriched.length, sample, pesosRows });
-  } catch (e) {
+  } catch (_e) {
     // swallow debug errors
+    void _e;
   }
   
   return enriched;

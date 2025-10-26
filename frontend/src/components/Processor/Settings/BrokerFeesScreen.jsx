@@ -77,7 +77,7 @@ export default function BrokerFeesScreen() {
         setFormValues(mapToFormState(fees));
         setInitialValues(fees);
       } catch (error) {
-        // eslint-disable-next-line no-console
+         
         console.error('PO: loadBrokerFees failed', error);
         if (mounted) {
           setErrorMessage(brokerStrings.errorMessage);
@@ -136,7 +136,7 @@ export default function BrokerFeesScreen() {
       setFormValues(mapToFormState(sanitized));
   showToast({ message: brokerStrings.successMessage, severity: 'success' });
     } catch (error) {
-      // eslint-disable-next-line no-console
+       
       console.error('PO: saveBrokerFees failed', error);
       setErrorMessage(brokerStrings.errorMessage);
     } finally {
@@ -155,7 +155,7 @@ export default function BrokerFeesScreen() {
       setFormValues(mapToFormState(defaults));
   showToast({ message: brokerStrings.resetMessage, severity: 'info' });
     } catch (error) {
-      // eslint-disable-next-line no-console
+       
       console.error('PO: clearBrokerFees failed', error);
   setErrorMessage(brokerStrings.errorMessage);
     } finally {
