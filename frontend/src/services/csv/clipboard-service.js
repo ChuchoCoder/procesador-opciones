@@ -97,8 +97,9 @@ const formatDate = (operation) => {
       const day = String(date.getDate()).padStart(2, '0');
       return `${month}/${day}/${year}`;
     }
-  } catch (error) {
+  } catch (_error) {
     // If date parsing fails, return empty string
+    void _error;
   }
 
   return '';

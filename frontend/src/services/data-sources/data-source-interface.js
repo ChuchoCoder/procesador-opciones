@@ -6,10 +6,12 @@ export class DataSourceAdapter {
   /**
    * Parse input data and return normalized rows
    * @param {File|string|Array|Object} input - The input to parse
-   * @param {Object} config - Optional configuration for the parser
+   * @param {Object} _config - Optional configuration for the parser (may be unused in base class)
    * @returns {Promise<{rows: Array, meta: Object}>} Parsed rows and metadata
    */
-  async parse(input, config = {}) {
+  async parse(input, _config = {}) {
+    // _config is intentionally unused in the base class; reference it to satisfy linter
+    void _config;
     throw new Error('DataSourceAdapter.parse() must be implemented by subclass');
   }
 

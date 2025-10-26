@@ -2,6 +2,7 @@
  * T052: Unit tests for retry utility
  * Verify retry logic, backoff sequences, and rate limit parsing
  */
+/* eslint-env node, jest */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { retryWithBackoff, parseRetryAfter } from '../../src/services/broker/retry-util.js';
 
@@ -49,6 +50,8 @@ describe('Retry Utility', () => {
       const mockFn = vi.fn().mockRejectedValue(finalError);
 
       const promise = retryWithBackoff(mockFn);
+      // attach no-op rejection handler to avoid Node's PromiseRejectionHandledWarning
+      void promise.catch(() => {});
 
       // Advance through all retry delays
       await vi.advanceTimersByTimeAsync(2000);
@@ -102,6 +105,8 @@ describe('Retry Utility', () => {
       const shouldRetryFn = (error) => !error.message.includes('AUTH_FAILED');
 
       const promise = retryWithBackoff(mockFn, { shouldRetryFn });
+      // avoid unhandled rejection warning when auth error causes early rejection
+      void promise.catch(() => {});
 
       await vi.advanceTimersByTimeAsync(2000); // First retry for transient error
 
@@ -224,6 +229,8 @@ describe('Retry Utility', () => {
         shouldRetryFn,
         retrySequence: [100, 200],
       });
+      // attach handler so Node doesn't report the rejection as unhandled before test asserts
+      void promise.catch(() => {});
 
       await vi.advanceTimersByTimeAsync(100);
       await vi.advanceTimersByTimeAsync(200);

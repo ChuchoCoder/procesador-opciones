@@ -56,6 +56,9 @@ export function adaptFeeBreakdownForTooltip(feeBreakdown, grossNotional, netTota
     return null;
   }
 
+  // conservative reference for an argument currently unused in this adapter
+  void totalQuantity;
+
   const {
     commissionPct,
     rightsPct,

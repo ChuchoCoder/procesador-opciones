@@ -6,12 +6,12 @@ import { DataSourceAdapter } from './data-source-interface.js';
  * Wraps the existing parseOperationsCsv function
  */
 export class CsvDataSource extends DataSourceAdapter {
-  async parse(input, config = {}) {
+  async parse(input, _config = {}) {
     if (!input) {
       throw new Error('CSV input is required');
     }
 
-    return await parseOperationsCsv(input, config);
+    return await parseOperationsCsv(input, _config);
   }
 
   getSourceType() {

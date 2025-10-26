@@ -5,6 +5,7 @@
  * only operations from the selected source are displayed.
  */
 
+/* eslint-env node, jest */
 import { describe, it, expect } from 'vitest';
 
 describe('Data Source Filtering', () => {

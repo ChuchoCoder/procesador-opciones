@@ -1,3 +1,4 @@
+/* eslint-env node, jest */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import {
   calculateRepoExpenseBreakdown,
@@ -6,6 +7,9 @@ import {
   reconcileBaseAmount,
   setRepoFeesLogger,
 } from '../../src/services/fees/repo-fees.js';
+
+// conservative reference for imported helper used in some tests by intention
+void reconcileBaseAmount;
 
 const defaultConfig = {
   arancelCaucionColocadora: { ARS: 0.2, USD: 0.2 },

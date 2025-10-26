@@ -99,7 +99,9 @@ function calculateTotals(operations) {
 /**
  * Single table for either CI or 24h operations
  */
-const OperationsTable = ({ title, operations, sideLabel, isSell }) => {
+const OperationsTable = ({ title, operations, _sideLabel, isSell }) => {
+  // _sideLabel is accepted for API compatibility; reference to satisfy linter
+  void _sideLabel;
   const groupedOps = useMemo(() => {
     const grouped = groupOperationsByOrderId(operations);
     
@@ -273,7 +275,9 @@ const OperationsTable = ({ title, operations, sideLabel, isSell }) => {
 /**
  * Main component - side-by-side tables for CI and 24h operations
  */
-const ArbitrageOperationsDetail = ({ operations, patron }) => {
+const ArbitrageOperationsDetail = ({ operations, _patron }) => {
+  // _patron is accepted for API compatibility; reference to satisfy linter
+  void _patron;
   // Split operations by venue (CI vs 24h)
   const { ciOperations, h24Operations, ciSide, h24Side } = useMemo(() => {
     if (!operations || operations.length === 0) {

@@ -1,3 +1,4 @@
+/* eslint-env node, jest */
 import { describe, it, expect } from 'vitest';
 
 import {

@@ -1,3 +1,4 @@
+/* eslint-env node, jest */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
 const SAMPLE_INSTRUMENTS = [

@@ -12,7 +12,7 @@ const startApplication = async () => {
   try {
     await bootstrapFeeServices();
   } catch (error) {
-    // eslint-disable-next-line no-console
+     
     console.error('PO: bootstrapFeeServices failed', error);
   }
 

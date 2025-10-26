@@ -115,98 +115,103 @@ function getPnLTradeBreakdown(row) {
  */
 function getPnLCaucionBreakdown(row) {
   if (!row.cauciones || row.cauciones.length === 0) {
-    const formatter = new Intl.NumberFormat('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    const fmt = (v) => (Number.isFinite(v) ? formatter.format(v) : '—');
-    const fmtSigned = (v) => {
-      if (!Number.isFinite(v)) return '—';
-      const abs = formatter.format(Math.abs(v));
-      if (v > 0) return `+${abs}`;
-      if (v < 0) return `-${abs}`;
-      return abs;
-    };
+    // If the service provided a normalized caucion fees breakdown for the row,
+    // prefer rendering that instead of re-estimating amounts in the UI.
+    const breakdown = row.caucionFeesBreakdown || row.feeBreakdown || null;
+    if (breakdown) {
+      const formatter = new Intl.NumberFormat('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      const fmt = (v) => (Number.isFinite(v) ? formatter.format(v) : '—');
+      const fmtSigned = (v) => {
+        if (!Number.isFinite(v)) return '—';
+        const abs = formatter.format(Math.abs(v));
+        if (v > 0) return `+${abs}`;
+        if (v < 0) return `-${abs}`;
+        return abs;
+      };
 
-    // Prefer an explicitly attached principal (estimation) if present so the
-    // tooltip shows the same 'Monto base' used by P&L calculations. Otherwise
-    // fall back to cantidad * precioPromedio or row.monto.
-    const baseAmount = Number.isFinite(row.principal)
-      ? row.principal
-      : (Number.isFinite(row.cantidad) && Number.isFinite(row.precioPromedio)
-        ? row.cantidad * row.precioPromedio
-        : (Number.isFinite(row.monto) ? row.monto : null));
+      const principal = Number.isFinite(row.principal) ? row.principal : null;
+      const baseAmount = Number.isFinite(breakdown.baseAmount) ? breakdown.baseAmount : principal;
+      const arancel = Number.isFinite(breakdown.arancel) ? breakdown.arancel : (Number.isFinite(breakdown.arancelAmount) ? breakdown.arancelAmount : 0);
+      const derechos = Number.isFinite(breakdown.derechos) ? breakdown.derechos : (Number.isFinite(breakdown.derechosMercadoAmount) ? breakdown.derechosMercadoAmount : 0);
+      const gastosGarantia = Number.isFinite(breakdown.gastos) ? breakdown.gastos : (Number.isFinite(breakdown.gastosGarantiaAmount) ? breakdown.gastosGarantiaAmount : 0);
+      const iva = Number.isFinite(breakdown.iva) ? breakdown.iva : (Number.isFinite(breakdown.ivaAmount) ? breakdown.ivaAmount : 0);
+      const totalExpenses = Number.isFinite(breakdown.totalExpenses) ? breakdown.totalExpenses : (arancel + derechos + gastosGarantia + iva);
+      const netSettlement = Number.isFinite(breakdown.netSettlement) ? breakdown.netSettlement : (Number.isFinite(breakdown.baseAmount) ? (breakdown.baseAmount - totalExpenses) : null);
 
-    let arancel = Number.isFinite(row.arancelAmount) ? row.arancelAmount : (Number.isFinite(row.arancel) ? row.arancel : 0);
-    let derechos = Number.isFinite(row.derechosMercadoAmount) ? row.derechosMercadoAmount : (Number.isFinite(row.derechosMercado) ? row.derechosMercado : 0);
-    let gastosGarantia = Number.isFinite(row.gastosGarantiaAmount) ? row.gastosGarantiaAmount : (Number.isFinite(row.gastosGarantia) ? row.gastosGarantia : 0);
-    let iva = Number.isFinite(row.ivaAmount) ? row.ivaAmount : (Number.isFinite(row.iva) ? row.iva : 0);
+      return (
+        <Box sx={{ p: 1, minWidth: 300 }}>
+          <Typography variant="body2" sx={{ fontWeight: 600, display: 'block', mb: 1, color: 'grey.100' }}>
+            Detalle P&L Caución {row.isCaucionColocadora ? "Colocadora" : "Tomadora"}
+          </Typography>
+          {Number.isFinite(breakdown.avgTNA) && (
+            <Typography variant="body2" sx={{ display: 'block', mt: 0.5, color: 'primary.light', fontWeight: 500 }}>
+              TNA Promedio: {Number(breakdown.avgTNA).toFixed(2)}%
+            </Typography>
+          )}
+          <Typography variant="body2" sx={{ display: 'block', mt: 1, color: 'grey.100' }}>
+            Plazo: {row.plazo ?? row.tenorDias ?? breakdown.tenorDays ?? '—'} días
+          </Typography>
+          <Typography variant="body2" sx={{ display: 'block', mt: 1, color: 'grey.100' }}>
+            Importe Bruto: {principal !== null ? fmt(principal) : '—'}
+          </Typography>
 
-    // If explicit amounts are missing, try to estimate using feeBreakdown percentages (commission/rights/vat)
-    const feeB = row.feeBreakdown || {};
-    const commissionPct = Number.isFinite(feeB.commissionPct) ? feeB.commissionPct : (Number.isFinite(feeB.commissionPctPct) ? feeB.commissionPctPct : null);
-    const rightsPct = Number.isFinite(feeB.rightsPct) ? feeB.rightsPct : (Number.isFinite(feeB.rightsPctPct) ? feeB.rightsPctPct : null);
-    const vatPct = Number.isFinite(feeB.vatPct) ? feeB.vatPct : (Number.isFinite(feeB.vatPctPct) ? feeB.vatPctPct : null);
+          <Typography variant="body2" sx={{ display: 'block', mt: 1, color: 'grey.100' }}>
+            Interés devengado: {fmtSigned(breakdown.accruedInterest ?? row.accruedInterest ?? row.pnl_caucion)}
+          </Typography>
+          <Typography variant="body2" sx={{ display: 'block', mt: 1, color: 'grey.100' }}>
+            Monto base: {baseAmount !== null ? fmt(baseAmount) : '—'}
+          </Typography>
+          <Typography variant="body2" sx={{ display: 'block', color: 'grey.400', ml: 1 }}>
+            Arancel: {fmtSigned(arancel)}
+          </Typography>
+          <Typography variant="body2" sx={{ display: 'block', color: 'grey.400', ml: 1 }}>
+            Derechos de mercado: {fmtSigned(derechos)}
+          </Typography>
+          {Number.isFinite(gastosGarantia) && (
+            <Typography variant="body2" sx={{ display: 'block', color: 'grey.400', ml: 1 }}>
+              Gastos de garantía: {fmtSigned(gastosGarantia)}
+            </Typography>
+          )}
+          <Typography variant="body2" sx={{ display: 'block', color: 'grey.400', ml: 1 }}>
+            IVA sobre gastos: {fmtSigned(iva)}
+          </Typography>
 
-    if (Number.isFinite(baseAmount)) {
-      if ((!arancel || arancel === 0) && Number.isFinite(commissionPct)) {
-        arancel = baseAmount * commissionPct;
-      }
-      if ((!derechos || derechos === 0) && Number.isFinite(rightsPct)) {
-        derechos = baseAmount * rightsPct;
-      }
-      if ((!iva || iva === 0) && Number.isFinite(vatPct)) {
-        // VAT usually applies to commission+rights
-        const commission = Number.isFinite(commissionPct) ? baseAmount * commissionPct : 0;
-        const rights = Number.isFinite(rightsPct) ? baseAmount * rightsPct : 0;
-        iva = (commission + rights) * vatPct;
-      }
+          <Typography variant="body2" sx={{ display: 'block', mt: 1, fontWeight: 600, borderTop: '1px solid', borderColor: 'grey.700', pt: 0.5, color: 'grey.100' }}>
+            Gastos totales: {fmtSigned(totalExpenses)}
+          </Typography>
+          <Typography variant="body2" sx={{ display: 'block', fontWeight: 600, color: 'grey.100' }}>
+            Neto de liquidación: {netSettlement !== null ? fmt(netSettlement) : '—'}
+          </Typography>
+        </Box>
+      );
     }
 
-    const totalExpenses = (arancel || 0) + (derechos || 0) + (gastosGarantia || 0) + (iva || 0);
-    // Assume expenses reduce net settlement (colocadora) — for tomadora logic we need role; default to subtraction
-    const netSettlement = Number.isFinite(baseAmount) ? (baseAmount - totalExpenses) : null;
+    // No service breakdown available — be strict: do not estimate repo fees locally.
+    const formatter = new Intl.NumberFormat('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const fmt = (v) => (Number.isFinite(v) ? formatter.format(v) : '—');
 
     return (
       <Box sx={{ p: 1, minWidth: 300 }}>
         <Typography variant="body2" sx={{ fontWeight: 600, display: 'block', mb: 1, color: 'grey.100' }}>
-          Detalle P&L Caución
+          Detalle P&L Caución {row.isCaucionColocadora ? "Colocadora" : "Tomadora"}
         </Typography>
         <Typography variant="body2" sx={{ color: 'grey.400' }}>
-          Sin cauciones - Usando TNA promedio
+          Datos de caución no disponibles (el servicio no proporcionó breakdown)
         </Typography>
-        {row.avgTNA > 0 && (
-          <Typography variant="body2" sx={{ display: 'block', mt: 0.5, color: 'primary.light', fontWeight: 500 }}>
-            TNA Promedio: {Number(row.avgTNA).toFixed(2)}%
-          </Typography>
-        )}
         <Typography variant="body2" sx={{ display: 'block', mt: 1, color: 'grey.100' }}>
-          Monto base: {baseAmount !== null ? fmt(baseAmount) : '—'}
+          Monto base: {fmt(null)}
         </Typography>
         <Typography variant="body2" sx={{ display: 'block', color: 'grey.400', ml: 1 }}>
           Plazo: {row.plazo ?? row.tenorDias ?? '—'} días
         </Typography>
-
         <Typography variant="body2" sx={{ display: 'block', mt: 1, color: 'grey.100' }}>
-          Interés devengado: {fmtSigned(row.pnl_caucion)}
+          Interés devengado: {fmt(null)}
         </Typography>
-        <Typography variant="body2" sx={{ display: 'block', color: 'grey.400', ml: 1 }}>
-          Arancel: {fmtSigned(arancel)}
-        </Typography>
-        <Typography variant="body2" sx={{ display: 'block', color: 'grey.400', ml: 1 }}>
-          Derechos de mercado: {fmtSigned(derechos)}
-        </Typography>
-        {Number.isFinite(gastosGarantia) && (
-          <Typography variant="body2" sx={{ display: 'block', color: 'grey.400', ml: 1 }}>
-            Gastos de garantía: {fmtSigned(gastosGarantia)}
-          </Typography>
-        )}
-        <Typography variant="body2" sx={{ display: 'block', color: 'grey.400', ml: 1 }}>
-          IVA sobre gastos: {fmtSigned(iva)}
-        </Typography>
-
         <Typography variant="body2" sx={{ display: 'block', mt: 1, fontWeight: 600, borderTop: '1px solid', borderColor: 'grey.700', pt: 0.5, color: 'grey.100' }}>
-          Gastos totales: {fmtSigned(totalExpenses)}
+          Gastos totales: {fmt(null)}
         </Typography>
         <Typography variant="body2" sx={{ display: 'block', fontWeight: 600, color: 'grey.100' }}>
-          Neto de liquidación: {netSettlement !== null ? fmt(netSettlement) : '—'}
+          Neto de liquidación: {fmt(null)}
         </Typography>
       </Box>
     );
@@ -224,7 +229,7 @@ function getPnLCaucionBreakdown(row) {
   return (
     <Box sx={{ p: 1, minWidth: 300 }}>
       <Typography variant="body2" sx={{ fontWeight: 600, display: 'block', mb: 1, color: 'grey.100' }}>
-        Detalle P&L Caución
+        Detalle P&L Caución {row.isCaucionColocadora ? "Colocadora" : "Tomadora"}
       </Typography>
       {row.avgTNA > 0 && (
         <Typography variant="body2" sx={{ display: 'block', mb: 1, color: 'primary.light', fontWeight: 500 }}>
@@ -233,7 +238,16 @@ function getPnLCaucionBreakdown(row) {
       )}
 
       {row.cauciones.map((c, idx) => {
-        const base = Number.isFinite(c.baseAmount) ? c.baseAmount : (Number.isFinite(c.monto) ? c.monto : (Number.isFinite(c.principalAmount) ? c.principalAmount : 0));
+        // Prefer service-provided principalPortion (portion of operation principal
+        // allocated to this caución). Fall back to baseAmount, then the
+        // original tranche monto, then any principalAmount if present.
+        const base = Number.isFinite(c.principalPortion)
+          ? c.principalPortion
+          : Number.isFinite(c.baseAmount)
+            ? c.baseAmount
+            : Number.isFinite(c.monto)
+              ? c.monto
+              : (Number.isFinite(c.principalAmount) ? c.principalAmount : 0);
         const tasa = Number.isFinite(c.tasa) ? c.tasa : (Number.isFinite(c.tna) ? c.tna : (row.avgTNA || null));
         const tenor = Number.isFinite(c.tenorDias) ? c.tenorDias : (Number.isFinite(c.tenorDays) ? c.tenorDays : null);
         const interes = Number.isFinite(c.interes) ? c.interes : (Number.isFinite(c.accruedInterest) ? c.accruedInterest : 0);
