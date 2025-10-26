@@ -45,7 +45,7 @@ Independent Test: With a mocked authenticated BrokerSession, invoke the sync han
 
 ### Implementation
 
-- [ ] T014 [US1] Implement `fetchInstruments()` in `frontend/src/services/instrumentsSyncService.js` to call `GET https://BASE_URL/rest/instruments/details` using existing HTTP helper or `fetch` and return parsed JSON
+- [ ] T014 [US1] Implement `fetchInstruments()` in `frontend/src/services/instrumentsSyncService.js` to call the broker client in `frontend/src/services/broker/jsrofex-client.js` (use its method to GET `/rest/instruments/details`) and return parsed JSON
 - [ ] T015 [US1] Implement `normalizeAndDedup(instruments)` in `frontend/src/services/instrumentsSyncService.js` following `data-model.md` rules (dedup key `${marketId}|${symbol}`, normalize `maturityDate` to `YYYY-MM-DD`, mark `incomplete` & `issues` when fields missing)
 - [ ] T016 [US1] Implement `saveRecord(record)` in `frontend/src/services/instrumentsSyncStorage.js` with `chrome.storage.local` write, fallback sharding to `localStorage` keys `instrumentsWithDetails.meta` and `instrumentsWithDetails.part.<n>` and compute `versionHash` (sha1 of canonical JSON)
 - [ ] T017 [US1] Implement alarm handler wiring: ensure `background/instruments-sync.js` calls the sync service and records logs in `PO:instruments-sync` namespace
