@@ -1,3 +1,4 @@
+/* eslint-env node, jest */
 import { describe, it, expect } from 'vitest';
 import {
   normalizeOperation,
@@ -10,38 +11,52 @@ describe('Dedupe & Merge Logic (T011, T063, T064)', () => {
   describe('normalizeOperation (T008)', () => {
     it('should normalize broker operation with all fields', () => {
       const raw = {
-        order_id: 'ORD-123',
-        operation_id: 'OP-456',
-        symbol: 'ggal',
-        optionType: 'call',
-        action: 'BUY',
-        quantity: 10,
-        price: 100.50,
-        tradeTimestamp: 1697000000000,
-        strike: 4500,
-        expirationDate: '2025-12-15',
-        sourceReferenceId: 'REF-789',
-        status: 'open',
-        revisionIndex: 0,
-      };
+            orderId: "O0Oxp8aEo13T-09809544",
+            clOrdId: "9vPafM7a7Mf3tb9S",
+            proprietary: "ISV_PBCP",
+            execId: "MERVE0Oxp3kCyL0V",
+            accountId: {
+                id: "17825"
+            },
+            instrumentId: {
+                marketId: "ROFX",
+                symbol: "MERV - XMEV - GGAL - 24hs"
+            },
+            price: 211.03,
+            orderQty: 80,
+            ordType: "LIMIT",
+            side: "BUY",
+            timeInForce: "DAY",
+            transactTime: "20251024-14:08:23.231-0300",
+            avgPx: 211.03000,
+            lastPx: 211.03,
+            lastQty: 1,
+            cumQty: 21,
+            leavesQty: 59,
+            iceberg: "true",
+            displayQty: 10,
+            status: "CANCELLED",
+            text: "REPLACED",
+            originatingUsername: "ISV_MATRIZ4"
+        };
 
       const result = normalizeOperation(raw, 'broker');
 
       expect(result.id).toBeTruthy(); // UUID generated
-      expect(result.order_id).toBe('ORD-123');
-      expect(result.operation_id).toBe('OP-456');
-      expect(result.symbol).toBe('GGAL'); // uppercase
-      expect(result.optionType).toBe('call');
+      expect(result.order_id).toBe('O0Oxp8aEo13T-09809544');
+      expect(result.operation_id).toBe('MERVE0Oxp3kCyL0V');
+      expect(result.symbol).toBe('MERV - XMEV - GGAL - 24HS'); // uppercase
+      expect(result.optionType).toBe('stock');
       expect(result.action).toBe('buy'); // lowercase
-      expect(result.quantity).toBe(10);
-      expect(result.price).toBe(100.50);
-      expect(result.tradeTimestamp).toBe(1697000000000);
-      expect(result.strike).toBe(4500);
-      expect(result.expirationDate).toBe('2025-12-15');
+      expect(result.quantity).toBe(21);
+      expect(result.price).toBe(211.03000);
+      expect(result.tradeTimestamp).toBe(1761325703231);
+      expect(result.strike).toBe(null);
+      expect(result.expirationDate).toBe(null);
       expect(result.source).toBe('broker');
-      expect(result.sourceReferenceId).toBe('REF-789');
-      expect(result.status).toBe('open');
-      expect(result.revisionIndex).toBe(0);
+      expect(result.sourceReferenceId).toBe('O0Oxp8aEo13T-09809544');
+      expect(result.status).toBe('CANCELLED');
+      expect(result.revisionIndex).toBe(null);
       expect(result.importTimestamp).toBeGreaterThan(0);
     });
 

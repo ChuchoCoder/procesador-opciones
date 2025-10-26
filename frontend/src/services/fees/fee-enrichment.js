@@ -5,7 +5,7 @@ import { calculateFee } from './fee-calculator.js';
 import { calculateRepoExpenseBreakdown, calculateAccruedInterest, parseTenorDays } from './repo-fees.js';
 import { resolveCfiCategory, getInstrumentDetails, getUnknownCfiCodes } from './instrument-mapping.js';
 import { getEffectiveRates } from '../bootstrap-defaults.js';
-import { getRepoFeeConfig } from '../storage-settings.js';
+import { getRepoFeeConfig } from './broker-fees-storage.js';
 import { logFeeProcessingSummary } from '../logging/fee-logging.js';
 
 const REPO_SOURCE_PREFIX = 'repo';
@@ -585,7 +585,7 @@ export async function enrichOperationsWithFees(operations) {
   const repoFeeConfig = await getRepoFeeConfig();
   
   // Debug: log effective rates
-  // eslint-disable-next-line no-console
+   
   console.log('PO: effective-rates', effectiveRates, {
     repoFeeConfigLoaded: Boolean(repoFeeConfig),
   });

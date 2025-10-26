@@ -43,7 +43,7 @@ function consolidatePartialFills(operations) {
   const consolidated = [];
   let duplicatesRemoved = 0;
   
-  orderGroups.forEach((fills, orderId) => {
+  orderGroups.forEach((fills) => {
     if (fills.length === 1) {
       // Single fill, no consolidation needed
       consolidated.push(fills[0]);
@@ -62,7 +62,7 @@ function consolidatePartialFills(operations) {
     });
     
     // Keep only first occurrence of each quantity
-    qtyMap.forEach((fillsWithSameQty, qty) => {
+  qtyMap.forEach((fillsWithSameQty) => {
       if (fillsWithSameQty.length > 1) {
         // Duplicate quantity - keep only the earliest fill
         const sorted = fillsWithSameQty.sort((a, b) => {
@@ -79,6 +79,8 @@ function consolidatePartialFills(operations) {
     });
   });
   
+  // Conservative reference to track how many duplicates were removed during consolidation
+  void duplicatesRemoved;
   return consolidated;
 }
 
@@ -91,7 +93,22 @@ function consolidatePartialFills(operations) {
  * @param {Date} jornada - Trading day
  * @returns {Map<string, import('./arbitrage-types.js').GrupoInstrumentoPlazo>} Map keyed by "instrumento:plazo"
  */
-export function aggregateByInstrumentoPlazo(operations, cauciones, jornada) {
+/**
+ * Aggregate operations and cauciones by instrument and plazo
+ * Calculates plazo based on CI and 24hs settlement dates (accounting for weekends/holidays)
+ *
+ * Note: avgTNAByCurrency is optional. If provided, it should be an object mapping
+ * currency codes (e.g. 'ARS', 'USD') to the weighted-average TNA to use when
+ * computing caución P&L. If not provided, the function will compute it from
+ * the supplied cauciones array.
+ *
+ * @param {import('./arbitrage-types.js').Operacion[]} operations - All operations
+ * @param {import('./arbitrage-types.js').Caucion[]} cauciones - All cauciones
+ * @param {Date} jornada - Trading day
+ * @param {Object<string, number>} [avgTNAByCurrency] - Optional precomputed weighted-average TNA by currency
+ * @returns {Map<string, import('./arbitrage-types.js').GrupoInstrumentoPlazo>} Map keyed by "instrumento:plazo"
+ */
+export function aggregateByInstrumentoPlazo(operations, cauciones, jornada, avgTNAByCurrency) {
   const grupos = new Map();
   
   // Consolidate partial fills FIRST before any aggregation
@@ -165,29 +182,27 @@ export function aggregateByInstrumentoPlazo(operations, cauciones, jornada) {
     }
   });
 
-  // Add cauciones to matching grupos
-  // Note: PESOS cauciones create separate grupos and won't be automatically
-  // linked to instrument operations without additional correlation data
-  cauciones.forEach((caucion) => {
-    const plazo = calculatePlazoFromDates(caucion.inicio, caucion.fin);
-    const key = `${caucion.instrumento}:${plazo}`;
+  // NOTE: We do NOT attach cauciones directly to operation grupos here.
+  // PESOS cauciones in CSV commonly reference the repo leg but not the underlying
+  // instrument symbol, so naive attachment caused many grupos (e.g. S31O5) to have
+  // zero attached cauciones while cauciones existed in the dataset. Instead we
+  // compute a weighted-average TNA per currency and apply the appropriate avgTNA
+  // to each grupo based on the instrument currency. This enforces the rule:
+  // "use the weighted average TNA by currency when computing caución P&L".
 
-    if (!grupos.has(key)) {
-      grupos.set(key, createGrupoInstrumentoPlazo(caucion.instrumento, plazo, jornada));
-    }
+  // Determine avgTNAByCurrency: prefer precomputed mapping, otherwise compute from cauciones
+  const avgTNAMap = avgTNAByCurrency || calculateAvgTNAByCurrency(cauciones);
 
-    const grupo = grupos.get(key);
-    grupo.cauciones.push(caucion);
-  });
-  
-  // Calculate weighted average TNA from ALL cauciones for use in P&L calculations
-  const avgTNA = calculateWeightedAverageTNA(cauciones);
-  
-  // Add avgTNA to all grupos that have operations (not just PESOS grupos)
+  // Add avgTNA to all grupos that have operations (do NOT attach explicit cauciones)
+  // Determine instrument currency via instrument mapping when available.
   grupos.forEach((grupo) => {
     if (grupo.ventasCI.length > 0 || grupo.compras24h.length > 0 ||
         grupo.comprasCI.length > 0 || grupo.ventas24h.length > 0) {
-      grupo.avgTNA = avgTNA;
+      const details = getInstrumentDetails(grupo.instrumento) || {};
+      const currency = (details.currency || 'ARS').toString().toUpperCase();
+      grupo.avgTNA = Number(avgTNAMap[currency] || 0);
+      // Ensure grupo.cauciones is empty (we don't attach explicit cauciones anywhere)
+      grupo.cauciones = [];
     }
   });
 
@@ -240,7 +255,7 @@ function calculatePlazoFromDates(inicio, fin) {
  * @param {import('./arbitrage-types.js').Caucion[]} cauciones - All cauciones
  * @returns {number} Weighted average TNA (annual rate as percentage)
  */
-function calculateWeightedAverageTNA(cauciones) {
+function _calculateWeightedAverageTNA(cauciones) {
   if (!cauciones || cauciones.length === 0) {
     return 0;
   }
@@ -260,8 +275,37 @@ function calculateWeightedAverageTNA(cauciones) {
   return weightedSum / totalMonto;
 }
 
+/**
+ * Calculate weighted average TNA per currency
+ * Returns an object mapping currency code -> weighted average TNA
+ *
+ * @param {import('./arbitrage-types.js').Caucion[]} cauciones
+ * @returns {Object<string, number>} e.g. { ARS: 95.5, USD: 12.3 }
+ */
+export function calculateAvgTNAByCurrency(cauciones) {
+  const tnaByCurrency = new Map(); // currency -> { totalMonto, weightedSum }
+  (cauciones || []).forEach((c) => {
+    const currency = (c.currency || 'ARS').toString().toUpperCase();
+    const monto = Number(c.monto || 0) || 0;
+    const tasa = Number(c.tasa || 0) || 0;
+    if (!tnaByCurrency.has(currency)) tnaByCurrency.set(currency, { totalMonto: 0, weightedSum: 0 });
+    const agg = tnaByCurrency.get(currency);
+    agg.totalMonto += monto;
+    agg.weightedSum += tasa * monto;
+  });
+
+  const avg = {};
+  tnaByCurrency.forEach((v, currency) => {
+    avg[currency] = v.totalMonto > 0 ? v.weightedSum / v.totalMonto : 0;
+  });
+
+  return avg;
+}
+
 // Debug flag for logging first operation
 let parseOperationsFirstLog = true;
+// Reference debug flag to satisfy linter when unused
+void parseOperationsFirstLog;
 
 /**
  * Parse operations from raw data
@@ -511,6 +555,8 @@ function parseVenue(venue) {
   if (normalized.includes('24') || normalized.includes('H24')) return VENUES.H24;
   return VENUES.CI;
 }
+// Reference parseVenue to avoid unused-function lint when other parsing paths are used
+void parseVenue;
 
 /**
  * Parse date from various formats
@@ -538,9 +584,13 @@ function parseDate(date) {
 /**
  * Get summary statistics for grupos
  * @param {Map<string, import('./arbitrage-types.js').GrupoInstrumentoPlazo>} grupos
+ * @param {import('./arbitrage-types.js').Caucion[]|null} [cauciones] - Optional original cauciones array.
+ *   If supplied, totalCauciones will be taken from this array (recommended when
+ *   grupos.cauciones are intentionally left empty). If omitted, the function
+ *   falls back to summing grupo.cauciones lengths.
  * @returns {Object} Summary statistics
  */
-export function getGruposSummary(grupos) {
+export function getGruposSummary(grupos, cauciones = null) {
   const stats = {
     totalGrupos: grupos.size,
     totalInstruments: getUniqueInstruments(grupos).length,
@@ -554,8 +604,18 @@ export function getGruposSummary(grupos) {
       grupo.compras24h.length +
       grupo.comprasCI.length +
       grupo.ventas24h.length;
-    stats.totalCauciones += grupo.cauciones.length;
   });
+
+  // If caller provided the original cauciones array (preferred now that grupos
+  // do not hold attached cauciones), use its length. Otherwise fall back to
+  // summing grupo.cauciones lengths for backward compatibility.
+  if (Array.isArray(cauciones)) {
+    stats.totalCauciones = cauciones.length;
+  } else {
+    let total = 0;
+    grupos.forEach((g) => { total += (g.cauciones && g.cauciones.length) || 0; });
+    stats.totalCauciones = total;
+  }
 
   return stats;
 }

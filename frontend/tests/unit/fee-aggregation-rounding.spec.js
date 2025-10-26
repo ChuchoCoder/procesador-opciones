@@ -1,6 +1,7 @@
 // fee-aggregation-rounding.spec.js - Unit tests for aggregate fee recomputation (US1)
 // Verifies aggregate fee vs sum rounding bias (<0.01 ARS tolerance)
 
+/* eslint-env node, jest */
 import { describe, it, expect } from 'vitest';
 import { aggregateFee } from '../../src/services/fees/fee-calculator.js';
 

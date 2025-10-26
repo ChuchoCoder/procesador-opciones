@@ -44,7 +44,7 @@ export function normalizeOperation(raw, source) {
       order_id: raw.orderId || raw.clOrdId || null,
       operation_id: raw.execId || raw.orderId || null,
       symbol: symbolValue.toUpperCase().trim(),
-      underlying: raw.underlying || null,
+      underlying: (raw.underlying || '').toUpperCase().trim() || null,
       optionType: raw.optionType || 'stock',
       action: (raw.side || '').toLowerCase(),
       quantity: Number(raw.cumQty || raw.lastQty || raw.orderQty || 0),

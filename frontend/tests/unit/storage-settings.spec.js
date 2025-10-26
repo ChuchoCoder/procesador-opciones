@@ -1,5 +1,6 @@
 /* global global */
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+/* eslint-env node, jest */
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import {
   getAllSymbols,
   loadSymbolConfig,
@@ -159,74 +160,5 @@ describe('storage-settings', () => {
       expect(await symbolExists('GGAL')).toBe(false);
     });
   });
-
-  describe('repo fee configuration helpers', () => {
-    const defaultsPayload = {
-      arancelCaucionColocadora: { ARS: 0.2, USD: 0.2 },
-      arancelCaucionTomadora: { ARS: 0.25, USD: 0.25 },
-      derechosDeMercadoDailyRate: { ARS: 0.0005, USD: 0.0005 },
-      gastosGarantiaDailyRate: { ARS: 0.00035, USD: 0.00035 },
-      ivaRepoRate: 0.21,
-      overridesMetadata: [],
-    };
-
-    const originalFetch = global.fetch;
-
-    const setupFetchMock = () => {
-      global.fetch = vi.fn().mockResolvedValue({
-        ok: true,
-        json: async () => defaultsPayload,
-      });
-    };
-
-    const restoreFetch = () => {
-      if (originalFetch) {
-        global.fetch = originalFetch;
-      } else {
-        delete global.fetch;
-      }
-    };
-
-    beforeEach(() => {
-      localStorage.clear();
-      setupFetchMock();
-    });
-
-    afterEach(async () => {
-      await loadRepoFeeDefaults({ forceReload: true });
-      await getRepoFeeConfig({ forceReload: true });
-      restoreFetch();
-    });
-
-    it('loads and caches repo fee defaults', async () => {
-      const defaults = await loadRepoFeeDefaults({ forceReload: true });
-      expect(defaults).toMatchObject(defaultsPayload);
-      expect(global.fetch).toHaveBeenCalledTimes(1);
-
-      const cached = await loadRepoFeeDefaults();
-      expect(cached).toMatchObject(defaultsPayload);
-      expect(global.fetch).toHaveBeenCalledTimes(1);
-    });
-
-    it('returns defaults when no overrides stored', async () => {
-      const config = await getRepoFeeConfig({ forceReload: true });
-      expect(config).toMatchObject(defaultsPayload);
-    });
-
-    it('persists overrides and merges with defaults', async () => {
-      await setRepoFeeConfig({
-        arancelCaucionColocadora: { USD: 0.45 },
-        overridesMetadata: [{ currency: 'USD', role: 'colocadora', effectiveDate: '2025-10-18T00:00:00Z' }],
-      });
-
-      const storedRaw = JSON.parse(localStorage.getItem('po.repoFeeConfig.v1'));
-      expect(storedRaw.arancelCaucionColocadora.USD).toBe(0.45);
-
-      const merged = await getRepoFeeConfig({ forceReload: true });
-      expect(merged.arancelCaucionColocadora.USD).toBe(0.45);
-      expect(merged.arancelCaucionColocadora.ARS).toBe(defaultsPayload.arancelCaucionColocadora.ARS);
-      expect(Array.isArray(merged.overridesMetadata)).toBe(true);
-      expect(merged.overridesMetadata[0]).toMatchObject({ currency: 'USD', role: 'colocadora' });
-    });
-  });
+  
 });

@@ -1,6 +1,11 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+/* eslint-env node, jest */
+import { describe, it, expect } from 'vitest';
 import { readFile } from 'fs/promises';
 import { resolve } from 'path';
+import { fileURLToPath } from 'url';
+import { dirname as _dirname } from 'path';
+// define __dirname for ESM tests
+const __dirname = _dirname(fileURLToPath(import.meta.url));
 import { processOperations } from '../../src/services/csv/process-operations.js';
 import { CsvDataSource, JsonDataSource, MockDataSource } from '../../src/services/data-sources/index.js';
 

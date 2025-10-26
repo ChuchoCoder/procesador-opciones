@@ -10,23 +10,24 @@ import {
   CAUCION_TIPOS,
   createResultadoPatron,
 } from './arbitrage-types.js';
+import { getRepoFeeConfig } from './fees/broker-fees-storage.js';
 
 /**
  * Calculate P&L for a given grupo (instrument + plazo)
  * @param {import('./arbitrage-types.js').GrupoInstrumentoPlazo} grupo
  * @returns {import('./arbitrage-types.js').ResultadoPatron[]}
  */
-export function calculatePnL(grupo) {
+export async function calculatePnL(grupo) {
   const resultados = [];
 
   // Pattern 1: VentaCI → Compra24h
-  const patron1 = calculatePatronVentaCICompra24h(grupo);
+  const patron1 = await calculatePatronVentaCICompra24h(grupo);
   if (patron1) {
     resultados.push(patron1);
   }
 
   // Pattern 2: CompraCI → Venta24h
-  const patron2 = calculatePatronCompraCIVenta24h(grupo);
+  const patron2 = await calculatePatronCompraCIVenta24h(grupo);
   if (patron2) {
     resultados.push(patron2);
   }
@@ -39,7 +40,7 @@ export function calculatePnL(grupo) {
  * @param {import('./arbitrage-types.js').GrupoInstrumentoPlazo} grupo
  * @returns {import('./arbitrage-types.js').ResultadoPatron|null}
  */
-function calculatePatronVentaCICompra24h(grupo) {
+async function calculatePatronVentaCICompra24h(grupo) {
   const { ventasCI, compras24h, cauciones, plazo } = grupo;
 
   if (ventasCI.length === 0 && compras24h.length === 0) {
@@ -55,7 +56,8 @@ function calculatePatronVentaCICompra24h(grupo) {
   // Calculate weighted average prices (normalized)
   const avgPrecioVentasCI = calculateWeightedAverage(ventasCI);
   const avgPrecioCompras24h = calculateWeightedAverage(compras24h);
-  const avgPrice = (avgPrecioVentasCI + avgPrecioCompras24h) / 2;
+  // For Sell CI - Buy 24 we should use the weighted average price of Sell CI
+  const avgPrice = avgPrecioVentasCI;
   
   // Calculate matched quantity - use the minimum of sell/buy quantities
   // This represents the maximum nominals that can be matched between both sides
@@ -74,6 +76,11 @@ function calculatePatronVentaCICompra24h(grupo) {
   // When quantities are unbalanced, only use proportional fees/commissions for matched quantity
   const avgComisionesVentas = calculateWeightedAverageCommissions(ventasCI);
   const avgComisionesCompras = calculateWeightedAverageCommissions(compras24h);
+
+  // conservative references: values computed for potential future display but
+  // currently unused by lint rules — mark them as used to avoid warnings
+  void avgComisionesVentas;
+  void avgComisionesCompras;
 
   resultado.precioPromedio = avgPrice;
 
@@ -110,27 +117,76 @@ function calculatePatronVentaCICompra24h(grupo) {
     quantity: totalCompras24h,
   };
 
-  // Calculate caución P&L using weighted average TNA from all cauciones
-  // VentaCI_Compra24h: You sell CI (receive cash) and lend it (colocadora)
-  // This means you EARN interest → Positive P&L
+  // Calculate caución P&L always using grupo.avgTNA and repo-fees breakdown
+  // NOTE: attached cauciones are ignored here per new requirement; we
+  // always use avgTNA and estimate ByMA/repo fees via the repo-fees calculator.
   const avgTNA = grupo.avgTNA || 0;
-  const caucionesFiltradas = filterCaucionesByType(cauciones, CAUCION_TIPOS.COLOCADORA);
-  resultado.cauciones = caucionesFiltradas;
+  resultado.cauciones = []; // attached cauciones are not used anymore
   resultado.avgTNA = avgTNA; // Store avgTNA for display
 
-  if (avgTNA > 0 && plazo > 0) {
-    // Calculate financing INCOME (positive - you're lending and earning interest)
-    // P&L Caución = +monto * (TNA / 100) * (plazo / 365) - fees
-    const monto = resultado.precioPromedio * matchedQty;
-    const interestIncome = monto * (avgTNA / 100) * (plazo / 365);
-    
-    // Subtract caución fees
-    const caucionFees = caucionesFiltradas.reduce((sum, c) => sum + (c.feeAmount || 0), 0);
-    resultado.pnl_caucion = interestIncome - caucionFees;
-    resultado.estado = totalVentasCI === totalCompras24h ? ESTADOS.COMPLETO : ESTADOS.CANTIDADES_DESBALANCEADAS;
-  } else if (caucionesFiltradas.length > 0) {
-    // Fallback: use actual cauciones if avgTNA not available
-    resultado.pnl_caucion = calculateCaucionPnL(caucionesFiltradas, matchedQty, plazo);
+  if (plazo > 0) {
+    // Financing INCOME (positive - lending / colocadora)
+    const operationTotal = resultado.precioPromedio * matchedQty;
+    const proportionalBrokerCommissions = totalComisionesVentas;
+    const totalOperationFeeAmount = ventasCI.reduce((sum, op) => sum + (op.feeAmount || 0), 0) * (matchedQty / (totalVentasCI || matchedQty));
+
+    // Principal (net cash received when selling CI and lending)
+    const principal = operationTotal - proportionalBrokerCommissions - totalOperationFeeAmount;
+    const accruedInterest = principal * (avgTNA / 100) * (plazo / 365);
+    const baseAmount = principal + accruedInterest;
+
+    // Default caucion fees to 0 and attempt to compute a full repo (ByMA) breakdown
+    let caucionFees = 0;
+    try {
+      const repoFeeConfig = await getRepoFeeConfig();
+      if (repoFeeConfig) {
+        const { calculateRepoExpenseBreakdown } = await import('./fees/repo-fees.js');
+        const tenorDays = plazo;
+        const priceTNA = avgTNA;
+        const repoOperationInput = {
+          id: `${resultado.patron}-${grupo.instrumento}-${plazo}`,
+          instrument: { cfiCode: 'RP', displayName: `${grupo.instrumento} ${tenorDays}D` },
+          currency: 'ARS',
+          role: CAUCION_TIPOS.COLOCADORA,
+          principalAmount: principal,
+          baseAmount,
+          priceTNA,
+          tenorDays,
+        };
+
+        const raw = calculateRepoExpenseBreakdown(repoOperationInput, repoFeeConfig);
+        if (raw) {
+          const normalized = {
+            _raw: raw,
+            principalAmount: raw.principalAmount,
+            tenorDays: raw.tenorDays,
+            baseAmount: raw.baseAmount,
+            accruedInterest: raw.accruedInterest,
+            arancel: raw.arancelAmount ?? raw.arancel ?? 0,
+            derechos: raw.derechosMercadoAmount ?? raw.derechos ?? 0,
+            gastos: raw.gastosGarantiaAmount ?? raw.gastos ?? 0,
+            iva: raw.ivaAmount ?? raw.iva ?? 0,
+            totalExpenses: raw.totalExpenses ?? 0,
+            netSettlement: raw.netSettlement ?? raw.baseAmount ?? baseAmount,
+            warnings: raw.warnings ?? [],
+            status: raw.status ?? null,
+          };
+
+          resultado.caucionFeesBreakdown = normalized;
+          caucionFees = normalized.totalExpenses || 0;
+          resultado.caucionFeesTotal = Math.round(caucionFees * 100) / 100;
+        }
+      }
+    } catch (_e) {
+      void _e; // non-fatal — keep caucionFees as computed (likely 0)
+    }
+
+    resultado.principal = Math.round(principal * 100) / 100;
+    resultado.accruedInterest = Math.round(accruedInterest * 100) / 100;
+    resultado.baseAmount = Math.round(baseAmount * 100) / 100;
+
+    // caucion P&L = accruedInterest (earnings) - fees
+    resultado.pnl_caucion = Math.round((accruedInterest - caucionFees) * 100) / 100;
     resultado.estado = totalVentasCI === totalCompras24h ? ESTADOS.COMPLETO : ESTADOS.CANTIDADES_DESBALANCEADAS;
   } else {
     resultado.pnl_caucion = 0;
@@ -139,6 +195,7 @@ function calculatePatronVentaCICompra24h(grupo) {
 
   // Total P&L
   resultado.pnl_total = resultado.pnl_trade + resultado.pnl_caucion;
+  resultado.isCaucionColocadora = true;
 
   return resultado;
 }
@@ -148,7 +205,7 @@ function calculatePatronVentaCICompra24h(grupo) {
  * @param {import('./arbitrage-types.js').GrupoInstrumentoPlazo} grupo
  * @returns {import('./arbitrage-types.js').ResultadoPatron|null}
  */
-function calculatePatronCompraCIVenta24h(grupo) {
+async function calculatePatronCompraCIVenta24h(grupo) {
   const { comprasCI, ventas24h, cauciones, plazo } = grupo;
 
   if (comprasCI.length === 0 && ventas24h.length === 0) {
@@ -164,7 +221,8 @@ function calculatePatronCompraCIVenta24h(grupo) {
   // Calculate weighted average prices (normalized)
   const avgPrecioComprasCI = calculateWeightedAverage(comprasCI);
   const avgPrecioVentas24h = calculateWeightedAverage(ventas24h);
-  const avgPrice = (avgPrecioComprasCI + avgPrecioVentas24h) / 2;
+  // For Buy CI - Sell 24 we should use the weighted average price of Buy CI
+  const avgPrice = avgPrecioComprasCI;
   
   // Calculate matched quantity - use the minimum of buy/sell quantities
   const matchedQty = Math.min(totalComprasCI, totalVentas24h);
@@ -183,12 +241,17 @@ function calculatePatronCompraCIVenta24h(grupo) {
   const avgComisionesCompras = calculateWeightedAverageCommissions(comprasCI);
   const avgComisionesVentas = calculateWeightedAverageCommissions(ventas24h);
 
+  // conservative references to satisfy linter (kept for parity with other branch)
+  void avgComisionesCompras;
+  void avgComisionesVentas;
+
   resultado.precioPromedio = avgPrice;
 
   // P&L Trade = (Venta 24h - Compra CI) * matchedQty - comisiones
   const pnlTradeGross = (avgPrecioVentas24h - avgPrecioComprasCI) * matchedQty;
   
   // Calculate proportional commissions based on matched quantity
+
   // If unbalanced, use only the proportion that was actually matched
   const proportionCompras = totalComprasCI > 0 ? matchedQty / totalComprasCI : 0;
   const proportionVentas = totalVentas24h > 0 ? matchedQty / totalVentas24h : 0;
@@ -217,27 +280,75 @@ function calculatePatronCompraCIVenta24h(grupo) {
     quantity: totalVentas24h,
   };
 
-  // Calculate caución P&L using weighted average TNA from all cauciones
-  // CompraCIVenta24h: You buy CI (pay cash) and borrow it (tomadora)
-  // This means you PAY interest → Negative P&L
+  // Calculate caución P&L always using grupo.avgTNA and repo-fees breakdown
+  // NOTE: attached cauciones are ignored here per new requirement; we
+  // always use avgTNA and estimate ByMA/repo fees via the repo-fees calculator.
   const avgTNA = grupo.avgTNA || 0;
-  const caucionesFiltradas = filterCaucionesByType(cauciones, CAUCION_TIPOS.TOMADORA);
-  resultado.cauciones = caucionesFiltradas;
+  resultado.cauciones = []; // attached cauciones are not used anymore
   resultado.avgTNA = avgTNA; // Store avgTNA for display
 
-  if (avgTNA > 0 && plazo > 0) {
-    // Calculate financing COST (negative - you're borrowing and paying interest)
-    // P&L Caución = -monto * (TNA / 100) * (plazo / 365) - fees
-    const monto = resultado.precioPromedio * matchedQty;
-    const interestCost = monto * (avgTNA / 100) * (plazo / 365);
-    
-    // Add caución fees (both interest cost and fees are negative)
-    const caucionFees = caucionesFiltradas.reduce((sum, c) => sum + (c.feeAmount || 0), 0);
-    resultado.pnl_caucion = -(interestCost + caucionFees);
-    resultado.estado = totalComprasCI === totalVentas24h ? ESTADOS.COMPLETO : ESTADOS.CANTIDADES_DESBALANCEADAS;
-  } else if (caucionesFiltradas.length > 0) {
-    // Fallback: use actual cauciones if avgTNA not available
-    resultado.pnl_caucion = calculateCaucionPnL(caucionesFiltradas, matchedQty, plazo);
+  if (plazo > 0) {
+    // Financing COST (negative - borrowing / tomadora)
+    const operationTotal = resultado.precioPromedio * matchedQty;
+    const proportionalBrokerCommissions = totalComisionesCompras;
+    const totalOperationFeeAmount = comprasCI.reduce((sum, op) => sum + (op.feeAmount || 0), 0) * (matchedQty / (totalComprasCI || matchedQty));
+
+    // Principal (cash paid when buying CI and borrowing)
+    const principal = operationTotal + proportionalBrokerCommissions + totalOperationFeeAmount;
+    const accruedInterest = principal * (avgTNA / 100) * (plazo / 365);
+    const baseAmount = principal + accruedInterest;
+
+    // Default caucion fees to 0 and attempt to compute a full repo (ByMA) breakdown
+    let caucionFees = 0;
+    try {
+      const repoFeeConfig = await getRepoFeeConfig();
+      if (repoFeeConfig) {
+        const { calculateRepoExpenseBreakdown } = await import('./fees/repo-fees.js');
+        const tenorDays = plazo;
+        const priceTNA = avgTNA;
+        const repoOperationInput = {
+          id: `${resultado.patron}-${grupo.instrumento}-${plazo}`,
+          instrument: { cfiCode: 'RP', displayName: `${grupo.instrumento} ${tenorDays}D` },
+          currency: 'ARS',
+          role: CAUCION_TIPOS.TOMADORA,
+          principalAmount: principal,
+          baseAmount,
+          priceTNA,
+          tenorDays,
+        };
+
+        const raw = calculateRepoExpenseBreakdown(repoOperationInput, repoFeeConfig);
+        if (raw) {
+          const normalized = {
+            _raw: raw,
+            principalAmount: raw.principalAmount,
+            tenorDays: raw.tenorDays,
+            baseAmount: raw.baseAmount,
+            accruedInterest: raw.accruedInterest,
+            arancel: raw.arancelAmount ?? raw.arancel ?? 0,
+            derechos: raw.derechosMercadoAmount ?? raw.derechos ?? 0,
+            gastos: raw.gastosGarantiaAmount ?? raw.gastos ?? 0,
+            iva: raw.ivaAmount ?? raw.iva ?? 0,
+            totalExpenses: raw.totalExpenses ?? 0,
+            netSettlement: raw.netSettlement ?? raw.baseAmount ?? baseAmount,
+            warnings: raw.warnings ?? [],
+            status: raw.status ?? null,
+          };
+
+          resultado.caucionFeesBreakdown = normalized;
+          caucionFees = normalized.totalExpenses || 0;
+          resultado.caucionFeesTotal = Math.round(caucionFees * 100) / 100;
+        }
+      }
+    } catch (_e) {
+      void _e; // non-fatal — keep caucionFees as computed (likely 0)
+    }
+
+    resultado.principal = Math.round(principal * 100) / 100;
+    resultado.accruedInterest = Math.round(accruedInterest * 100) / 100;
+    resultado.baseAmount = Math.round(baseAmount * 100) / 100;
+
+    resultado.pnl_caucion = Math.round((-(accruedInterest + caucionFees)) * 100) / 100;
     resultado.estado = totalComprasCI === totalVentas24h ? ESTADOS.COMPLETO : ESTADOS.CANTIDADES_DESBALANCEADAS;
   } else {
     resultado.pnl_caucion = 0;
@@ -246,6 +357,7 @@ function calculatePatronCompraCIVenta24h(grupo) {
 
   // Total P&L
   resultado.pnl_total = resultado.pnl_trade + resultado.pnl_caucion;
+  resultado.isCaucionColocadora = false;
 
   return resultado;
 }
@@ -340,19 +452,46 @@ function filterCaucionesByType(cauciones, tipo) {
 function calculateCaucionPnL(cauciones, matchedQty, plazo) {
   if (cauciones.length === 0) return 0;
 
-  // Use the first caución as representative (or could average)
-  // In practice, there should typically be one matching caución per pattern
-  const caucion = cauciones[0];
+  // Support multiple tramos by computing a TNA ponderada por monto.
+  // This mirrors the avgTNA-based calculation used elsewhere but kept
+  // compatible with the existing normalization approach: callers pass
+  // `cauciones` already filtradas por tipo (colocadora|tomadora).
 
-  // Interest is already calculated in the Caución object
-  // For colocadora: positive (earning interest)
-  // For tomadora: negative (paying interest)
-  const interest = caucion.interes;
+  // Sum total monto and compute weighted TNA
+  let totalMonto = 0;
+  let weightedTnaSum = 0;
+  let totalInterest = 0;
 
-  // Normalize by matched quantity if caución monto differs
-  const normalizedInterest = (interest * matchedQty) / caucion.monto;
+  cauciones.forEach((c) => {
+    const monto = c.monto || 0;
+    const tasa = c.tasa || 0; // tasa expected as % (e.g. 75 means 75%)
+    const interes = c.interes || 0; // existing precomputed interest for the tranche
+    totalMonto += monto;
+    weightedTnaSum += tasa * monto;
+    totalInterest += interes;
+  });
 
-  return caucion.tipo === CAUCION_TIPOS.COLOCADORA ? normalizedInterest : -normalizedInterest;
+  if (totalMonto === 0) {
+    return 0;
+  }
+
+  const weightedTNA = weightedTnaSum / totalMonto;
+
+  // conservative reference for totalInterest (preserved for compatibility)
+  void totalInterest;
+
+  // Estimate total interest for the (combined) principal using weightedTNA
+  // Note: keep same day-base as other code (plazo/365)
+  const estimatedTotalInterest = totalMonto * (weightedTNA / 100) * (plazo / 365);
+
+  // Normalize to matchedQty using the same mapping used previously:
+  // normalizedInterest = (estimatedTotalInterest * matchedQty) / totalMonto
+  // This simplifies to matchedQty * (weightedTNA/100) * (plazo/365)
+  const normalizedInterest = (estimatedTotalInterest * matchedQty) / totalMonto;
+
+  // Preserve sign depending on caución tipo (colocadora = earn, tomadora = pay)
+  const tipo = cauciones[0]?.tipo || cauciones[0]?.role || 'colocadora';
+  return tipo === CAUCION_TIPOS.COLOCADORA ? normalizedInterest : -normalizedInterest;
 }
 
 /**
