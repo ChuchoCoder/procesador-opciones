@@ -32,6 +32,8 @@ export function calculateFee(operation, effectiveRates) {
   // Resolve rates for category
   const rates = effectiveRates[category] || effectiveRates.bonds; // fallback to bonds
   const { commissionPct, rightsPct, vatPct, effectiveRate } = rates;
+  // conservative reference to avoid unused-variable lint when configs include extra fields
+  void effectiveRate;
 
   // Component amounts (high precision)
   const commissionAmount = grossNotional * commissionPct;

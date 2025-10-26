@@ -1,3 +1,4 @@
+/* eslint-env node, jest */
 import { describe, it, expect, vi } from 'vitest';
 import {
   CLIPBOARD_SCOPES,

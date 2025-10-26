@@ -1,4 +1,5 @@
 // instrument-roundlot.spec.js - Test RoundLot usage for options
+/* eslint-env node, jest */
 import { describe, it, expect, beforeEach } from 'vitest';
 import { loadInstrumentMapping, getInstrumentDetails } from '../../src/services/fees/instrument-mapping.js';
 

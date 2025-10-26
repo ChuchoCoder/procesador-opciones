@@ -24,10 +24,10 @@ const buildFeeConfig = async () => {
 
     _validatedFeeConfig = validateFeeConfig(mergedConfig);
     _effectiveRates = computeEffectiveRates(_validatedFeeConfig);
-    // eslint-disable-next-line no-console
+     
     console.info('PO: fee-config-validated', Object.keys(_effectiveRates));
   } catch (error) {
-    // eslint-disable-next-line no-console
+     
     console.error('PO: fee-config-validation-failed', error);
     _validatedFeeConfig = { byma: {}, broker: {} };
     _effectiveRates = {};
@@ -82,10 +82,10 @@ export const refreshFeeServices = async () => {
 export function initializeInstrumentMapping() {
   try {
     loadInstrumentMapping(instrumentsData);
-    // eslint-disable-next-line no-console
+     
     console.info('PO: instrument-mapping-initialized');
   } catch (e) {
-    // eslint-disable-next-line no-console
+     
     console.error('PO: instrument-mapping-init-failed', e);
   }
 }

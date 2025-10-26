@@ -6,7 +6,6 @@ import TextField from '@mui/material/TextField';
 import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
 import Alert from '@mui/material/Alert';
-import Snackbar from '@mui/material/Snackbar';
 import CircularProgress from '@mui/material/CircularProgress';
 
 import strings from '../../../strings/es-AR.js';
@@ -16,6 +15,7 @@ import {
   clearBrokerFees,
 } from '../../../services/fees/broker-fees-storage.js';
 import { refreshFeeServices } from '../../../services/bootstrap-defaults.js';
+import { showToast } from '../../../services/toastService.js';
 
 const brokerStrings = strings.settings.brokerFees;
 
@@ -66,7 +66,6 @@ export default function BrokerFeesScreen() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
-  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
 
   useEffect(() => {
     let mounted = true;
@@ -78,7 +77,7 @@ export default function BrokerFeesScreen() {
         setFormValues(mapToFormState(fees));
         setInitialValues(fees);
       } catch (error) {
-        // eslint-disable-next-line no-console
+         
         console.error('PO: loadBrokerFees failed', error);
         if (mounted) {
           setErrorMessage(brokerStrings.errorMessage);
@@ -119,9 +118,7 @@ export default function BrokerFeesScreen() {
     }));
   };
 
-  const handleCloseSnackbar = () => {
-    setSnackbar((current) => ({ ...current, open: false }));
-  };
+  // no local snackbar: using global toast service
 
   const handleSave = async () => {
     if (hasValidationError) {
@@ -137,9 +134,9 @@ export default function BrokerFeesScreen() {
       await refreshFeeServices();
       setInitialValues(sanitized);
       setFormValues(mapToFormState(sanitized));
-      setSnackbar({ open: true, message: brokerStrings.successMessage, severity: 'success' });
+  showToast({ message: brokerStrings.successMessage, severity: 'success' });
     } catch (error) {
-      // eslint-disable-next-line no-console
+       
       console.error('PO: saveBrokerFees failed', error);
       setErrorMessage(brokerStrings.errorMessage);
     } finally {
@@ -156,11 +153,11 @@ export default function BrokerFeesScreen() {
       await refreshFeeServices();
       setInitialValues(defaults);
       setFormValues(mapToFormState(defaults));
-      setSnackbar({ open: true, message: brokerStrings.resetMessage, severity: 'info' });
+  showToast({ message: brokerStrings.resetMessage, severity: 'info' });
     } catch (error) {
-      // eslint-disable-next-line no-console
+       
       console.error('PO: clearBrokerFees failed', error);
-      setErrorMessage(brokerStrings.errorMessage);
+  setErrorMessage(brokerStrings.errorMessage);
     } finally {
       setSaving(false);
     }
@@ -242,16 +239,7 @@ export default function BrokerFeesScreen() {
         </Stack>
       )}
 
-      <Snackbar
-        open={snackbar.open}
-        autoHideDuration={4000}
-        onClose={handleCloseSnackbar}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        <Alert onClose={handleCloseSnackbar} severity={snackbar.severity} sx={{ width: '100%' }}>
-          {snackbar.message}
-        </Alert>
-      </Snackbar>
+      {/* Toasts are handled by the global ToastContainer */}
     </Container>
   );
 }

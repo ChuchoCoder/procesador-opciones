@@ -1,9 +1,7 @@
-/* global chrome */
 /**
  * Universal storage adapter that works with both localStorage (web) and chrome.storage.local (extension)
  * Provides a consistent async API for both storage backends
  */
-
 /* global chrome */
 
 /**

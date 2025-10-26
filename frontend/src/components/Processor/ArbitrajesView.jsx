@@ -4,7 +4,7 @@
  * Implements User Stories 1, 2, 3 from specs/006-arbitraje-de-plazos
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
 import CircularProgress from '@mui/material/CircularProgress';
@@ -13,9 +13,10 @@ import Typography from '@mui/material/Typography';
 import GroupFilter from './GroupFilter.jsx';
 import ArbitrageTable from './ArbitrageTable.jsx';
 
-import { parseOperations, parseCauciones, aggregateByInstrumentoPlazo } from '../../services/data-aggregation.js';
+import { parseOperations, parseCauciones, aggregateByInstrumentoPlazo, calculateAvgTNAByCurrency } from '../../services/data-aggregation.js';
 import { calculatePnL } from '../../services/pnl-calculations.js';
 import { enrichArbitrageOperations, enrichCauciones } from '../../services/arbitrage-fee-enrichment.js';
+import { LADOS } from '../../services/arbitrage-types.js';
 
 /**
  * Transform ResultadoPatron to table row format
@@ -24,6 +25,7 @@ function transformToTableRow(grupo, resultado) {
   const row = {
     id: `${grupo.instrumento}-${grupo.plazo}-${resultado.patron}`,
     instrumento: grupo.instrumento,
+    isCaucionColocadora: resultado.isCaucionColocadora,
     plazo: grupo.plazo,
     patron: resultado.patron,
     cantidad: resultado.matchedQty,
@@ -35,6 +37,12 @@ function transformToTableRow(grupo, resultado) {
     operations: resultado.operations,
     cauciones: resultado.cauciones,
     avgTNA: resultado.avgTNA, // Weighted average TNA from all cauciones
+    // Precomputed caucion fields so UI doesn't need to recalc
+    principal: resultado.principal,
+    baseAmount: resultado.baseAmount,
+    accruedInterest: resultado.accruedInterest,
+    caucionFeesTotal: resultado.caucionFeesTotal,
+    caucionFeesBreakdown: resultado.caucionFeesBreakdown || resultado.feeBreakdown || null,
     // Copy breakdown fields for tooltip display
     ventaCI_breakdown: resultado.ventaCI_breakdown,
     compra24h_breakdown: resultado.compra24h_breakdown,
@@ -47,22 +55,32 @@ function transformToTableRow(grupo, resultado) {
 
 const ArbitrajesView = ({
   operations = [],
-  cauciones = [],
   groupOptions,
   selectedGroupId,
   strings,
   onGroupChange,
+  avgTNAByCurrency: avgTNAProp = null,
 }) => {
-  const [isCalculating, setIsCalculating] = useState(false);
+  // Show the spinner immediately if the parent passed operations already
+  // (prevents a flash of "no data" before parsing starts).
+  const [isCalculating, setIsCalculating] = useState(() => Boolean(operations && operations.length > 0));
   const [tableData, setTableData] = useState([]);
 
   const filterStrings = strings?.filters ?? {};
   const arbitrageStrings = strings?.arbitrage ?? {};
 
-  // Process operations and calculate P&L with useEffect for async operations
+  // We'll split processing into two stages so we can memoize the avgTNAByCurrency
+  // using React's useMemo hook. Stage 1: parse & enrich inputs and store in state.
+  const [parsedOperationsState, setParsedOperationsState] = useState([]);
+  const [enrichedCaucionesState, setEnrichedCaucionesState] = useState([]);
+
   useEffect(() => {
-    const processData = async () => {
+    let cancelled = false;
+
+    const prepare = async () => {
       if (!operations || operations.length === 0) {
+        setParsedOperationsState([]);
+        setEnrichedCaucionesState([]);
         setTableData([]);
         setIsCalculating(false);
         return;
@@ -70,60 +88,128 @@ const ArbitrajesView = ({
 
       setIsCalculating(true);
 
-      // Use setTimeout to allow UI to update before heavy processing
+      // Allow UI to update first
       setTimeout(async () => {
         try {
-          // Get current jornada (trading day) - for now use today
-          const jornada = new Date();
-
           // Enrich operations with fee calculations FIRST
           const enrichedOperations = await enrichArbitrageOperations(operations);
 
-        // Parse operations and cauciones using the service layer
-        // parseOperations will skip PESOS operations (cauciones)
-        // parseCauciones will extract PESOS operations and convert them
-        const parsedOperations = parseOperations(enrichedOperations);
-        const parsedCauciones = parseCauciones(enrichedOperations);
+          // Parse operations and cauciones using the service layer
+          const parsedOperations = parseOperations(enrichedOperations);
+          const parsedCauciones = parseCauciones(enrichedOperations);
 
-        // Enrich cauciones with fees
-        const enrichedCauciones = await enrichCauciones(parsedCauciones);
+          // Enrich cauciones with fees
+          const enrichedCauciones = await enrichCauciones(parsedCauciones);
 
-        if (parsedOperations.length === 0) {
-          console.warn('ArbitrajesView: No valid operations after parsing');
+          if (cancelled) return;
+
+          setParsedOperationsState(parsedOperations);
+          setEnrichedCaucionesState(enrichedCauciones || []);
+
+          // Debug sample
+          try {
+            const sample = (enrichedCauciones || []).slice(0, 6).map((c) => ({
+              id: c?.id ?? null,
+              instrumento: c?.instrumento ?? null,
+              monto: c?.monto ?? null,
+              tasa: c?.tasa ?? null,
+              tenorDias: c?.tenorDias ?? null,
+              feeAmount: c?.feeAmount ?? null,
+              hasFeeBreakdown: !!c?.feeBreakdown,
+              feeBreakdownKeys: c?.feeBreakdown ? Object.keys(c.feeBreakdown) : null,
+            }));
+            console.debug('[ArbitrajesView] enrichedCauciones sample', { total: enrichedCauciones.length, sample });
+          } catch {
+            // ignore
+          }
+        } catch (error) {
+          console.error('ArbitrajesView prepare error', error);
+          setParsedOperationsState([]);
+          setEnrichedCaucionesState([]);
           setTableData([]);
+          setIsCalculating(false);
+        }
+      }, 100);
+    };
+
+    prepare();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [operations]);
+
+  // Memoize avgTNAByCurrency so it only recomputes when enriched cauciones change
+  const avgTNAByCurrencyMemo = useMemo(() => {
+    return calculateAvgTNAByCurrency(enrichedCaucionesState || []);
+  }, [enrichedCaucionesState]);
+
+  // If a precomputed mapping is provided by the caller, prefer it (caller rollout).
+  const effectiveAvgTNAByCurrency = (avgTNAProp && typeof avgTNAProp === 'object' && Object.keys(avgTNAProp).length > 0)
+    ? avgTNAProp
+    : avgTNAByCurrencyMemo;
+
+  // Stage 2: aggregate and compute P&L when parsed operations or cauciones update
+  useEffect(() => {
+    let cancelled = false;
+
+    const doAggregation = async () => {
+      // If there are no parsed operations yet, and we're currently in a
+      // calculating/parsing phase, don't prematurely clear the loading
+      // indicator — let the prepare() effect finish and populate state.
+      if (!parsedOperationsState || parsedOperationsState.length === 0) {
+        if (isCalculating) {
+          // parsing/aggregation still in progress — keep spinner visible
           return;
         }
 
-        // Aggregate operations and cauciones
-        const grupos = aggregateByInstrumentoPlazo(parsedOperations, enrichedCauciones, jornada);
+        setTableData([]);
+        setIsCalculating(false);
+        return;
+      }
 
+  setIsCalculating(true);
+
+  // Allow the browser to paint the loading spinner before we run
+  // potentially CPU/IO-heavy aggregation and P&L calculations.
+  // A short timeout yields control to the event loop so the UI updates.
+  await new Promise((resolve) => setTimeout(resolve, 50));
+
+  try {
+        const jornada = new Date();
+
+  // Pass the precomputed mapping into the aggregator (prefer caller-provided mapping)
+  const grupos = aggregateByInstrumentoPlazo(parsedOperationsState, enrichedCaucionesState, jornada, effectiveAvgTNAByCurrency);
         const filteredGrupos = Array.from(grupos.values());
 
-        // Calculate P&L for each grupo and flatten to table rows
         const rows = [];
-        filteredGrupos.forEach((grupo) => {
-          const resultados = calculatePnL(grupo);
+        for (const grupo of filteredGrupos) {
+          if (cancelled) break;
+          const resultados = await calculatePnL(grupo);
           resultados.forEach((resultado) => {
-            // Only include results with matched operations
             if (resultado.matchedQty > 0) {
-              rows.push(transformToTableRow(grupo, resultado));
+              const row = transformToTableRow(grupo, resultado);
+              rows.push(row);
             }
           });
-        });
-
-        setTableData(rows);
-        } catch (error) {
-          console.error('Error calculating arbitrage P&L:', error);
-          console.error('Error stack:', error.stack);
-          setTableData([]);
-        } finally {
-          setIsCalculating(false);
         }
-      }, 100); // 100ms delay to allow UI to show loading state
+
+        if (!cancelled) setTableData(rows);
+      } catch (error) {
+        console.error('Error calculating arbitrage P&L:', error);
+        console.error('Error stack:', error.stack);
+        if (!cancelled) setTableData([]);
+      } finally {
+        if (!cancelled) setIsCalculating(false);
+      }
     };
 
-    processData();
-  }, [operations, cauciones]);
+    doAggregation();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [parsedOperationsState, enrichedCaucionesState, avgTNAByCurrencyMemo, avgTNAProp]);
 
   return (
     <Stack spacing={2} sx={{ flex: 1, minHeight: 0, p: 2 }}>

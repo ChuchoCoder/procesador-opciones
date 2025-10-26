@@ -6,15 +6,29 @@
       "bonds": 0.01,
       "option": 0.2,
       "iva": 0.21
-    },
-    "cauciones": {
-      "derechosDeMercadoDailyRate": 0.0005,
-      "gastosGarantiaDailyRate": 0.0005
     }
   },
   "broker": {
-    "commission": 0.0,
-    "arancelCaucionColocadora": 1.5,
-    "arancelCaucionTomadora": 3.0
+    "commission": 0.0
+  },
+  "repo": {
+    "arancelCaucionColocadora": {
+      "ARS": 1.5,
+      "USD": 0.2
+    },
+    "arancelCaucionTomadora": {
+      "ARS": 3.0,
+      "USD": 0.2
+    },
+    "derechosDeMercadoDailyRate": {
+      "ARS": 0.0005,
+      "USD": 0.0005
+    },
+    "gastosGarantiaDailyRate": {
+      "ARS": 0.0005,
+      "USD": 0.0005
+    },
+    "ivaRepoRate": 0.21,
+    "overridesMetadata": []
   }
 }

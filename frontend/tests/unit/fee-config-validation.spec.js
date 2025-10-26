@@ -1,6 +1,7 @@
 // fee-config-validation.spec.js - Unit tests for config validation (US1)
 // Covers: invalid numbers -> sanitized defaults & warnings
 
+/* eslint-env node, jest */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { validateFeeConfig, computeEffectiveRates } from '../../src/services/fees/config-validation.js';
 import * as feeLogging from '../../src/services/logging/fee-logging.js';

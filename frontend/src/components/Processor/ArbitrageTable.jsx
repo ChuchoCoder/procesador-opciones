@@ -65,63 +65,42 @@ function getPnLTradeBreakdown(row) {
     return <Typography variant="caption" sx={{ color: 'grey.300' }}>Sin operaciones</Typography>;
   }
 
+  const renderSection = (label, data, isSell) => {
+    if (!data) return null;
+    const totalValue = Number.isFinite(data.totalValue) ? data.totalValue : 0;
+    const avgPrice = Number.isFinite(data.avgPrice) ? data.avgPrice : 0;
+    const totalFees = Number.isFinite(data.totalFees) ? data.totalFees : 0;
+    const net = isSell ? (totalValue - totalFees) : (totalValue + totalFees);
+
+    return (
+      <Box sx={{ mb: 0.5 }}>
+        <Typography variant="body2" sx={{ display: 'block', color: 'grey.100' }}>
+          {label}: {formatCurrency(totalValue)}
+        </Typography>
+        <Box sx={{ ml: 1, mt: 0.25 }}>
+          <Typography variant="body2" sx={{ display: 'block', color: 'grey.400', fontSize: '0.75rem' }}>
+            {'\u2022'} Precio promedio: {formatCurrency(avgPrice)}
+          </Typography>
+          <Typography variant="body2" sx={{ display: 'block', color: 'grey.400', fontSize: '0.75rem' }}>
+            {'\u2022'} Comisiones: {formatCurrency(totalFees)}
+          </Typography>
+          <Typography variant="body2" sx={{ display: 'block', color: isSell ? 'error.main' : 'success.main', fontSize: '0.75rem' }}>
+            {'\u2022'} Neto: {formatCurrency(net)}
+          </Typography>
+        </Box>
+      </Box>
+    );
+  };
+
   return (
     <Box sx={{ p: 1, minWidth: 300 }}>
       <Typography variant="body2" sx={{ fontWeight: 600, display: 'block', mb: 1, color: 'grey.100' }}>
         Detalle P&L Trade
       </Typography>
-      {row.ventaCI_breakdown && (
-        <>
-          <Typography variant="body2" sx={{ display: 'block', color: 'grey.100' }}>
-            Venta CI: {formatCurrency(row.ventaCI_breakdown.totalValue)}
-          </Typography>
-          <Typography variant="body2" sx={{ display: 'block', color: 'grey.400', ml: 1, fontSize: '0.75rem' }}>
-            Precio promedio: {formatCurrency(row.ventaCI_breakdown.avgPrice)}
-          </Typography>
-          <Typography variant="body2" sx={{ display: 'block', color: 'grey.400', ml: 1 }}>
-            Comisiones: {formatCurrency(row.ventaCI_breakdown.totalFees)}
-          </Typography>
-        </>
-      )}
-      {row.compra24h_breakdown && (
-        <>
-          <Typography variant="body2" sx={{ display: 'block', mt: 0.5, color: 'grey.100' }}>
-            Compra 24H: {formatCurrency(row.compra24h_breakdown.totalValue)}
-          </Typography>
-          <Typography variant="body2" sx={{ display: 'block', color: 'grey.400', ml: 1, fontSize: '0.75rem' }}>
-            Precio promedio: {formatCurrency(row.compra24h_breakdown.avgPrice)}
-          </Typography>
-          <Typography variant="body2" sx={{ display: 'block', color: 'grey.400', ml: 1 }}>
-            Comisiones: {formatCurrency(row.compra24h_breakdown.totalFees)}
-          </Typography>
-        </>
-      )}
-      {row.compraCI_breakdown && (
-        <>
-          <Typography variant="body2" sx={{ display: 'block', mt: 0.5, color: 'grey.100' }}>
-            Compra CI: {formatCurrency(row.compraCI_breakdown.totalValue)}
-          </Typography>
-          <Typography variant="body2" sx={{ display: 'block', color: 'grey.400', ml: 1, fontSize: '0.75rem' }}>
-            Precio promedio: {formatCurrency(row.compraCI_breakdown.avgPrice)}
-          </Typography>
-          <Typography variant="body2" sx={{ display: 'block', color: 'grey.400', ml: 1 }}>
-            Comisiones: {formatCurrency(row.compraCI_breakdown.totalFees)}
-          </Typography>
-        </>
-      )}
-      {row.venta24h_breakdown && (
-        <>
-          <Typography variant="body2" sx={{ display: 'block', mt: 0.5, color: 'grey.100' }}>
-            Venta 24H: {formatCurrency(row.venta24h_breakdown.totalValue)}
-          </Typography>
-          <Typography variant="body2" sx={{ display: 'block', color: 'grey.400', ml: 1, fontSize: '0.75rem' }}>
-            Precio promedio: {formatCurrency(row.venta24h_breakdown.avgPrice)}
-          </Typography>
-          <Typography variant="body2" sx={{ display: 'block', color: 'grey.400', ml: 1 }}>
-            Comisiones: {formatCurrency(row.venta24h_breakdown.totalFees)}
-          </Typography>
-        </>
-      )}
+      {renderSection('Venta CI', row.ventaCI_breakdown, true)}
+      {renderSection('Compra 24H', row.compra24h_breakdown, false)}
+      {renderSection('Compra CI', row.compraCI_breakdown, false)}
+      {renderSection('Venta 24H', row.venta24h_breakdown, true)}
       <Typography variant="body2" sx={{ display: 'block', mt: 1, fontWeight: 600, borderTop: '1px solid', borderColor: 'grey.700', pt: 0.5, color: 'grey.100' }}>
         Total: {formatCurrency(row.pnl_trade)}
       </Typography>
@@ -136,63 +115,197 @@ function getPnLTradeBreakdown(row) {
  */
 function getPnLCaucionBreakdown(row) {
   if (!row.cauciones || row.cauciones.length === 0) {
+    // If the service provided a normalized caucion fees breakdown for the row,
+    // prefer rendering that instead of re-estimating amounts in the UI.
+    const breakdown = row.caucionFeesBreakdown || row.feeBreakdown || null;
+    if (breakdown) {
+      const formatter = new Intl.NumberFormat('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      const fmt = (v) => (Number.isFinite(v) ? formatter.format(v) : '—');
+      const fmtSigned = (v) => {
+        if (!Number.isFinite(v)) return '—';
+        const abs = formatter.format(Math.abs(v));
+        if (v > 0) return `+${abs}`;
+        if (v < 0) return `-${abs}`;
+        return abs;
+      };
+
+      const principal = Number.isFinite(row.principal) ? row.principal : null;
+      const baseAmount = Number.isFinite(breakdown.baseAmount) ? breakdown.baseAmount : principal;
+      const arancel = Number.isFinite(breakdown.arancel) ? breakdown.arancel : (Number.isFinite(breakdown.arancelAmount) ? breakdown.arancelAmount : 0);
+      const derechos = Number.isFinite(breakdown.derechos) ? breakdown.derechos : (Number.isFinite(breakdown.derechosMercadoAmount) ? breakdown.derechosMercadoAmount : 0);
+      const gastosGarantia = Number.isFinite(breakdown.gastos) ? breakdown.gastos : (Number.isFinite(breakdown.gastosGarantiaAmount) ? breakdown.gastosGarantiaAmount : 0);
+      const iva = Number.isFinite(breakdown.iva) ? breakdown.iva : (Number.isFinite(breakdown.ivaAmount) ? breakdown.ivaAmount : 0);
+      const totalExpenses = Number.isFinite(breakdown.totalExpenses) ? breakdown.totalExpenses : (arancel + derechos + gastosGarantia + iva);
+      const netSettlement = Number.isFinite(breakdown.netSettlement) ? breakdown.netSettlement : (Number.isFinite(breakdown.baseAmount) ? (breakdown.baseAmount - totalExpenses) : null);
+
+      return (
+        <Box sx={{ p: 1, minWidth: 300 }}>
+          <Typography variant="body2" sx={{ fontWeight: 600, display: 'block', mb: 1, color: 'grey.100' }}>
+            Detalle P&L Caución {row.isCaucionColocadora ? "Colocadora" : "Tomadora"}
+          </Typography>
+          {Number.isFinite(breakdown.avgTNA) && (
+            <Typography variant="body2" sx={{ display: 'block', mt: 0.5, color: 'primary.light', fontWeight: 500 }}>
+              TNA Promedio: {Number(breakdown.avgTNA).toFixed(2)}%
+            </Typography>
+          )}
+          <Typography variant="body2" sx={{ display: 'block', mt: 1, color: 'grey.100' }}>
+            Plazo: {row.plazo ?? row.tenorDias ?? breakdown.tenorDays ?? '—'} días
+          </Typography>
+          <Typography variant="body2" sx={{ display: 'block', mt: 1, color: 'grey.100' }}>
+            Importe Bruto: {principal !== null ? fmt(principal) : '—'}
+          </Typography>
+
+          <Typography variant="body2" sx={{ display: 'block', mt: 1, color: 'grey.100' }}>
+            Interés devengado: {fmtSigned(breakdown.accruedInterest ?? row.accruedInterest ?? row.pnl_caucion)}
+          </Typography>
+          <Typography variant="body2" sx={{ display: 'block', mt: 1, color: 'grey.100' }}>
+            Monto base: {baseAmount !== null ? fmt(baseAmount) : '—'}
+          </Typography>
+          <Typography variant="body2" sx={{ display: 'block', color: 'grey.400', ml: 1 }}>
+            Arancel: {fmtSigned(arancel)}
+          </Typography>
+          <Typography variant="body2" sx={{ display: 'block', color: 'grey.400', ml: 1 }}>
+            Derechos de mercado: {fmtSigned(derechos)}
+          </Typography>
+          {Number.isFinite(gastosGarantia) && (
+            <Typography variant="body2" sx={{ display: 'block', color: 'grey.400', ml: 1 }}>
+              Gastos de garantía: {fmtSigned(gastosGarantia)}
+            </Typography>
+          )}
+          <Typography variant="body2" sx={{ display: 'block', color: 'grey.400', ml: 1 }}>
+            IVA sobre gastos: {fmtSigned(iva)}
+          </Typography>
+
+          <Typography variant="body2" sx={{ display: 'block', mt: 1, fontWeight: 600, borderTop: '1px solid', borderColor: 'grey.700', pt: 0.5, color: 'grey.100' }}>
+            Gastos totales: {fmtSigned(totalExpenses)}
+          </Typography>
+          <Typography variant="body2" sx={{ display: 'block', fontWeight: 600, color: 'grey.100' }}>
+            Neto de liquidación: {netSettlement !== null ? fmt(netSettlement) : '—'}
+          </Typography>
+        </Box>
+      );
+    }
+
+    // No service breakdown available — be strict: do not estimate repo fees locally.
+    const formatter = new Intl.NumberFormat('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const fmt = (v) => (Number.isFinite(v) ? formatter.format(v) : '—');
+
     return (
-      <Box sx={{ p: 1, minWidth: 200 }}>
+      <Box sx={{ p: 1, minWidth: 300 }}>
         <Typography variant="body2" sx={{ fontWeight: 600, display: 'block', mb: 1, color: 'grey.100' }}>
-          Detalle P&L Caución
+          Detalle P&L Caución {row.isCaucionColocadora ? "Colocadora" : "Tomadora"}
         </Typography>
         <Typography variant="body2" sx={{ color: 'grey.400' }}>
-          Sin cauciones - Usando TNA promedio
+          Datos de caución no disponibles (el servicio no proporcionó breakdown)
         </Typography>
-        {row.avgTNA > 0 && (
-          <Typography variant="body2" sx={{ display: 'block', mt: 1, color: 'primary.light', fontWeight: 500 }}>
-            TNA Promedio: {row.avgTNA.toFixed(2)}%
-          </Typography>
-        )}
         <Typography variant="body2" sx={{ display: 'block', mt: 1, color: 'grey.100' }}>
-          Monto: {formatCurrency(row.cantidad * row.precioPromedio)}
+          Monto base: {fmt(null)}
         </Typography>
-        <Typography variant="body2" sx={{ display: 'block', color: 'grey.100' }}>
-          Plazo: {row.plazo} días
+        <Typography variant="body2" sx={{ display: 'block', color: 'grey.400', ml: 1 }}>
+          Plazo: {row.plazo ?? row.tenorDias ?? '—'} días
         </Typography>
-        <Typography variant="body2" sx={{ display: 'block', mt: 1, fontWeight: 600, color: 'grey.100' }}>
-          Interés estimado: {formatCurrency(row.pnl_caucion)}
+        <Typography variant="body2" sx={{ display: 'block', mt: 1, color: 'grey.100' }}>
+          Interés devengado: {fmt(null)}
+        </Typography>
+        <Typography variant="body2" sx={{ display: 'block', mt: 1, fontWeight: 600, borderTop: '1px solid', borderColor: 'grey.700', pt: 0.5, color: 'grey.100' }}>
+          Gastos totales: {fmt(null)}
+        </Typography>
+        <Typography variant="body2" sx={{ display: 'block', fontWeight: 600, color: 'grey.100' }}>
+          Neto de liquidación: {fmt(null)}
         </Typography>
       </Box>
     );
   }
-
-  const totalInteres = row.cauciones.reduce((sum, c) => sum + (c.interes || 0), 0);
-  const totalFees = row.cauciones.reduce((sum, c) => sum + (c.feeAmount || 0), 0);
+  const formatter = new Intl.NumberFormat('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const fmt = (v) => (Number.isFinite(v) ? formatter.format(v) : '—');
+  const fmtSigned = (v) => {
+    if (!Number.isFinite(v)) return '—';
+    const abs = formatter.format(Math.abs(v));
+    if (v > 0) return `+${abs}`;
+    if (v < 0) return `-${abs}`;
+    return abs;
+  };
 
   return (
-    <Box sx={{ p: 1, minWidth: 250 }}>
+    <Box sx={{ p: 1, minWidth: 300 }}>
       <Typography variant="body2" sx={{ fontWeight: 600, display: 'block', mb: 1, color: 'grey.100' }}>
-        Detalle P&L Caución
+        Detalle P&L Caución {row.isCaucionColocadora ? "Colocadora" : "Tomadora"}
       </Typography>
       {row.avgTNA > 0 && (
         <Typography variant="body2" sx={{ display: 'block', mb: 1, color: 'primary.light', fontWeight: 500 }}>
-          TNA Promedio: {row.avgTNA.toFixed(2)}%
+          TNA Promedio: {Number(row.avgTNA).toFixed(2)}%
         </Typography>
       )}
-      {row.cauciones.map((c, idx) => (
-        <Box key={idx} sx={{ mb: 1 }}>
-          <Typography variant="body2" sx={{ display: 'block', color: 'grey.100' }}>
-            {c.tipo}: {formatCurrency(c.monto)}
-          </Typography>
-          <Typography variant="body2" sx={{ display: 'block', color: 'grey.400', ml: 1 }}>
-            Tasa: {c.tasa}% - {c.tenorDias} días
-          </Typography>
-          <Typography variant="body2" sx={{ display: 'block', color: 'grey.400', ml: 1 }}>
-            Interés: {formatCurrency(c.interes)}
-          </Typography>
-          {c.feeAmount > 0 && (
-            <Typography variant="body2" sx={{ display: 'block', color: 'grey.400', ml: 1 }}>
-              Comisiones: {formatCurrency(c.feeAmount)}
+
+      {row.cauciones.map((c, idx) => {
+        // Prefer service-provided principalPortion (portion of operation principal
+        // allocated to this caución). Fall back to baseAmount, then the
+        // original tranche monto, then any principalAmount if present.
+        const base = Number.isFinite(c.principalPortion)
+          ? c.principalPortion
+          : Number.isFinite(c.baseAmount)
+            ? c.baseAmount
+            : Number.isFinite(c.monto)
+              ? c.monto
+              : (Number.isFinite(c.principalAmount) ? c.principalAmount : 0);
+        const tasa = Number.isFinite(c.tasa) ? c.tasa : (Number.isFinite(c.tna) ? c.tna : (row.avgTNA || null));
+        const tenor = Number.isFinite(c.tenorDias) ? c.tenorDias : (Number.isFinite(c.tenorDays) ? c.tenorDays : null);
+        const interes = Number.isFinite(c.interes) ? c.interes : (Number.isFinite(c.accruedInterest) ? c.accruedInterest : 0);
+        const arancel = Number.isFinite(c.arancelAmount) ? c.arancelAmount : (Number.isFinite(c.arancel) ? c.arancel : 0);
+        const derechos = Number.isFinite(c.derechosMercadoAmount) ? c.derechosMercadoAmount : (Number.isFinite(c.derechosMercado) ? c.derechosMercado : 0);
+        const gastosGarantia = Number.isFinite(c.gastosGarantiaAmount) ? c.gastosGarantiaAmount : (Number.isFinite(c.gastosGarantia) ? c.gastosGarantia : 0);
+        const iva = Number.isFinite(c.ivaAmount) ? c.ivaAmount : (Number.isFinite(c.iva) ? c.iva : 0);
+        const totalExpenses = Number.isFinite(c.totalExpenses) ? c.totalExpenses : (arancel + derechos + gastosGarantia + iva);
+        const netSettlement = Number.isFinite(c.netSettlement) ? c.netSettlement : (Number.isFinite(c.neto) ? c.neto : null);
+        const roleLabel = c.tipo || c.role || (c.roleLabel ?? 'Caución');
+        const currency = c.currency || (c.instrument && c.instrument.currency) || 'ARS';
+
+        return (
+          <Box key={idx} sx={{ mb: 1 }}>
+            <Typography variant="body2" sx={{ fontWeight: 600, display: 'block', color: 'grey.100' }}>
+              {roleLabel} · {currency}
             </Typography>
-          )}
-        </Box>
-      ))}
+            <Typography variant="body2" sx={{ display: 'block', color: 'grey.100' }}>
+              Monto base: {fmt(base)}
+            </Typography>
+            {tasa !== null && (
+              <Typography variant="body2" sx={{ display: 'block', color: 'grey.400', ml: 1 }}>
+                TNA Promedio: {Number(tasa).toFixed(2)}%
+              </Typography>
+            )}
+            {tenor !== null && (
+              <Typography variant="body2" sx={{ display: 'block', color: 'grey.400', ml: 1 }}>
+                Plazo: {tenor} días
+              </Typography>
+            )}
+
+            <Typography variant="body2" sx={{ display: 'block', color: 'grey.100', mt: 0.5 }}>
+              Interés devengado: {fmtSigned(interes)}
+            </Typography>
+            <Typography variant="body2" sx={{ display: 'block', color: 'grey.400', ml: 1 }}>
+              Arancel: {fmtSigned(arancel)}
+            </Typography>
+            <Typography variant="body2" sx={{ display: 'block', color: 'grey.400', ml: 1 }}>
+              Derechos de mercado: {fmtSigned(derechos)}
+            </Typography>
+            {Number.isFinite(gastosGarantia) && (
+              <Typography variant="body2" sx={{ display: 'block', color: 'grey.400', ml: 1 }}>
+                Gastos de garantía: {fmtSigned(gastosGarantia)}
+              </Typography>
+            )}
+            <Typography variant="body2" sx={{ display: 'block', color: 'grey.400', ml: 1 }}>
+              IVA sobre gastos: {fmtSigned(iva)}
+            </Typography>
+            <Typography variant="body2" sx={{ display: 'block', mt: 1, fontWeight: 600, borderTop: '1px solid', borderColor: 'grey.700', pt: 0.5, color: 'grey.100' }}>
+              Gastos totales: {fmtSigned(totalExpenses)}
+            </Typography>
+            <Typography variant="body2" sx={{ display: 'block', fontWeight: 600, color: 'grey.100' }}>
+              Neto de liquidación: {netSettlement !== null ? fmt(netSettlement) : '—'}
+            </Typography>
+          </Box>
+        );
+      })}
+
       <Typography variant="body2" sx={{ display: 'block', mt: 1, fontWeight: 600, borderTop: '1px solid', borderColor: 'grey.700', pt: 0.5, color: 'grey.100' }}>
         Total: {formatCurrency(row.pnl_caucion)}
       </Typography>
