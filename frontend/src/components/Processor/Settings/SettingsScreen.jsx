@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Container, Box, Typography, Button, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, Stack, Alert, Snackbar } from '@mui/material';
+import { Container, Box, Typography, Button, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, Stack, Alert } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import RestoreIcon from '@mui/icons-material/Restore';
 import AddSymbol from './AddSymbol.jsx';
@@ -8,6 +8,7 @@ import SymbolSettings from './SymbolSettings.jsx';
 import { getAllSymbols, loadSymbolConfig, deleteSymbolConfig, clearAllSymbols } from '../../../services/storage-settings.js';
 import { seedDefaultSymbols } from '../../../services/bootstrap-defaults.js';
 import strings from '../../../strings/es-AR.js';
+import { showToast } from '../../../services/toastService.js';
 
 const s = strings.settings.symbolSettings;
 
@@ -17,7 +18,6 @@ export default function SettingsScreen() {
   const [config, setConfig] = useState(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [restoreDialogOpen, setRestoreDialogOpen] = useState(false);
-  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
 
   const refreshSymbols = useCallback(async () => {
     const allSymbols = await getAllSymbols();
@@ -58,7 +58,7 @@ export default function SettingsScreen() {
 
     const success = await deleteSymbolConfig(activeSymbol);
     if (success) {
-      setSnackbar({ open: true, message: s.deleteSymbolSuccess, severity: 'success' });
+      showToast({ message: s.deleteSymbolSuccess, severity: 'success' });
       setDeleteDialogOpen(false);
       
       // Refresh symbols list and select a different symbol
@@ -74,14 +74,14 @@ export default function SettingsScreen() {
         setConfig(null);
       }
     } else {
-      setSnackbar({ open: true, message: s.errorSaveFailed, severity: 'error' });
+      showToast({ message: s.errorSaveFailed, severity: 'error' });
     }
   };
 
   const handleRestoreDefaults = async () => {
     const success = await clearAllSymbols();
     if (success) {
-      setSnackbar({ open: true, message: s.restoreDefaultsSuccess, severity: 'success' });
+      showToast({ message: s.restoreDefaultsSuccess, severity: 'success' });
       setRestoreDialogOpen(false);
       
       // Re-seed defaults and refresh
@@ -96,13 +96,11 @@ export default function SettingsScreen() {
         setConfig(null);
       }
     } else {
-      setSnackbar({ open: true, message: s.errorSaveFailed, severity: 'error' });
+      showToast({ message: s.errorSaveFailed, severity: 'error' });
     }
   };
 
-  const handleCloseSnackbar = () => {
-    setSnackbar({ ...snackbar, open: false });
-  };
+  // using global toast service; no local snackbar state
 
   return (
     <Container maxWidth={false} sx={{ py: 3, px: 4 }}>
@@ -208,17 +206,7 @@ export default function SettingsScreen() {
         </DialogActions>
       </Dialog>
 
-      {/* Success/Error Snackbar */}
-      <Snackbar
-        open={snackbar.open}
-        autoHideDuration={4000}
-        onClose={handleCloseSnackbar}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        <Alert onClose={handleCloseSnackbar} severity={snackbar.severity} sx={{ width: '100%' }}>
-          {snackbar.message}
-        </Alert>
-      </Snackbar>
+      {/* Toasts are handled by the global ToastContainer */}
     </Container>
   );
 }

@@ -129,7 +129,7 @@ const REPO_AGGREGATE_NUMERIC_KEYS = [
 
 const REPO_AGGREGATION_TOLERANCE = 0.01;
 
-const createRepoAggregate = (breakdown = {}) => ({
+const _createRepoAggregate = (breakdown = {}) => ({
   principalAmount: 0,
   baseAmount: 0,
   accruedInterest: 0,
@@ -154,7 +154,7 @@ const createRepoAggregate = (breakdown = {}) => ({
   },
 });
 
-const accumulateRepoBreakdown = (aggregate, breakdown = {}, netContribution = null) => {
+const _accumulateRepoBreakdown = (aggregate, breakdown = {}, netContribution = null) => {
   if (!aggregate || !breakdown) {
     return;
   }
@@ -217,7 +217,7 @@ const accumulateRepoBreakdown = (aggregate, breakdown = {}, netContribution = nu
   }
 };
 
-const finalizeRepoAggregate = (aggregate, explicitNet = null) => {
+const _finalizeRepoAggregate = (aggregate, explicitNet = null) => {
   if (!aggregate) {
     return null;
   }
@@ -400,6 +400,13 @@ const aggregateRows = (rows) => {
 
   rows.forEach((row) => {
     const key = `${row.symbol}::${row.settlement}`;
+
+    // Only accept explicit service-provided caucion breakdowns. Do NOT build
+    // a minimal breakdown from flat fields (avoid local estimation/fallback).
+    const serviceCaucionBreakdown = row?.caucionFeesBreakdown ?? null;
+
+    const initialFeeBreakdown = cloneFeeBreakdown(serviceCaucionBreakdown ?? row?.feeBreakdown ?? null);
+
     if (!groups.has(key)) {
       groups.set(key, {
         key,
@@ -410,15 +417,13 @@ const aggregateRows = (rows) => {
         totalWeight: 0,
         feeAmount: 0,
         grossNotional: 0,
-  feeBreakdown: cloneFeeBreakdown(row.feeBreakdown),
+        feeBreakdown: initialFeeBreakdown,
         category: row.category,
         side: row.side, // Preserve side from first row in group
-        netSettlement: row?.feeBreakdown?.source?.startsWith('repo')
-          ? 0
-          : Number.isFinite(row.netSettlement)
-            ? row.netSettlement
-            : null,
-        repoAggregatedBreakdown: null,
+        // For repo rows we don't fabricate an initial net (avoid local repo estimation). Use provided netSettlement when present.
+        netSettlement: Number.isFinite(row.netSettlement)
+          ? row.netSettlement
+          : (Number.isFinite(initialFeeBreakdown?.netSettlement) ? initialFeeBreakdown.netSettlement : null),
       });
     }
 
@@ -426,22 +431,17 @@ const aggregateRows = (rows) => {
     entry.quantity += row.quantity;
     entry.feeAmount += (row.feeAmount || 0);
     entry.grossNotional += (row.grossNotional || 0);
-    const isRepoRow = row?.feeBreakdown?.source?.startsWith('repo');
-    if (isRepoRow) {
-      const netCandidate = Number.isFinite(row?.netSettlement)
-        ? row.netSettlement
-        : Number(row?.feeBreakdown?.netSettlement);
-      if (Number.isFinite(netCandidate)) {
-        entry.netSettlement = (entry.netSettlement ?? 0) + netCandidate;
-      }
-      if (!entry.repoAggregatedBreakdown) {
-        entry.repoAggregatedBreakdown = createRepoAggregate(cloneFeeBreakdown(row.feeBreakdown));
-      }
-      accumulateRepoBreakdown(
-        entry.repoAggregatedBreakdown,
-        row.feeBreakdown,
-        Number.isFinite(netCandidate) ? netCandidate : null,
-      );
+
+    // If the row has an explicit netSettlement (service-provided), accumulate it for the group
+    const netCandidate = Number.isFinite(row?.netSettlement)
+      ? row.netSettlement
+      : Number.isFinite(row?.caucionFeesBreakdown?.netSettlement)
+        ? Number(row.caucionFeesBreakdown.netSettlement)
+        : Number.isFinite(row?.feeBreakdown?.netSettlement)
+          ? Number(row.feeBreakdown.netSettlement)
+          : null;
+    if (Number.isFinite(netCandidate)) {
+      entry.netSettlement = (entry.netSettlement ?? 0) + netCandidate;
     }
     const weight = Number.isFinite(row.weight) && row.weight > 0
       ? row.weight
@@ -452,30 +452,19 @@ const aggregateRows = (rows) => {
 
   return Array.from(groups.values())
     .map((entry) => {
-      // Recalculate fee breakdown for aggregated gross notional
+      // Build final feeBreakdown: prefer service-provided repo breakdowns and avoid local repo aggregation.
       let feeBreakdown = cloneFeeBreakdown(entry.feeBreakdown);
       if (entry.feeBreakdown?.source?.startsWith('repo')) {
-        const aggregated = finalizeRepoAggregate(
-          entry.repoAggregatedBreakdown,
-          Number.isFinite(entry.netSettlement) ? entry.netSettlement : null,
-        );
-        feeBreakdown = aggregated || {
-          ...cloneFeeBreakdown(entry.feeBreakdown),
-          netSettlement: Number.isFinite(entry.netSettlement)
-            ? entry.netSettlement
-            : entry.feeBreakdown?.netSettlement,
-        };
-        if (aggregated) {
-          entry.netSettlement = aggregated.netSettlement ?? entry.netSettlement;
-          entry.feeAmount = aggregated.totalExpenses ?? entry.feeAmount;
-        } else if (feeBreakdown) {
-          const roundedExpenses = roundAmount(entry.feeAmount);
-          feeBreakdown.totalExpenses = roundedExpenses;
-          entry.feeAmount = roundedExpenses;
-          if (Number.isFinite(entry.netSettlement)) {
-            entry.netSettlement = roundAmount(entry.netSettlement);
-          }
+        // Use the service-provided breakdown as-is. If multiple rows provided explicit netSettlement,
+        // we summed them into entry.netSettlement above; reflect that in the breakdown.
+        feeBreakdown = cloneFeeBreakdown(entry.feeBreakdown);
+        if (Number.isFinite(entry.netSettlement)) {
+          feeBreakdown.netSettlement = roundAmount(entry.netSettlement);
+          entry.netSettlement = roundAmount(entry.netSettlement);
+        } else if (Number.isFinite(feeBreakdown.netSettlement)) {
+          entry.netSettlement = roundAmount(feeBreakdown.netSettlement);
         }
+        entry.feeAmount = Number.isFinite(feeBreakdown.totalExpenses) ? feeBreakdown.totalExpenses : entry.feeAmount;
       } else if (entry.feeBreakdown && entry.grossNotional > 0) {
         feeBreakdown = {
           ...cloneFeeBreakdown(entry.feeBreakdown),
@@ -687,14 +676,38 @@ const BuySellTable = ({
               </TableRow>
             )}
             {operations.map((row, index) => {
-              const explicitNet = Number.isFinite(row?.netSettlement) ? row.netSettlement : null;
-              const repoNet = explicitNet === null && row?.feeBreakdown?.source?.startsWith('repo')
-                ? row?.feeBreakdown?.netSettlement
-                : explicitNet;
-              const netTotal = Number.isFinite(repoNet)
-                ? repoNet
-                : calculateNetTotal(row.grossNotional, row.feeAmount, row.side);
-              
+              // Prefer service-provided caucion breakdowns / fields. Do NOT compute local repo estimations here.
+              // Priority: row.caucionFeesBreakdown -> service flat fields (caucionFeesTotal/principal/baseAmount/accruedInterest) -> row.feeBreakdown
+              const serviceCaucionBreakdown = row?.caucionFeesBreakdown ?? (Number.isFinite(row?.caucionFeesTotal) || Number.isFinite(row?.baseAmount) || Number.isFinite(row?.accruedInterest) || Number.isFinite(row?.principal)
+                ? {
+                  // Build a minimal breakdown shape from flat service fields (these come from the service and are NOT locally estimated)
+                  totalExpenses: Number.isFinite(row.caucionFeesTotal) ? row.caucionFeesTotal : undefined,
+                  principalAmount: Number.isFinite(row.principal) ? row.principal : undefined,
+                  baseAmount: Number.isFinite(row.baseAmount) ? row.baseAmount : undefined,
+                  accruedInterest: Number.isFinite(row.accruedInterest) ? row.accruedInterest : undefined,
+                  netSettlement: Number.isFinite(row.netSettlement) ? row.netSettlement : undefined,
+                  source: 'repo',
+                }
+                : null);
+
+              const _preferredBreakdown = serviceCaucionBreakdown ?? row?.feeBreakdown ?? null;
+
+              // Determine net total. For repo rows use explicit service breakdowns only.
+              // For other rows, compute net from explicit netSettlement or fall back to
+              // grossNotional +/- feeAmount (preserve previous behaviour for non-repo rows).
+              let netTotal;
+              if (serviceCaucionBreakdown?.source?.startsWith('repo')) {
+                const netCandidate = Number.isFinite(serviceCaucionBreakdown?.netSettlement)
+                  ? serviceCaucionBreakdown.netSettlement
+                  : Number.isFinite(row?.netSettlement)
+                    ? row.netSettlement
+                    : undefined;
+                netTotal = Number.isFinite(netCandidate) ? netCandidate : undefined;
+              } else {
+                const explicitNet = Number.isFinite(row?.netSettlement) ? row.netSettlement : null;
+                netTotal = Number.isFinite(explicitNet) ? explicitNet : calculateNetTotal(row.grossNotional, row.feeAmount, row.side);
+              }
+
               return (
                 <TableRow
                   key={row.key}
@@ -710,8 +723,8 @@ const BuySellTable = ({
                   </TableCell>
                   <TableCell align="right">{formatDecimal(row.price)}</TableCell>
                   <TableCell align="right">
-                    {row?.feeBreakdown?.source?.startsWith('repo') ? (
-                      <TooltipRepoFees breakdown={row.feeBreakdown} strings={strings}>
+                    {serviceCaucionBreakdown?.source?.startsWith('repo') ? (
+                      <TooltipRepoFees breakdown={serviceCaucionBreakdown} strings={strings}>
                         <Typography variant="body2" component="span">
                           {formatFee(netTotal)}
                         </Typography>

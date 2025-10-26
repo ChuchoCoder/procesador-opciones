@@ -36,7 +36,7 @@ describe('Fee Calculation Performance', () => {
     const endTime = performance.now();
     const elapsed = endTime - startTime;
 
-    // eslint-disable-next-line no-console
+     
     console.info(`PO: fee-benchmark-10k elapsed: ${elapsed.toFixed(2)}ms`);
     
     // Target: <8s for 50k => ~1.6s for 10k as rough guideline

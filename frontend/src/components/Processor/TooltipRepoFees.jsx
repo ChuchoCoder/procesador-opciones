@@ -64,6 +64,14 @@ const formatAmount = (value, formatter) => {
   return formatter.format(value);
 };
 
+const formatSigned = (value, formatter) => {
+  if (!Number.isFinite(value)) return '—';
+  const formatted = formatter.format(Math.abs(value));
+  if (value > 0) return `+${formatted}`;
+  if (value < 0) return `-${formatted}`;
+  return formatted;
+};
+
 const buildSuccessTooltip = (breakdown, strings) => {
   const labels = strings?.repo?.tooltip ?? {};
   const roleLabel = getRoleLabel(breakdown?.role, strings);
@@ -79,11 +87,22 @@ const buildSuccessTooltip = (breakdown, strings) => {
         {roleLabel || 'Caución'}
         {currencyLabel ? ` · ${currencyLabel}` : ''}
       </Typography>
+      {/* Optional TNA Promedio / Plazo lines (only shown when present in breakdown) */}
+      {Number.isFinite(breakdown?.avgTNA) && (
+        <Typography variant="caption" sx={{ display: 'block', color: 'primary.light', fontWeight: 500 }}>
+          {labels.tnaAvg || 'TNA Promedio'}: {Number(breakdown.avgTNA).toFixed(2)}%
+        </Typography>
+      )}
+      {Number.isFinite(breakdown?.tenorDays) && (
+        <Typography variant="caption" sx={{ display: 'block' }}>
+          {labels.tenor || 'Plazo'}: {breakdown.tenorDays} {labels.daysLabel || 'días'}
+        </Typography>
+      )}
       <Typography variant="caption" sx={{ display: 'block' }}>
         {labels.baseAmount || 'Monto base'}: {formatAmount(breakdown?.baseAmount, formatter)}
       </Typography>
       <Typography variant="caption" sx={{ display: 'block' }}>
-        {labels.accruedInterest || 'Interés devengado'}: {formatAmount(breakdown?.accruedInterest, formatter)}
+        {labels.accruedInterest || 'Interés devengado'}: {formatSigned(breakdown?.accruedInterest, formatter)}
       </Typography>
       <Box sx={{ borderTop: '1px solid', borderColor: 'divider', my: 0.5 }} />
       <Typography variant="caption" sx={{ display: 'block' }}>
@@ -98,11 +117,11 @@ const buildSuccessTooltip = (breakdown, strings) => {
         </Typography>
       )}
       <Typography variant="caption" sx={{ display: 'block' }}>
-        {labels.iva || 'IVA sobre gastos'}: {formatAmount(breakdown?.ivaAmount, formatter)}
+        {labels.iva || 'IVA sobre gastos'}: {formatSigned(breakdown?.ivaAmount, formatter)}
       </Typography>
       <Box sx={{ borderTop: '1px solid', borderColor: 'divider', my: 0.5 }} />
       <Typography variant="caption" sx={{ fontWeight: 600, display: 'block' }}>
-        {labels.totalExpenses || 'Gastos totales'}: {formatAmount(breakdown?.totalExpenses, formatter)}
+        {labels.totalExpenses || 'Gastos totales'}: {formatSigned(breakdown?.totalExpenses, formatter)}
       </Typography>
       <Typography variant="caption" sx={{ fontWeight: 600, display: 'block', mt: 0.25 }}>
         {labels.netSettlement || 'Neto de liquidación'}: {formatAmount(breakdown?.netSettlement, formatter)}
