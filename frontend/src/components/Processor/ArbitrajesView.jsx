@@ -61,7 +61,9 @@ const ArbitrajesView = ({
   onGroupChange,
   avgTNAByCurrency: avgTNAProp = null,
 }) => {
-  const [isCalculating, setIsCalculating] = useState(false);
+  // Show the spinner immediately if the parent passed operations already
+  // (prevents a flash of "no data" before parsing starts).
+  const [isCalculating, setIsCalculating] = useState(() => Boolean(operations && operations.length > 0));
   const [tableData, setTableData] = useState([]);
 
   const filterStrings = strings?.filters ?? {};
@@ -152,15 +154,28 @@ const ArbitrajesView = ({
     let cancelled = false;
 
     const doAggregation = async () => {
+      // If there are no parsed operations yet, and we're currently in a
+      // calculating/parsing phase, don't prematurely clear the loading
+      // indicator — let the prepare() effect finish and populate state.
       if (!parsedOperationsState || parsedOperationsState.length === 0) {
+        if (isCalculating) {
+          // parsing/aggregation still in progress — keep spinner visible
+          return;
+        }
+
         setTableData([]);
         setIsCalculating(false);
         return;
       }
 
-      setIsCalculating(true);
+  setIsCalculating(true);
 
-      try {
+  // Allow the browser to paint the loading spinner before we run
+  // potentially CPU/IO-heavy aggregation and P&L calculations.
+  // A short timeout yields control to the event loop so the UI updates.
+  await new Promise((resolve) => setTimeout(resolve, 50));
+
+  try {
         const jornada = new Date();
 
   // Pass the precomputed mapping into the aggregator (prefer caller-provided mapping)
