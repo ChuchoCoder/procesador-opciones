@@ -1,0 +1,38 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "MarketData Messages",
+  "definitions": {
+    "InstrumentId": {
+      "type": "object",
+      "properties": {
+        "marketId": {"type": "string"},
+        "symbol": {"type": "string"}
+      },
+      "required": ["marketId","symbol"]
+    }
+  },
+  "oneOf": [
+    {
+      "title": "Subscription Message (smd)",
+      "type": "object",
+      "properties": {
+        "type": {"const": "smd"},
+        "level": {"type": "integer"},
+        "entries": {"type": "array", "items": {"type":"string"}},
+        "products": {"type":"array", "items": {"$ref":"#/definitions/InstrumentId"}},
+        "depth": {"type":"integer","minimum":1}
+      },
+      "required": ["type","products"]
+    },
+    {
+      "title": "Market Data Message (Md)",
+      "type": "object",
+      "properties": {
+        "type": {"const": "Md"},
+        "instrumentId": {"$ref":"#/definitions/InstrumentId"},
+        "marketData": {"type":"object"}
+      },
+      "required": ["type","instrumentId","marketData"]
+    }
+  ]
+}
