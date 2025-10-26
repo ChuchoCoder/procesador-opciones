@@ -29,6 +29,7 @@ Purpose: Implement the core sync primitives and auth checks that all stories rel
 - [ ] T009 Implement storage read/write helpers that use `chrome.storage.local` plus compatibility `localStorage` copy in `frontend/src/services/instrumentsSyncStorage.js` (sharding policy: 256KB parts, metadata key `instrumentsWithDetails.meta`).
 - [ ] T010 Add retry/backoff utility `frontend/src/services/retryWithBackoff.js` (max 3 retries within 5 minutes, base backoff 2s with jitter ±25%).
 - [ ] T011 Add unit tests scaffold for `instrumentsSyncService` in `frontend/tests/instruments-sync/test_instruments_sync.spec.js` (tests to be filled in Phase 3) — mark as TODO for writing the tests.
+- [ ] T033 Implement market-calendar helper `frontend/src/services/marketCalendar.js` exposing `isMarketBusinessDay(date, marketId)` and `nextMarketBusinessDay(date, marketId)` and integrate it into `shouldRunDailySync()` (document manual validation steps; unit tests optional).
 
 ---
 

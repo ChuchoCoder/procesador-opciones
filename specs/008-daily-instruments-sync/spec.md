@@ -81,17 +81,20 @@ Como usuario, quiero que si la sincronización falla (API indisponible o sesión
 ### Functional Requirements
 
 - **FR-001**: El sistema MUST intentar obtener diariamente la lista detallada de instrumentos desde la Broker API (`GET https://BASE_URL/rest/instruments/details`) solo si el usuario tiene una sesión activa con la Broker API.
-- **FR-002**: El sistema MUST guardar el JSON completo devuelto por la API en `localStorage` bajo la clave `instrumentsWithDetails` junto con metadatos: `{ fetchedAt: ISO8601, source: 'broker-api', versionHash: <sha1> }`.
+- **FR-002**: El sistema MUST persistir el JSON completo devuelto por la API junto con metadatos: `{ fetchedAt: ISO8601, source: 'broker-api', versionHash: <sha1> }`.
+  - Implementation note: El almacén persistente primario SHOULD ser `chrome.storage.local` (mayor cuota y API asíncrona). Para retrocompatibilidad con la UI existente, la implementación debe escribir una copia de compatibilidad en `localStorage.instrumentsWithDetails` (compatibility write). La política de sharding/recomposición (FR-011) se aplicará cuando el payload exceda las cuotas.
 - **FR-003**: La UI MUST preferir los datos de `localStorage.instrumentsWithDetails` sobre `frontend/InstrumentsWithDetails.json` cuando exista una entrada válida.
 - **FR-004**: Si el usuario NO está conectado o la solicitud falla, la app MUST usar `frontend/InstrumentsWithDetails.json` como fallback y registrar la causa del fallo en logs (nivel diagnóstico).
 - **FR-005**: La operación de sincronización MUST poder ejecutarse manualmente desde la UI por usuarios autenticados para forzar actualización inmediata.
 - **FR-006**: Las entradas en localStorage deben deduplicarse por `instrumentId.marketId + '|' + instrumentId.symbol` y normalizar los campos de fecha (`maturityDate`) a ISO-8601 (YYYY-MM-DD) en el metadato local.
 - **FR-007**: En caso de datos incompletos, el registro guardado debe incluir `incomplete: true` y un campo `issues: []` con descripciones breves de campos faltantes.
 - **FR-008**: La sincronización diaria MUST respetar límites de tasa (rate-limiting): no reintentar más de 3 veces con backoff exponencial en una ventana de 5 minutos.
-- **FR-009**: Las pruebas automatizadas deben cubrir: éxito de sincronización y guardado en localStorage, fallback cuando no hay sesión, deduplicación y manejo de campos nulos.
+- **FR-009**: Se recomienda que las pruebas automatizadas cubran: éxito de sincronización y guardado en el store, fallback cuando no hay sesión, deduplicación y manejo de campos nulos. Si el equipo decide no incluir pruebas automatizadas para esta entrega, MUST documentar procedimientos de validación manual en la sección "Testing & QA" y en las tareas asociadas.
 - **FR-010**: Definir el disparador preciso para la ejecución "diaria": la sincronización debe ejecutarse al menos una vez por día después de 09:45 AM Hora Argentina (ART). Implementación operativa sugerida: la app intentará ejecutar la sincronización a las 09:45 ART si está abierta; si la app no está abierta en ese momento, en el próximo arranque la app comprobará la fecha de `fetchedAt` y, si no existe una sincronización realizada el mismo día (según zona horaria ART), forzará una sincronización al inicio.
 - **FR-011**: Política para `localStorage` cuando el payload excede la cuota: segmentar en múltiples claves (sharding) con prefijo conocido (`instrumentsWithDetails.part.<n>`) y metadatos para recomponer en lectura. Esta política permite almacenar grandes catálogos evitando excepciones de cuota; la recomposición y validación se hará al leer los datos.
 - **FR-012**: TTL / validez de los datos sincronizados: los datos se consideran válidos "hasta el próximo día hábil de mercado" (market-aware). Esto significa que, fuera de sesión de mercado o en días no hábiles, no se forzará una nueva descarga hasta el siguiente día hábil; durante días hábiles se aplicará como válida hasta la próxima apertura o sincronización diaria según FR-010.
+
+- **FR-013**: El sistema MUST exponer e integrar una función reutilizable para la lógica "market-aware" (p. ej. `isMarketBusinessDay(date, marketId)` y `nextMarketBusinessDay(date, marketId)`) que `shouldRunDailySync()` consultará para decidir si procede una descarga. La especificación de la función, fuentes de calendario (si aplica) y pasos de validación manual deben incluirse en la documentación de entrega.
 
 ### Key Entities *(include if feature involves data)*
 
