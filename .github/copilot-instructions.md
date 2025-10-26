@@ -3,21 +3,9 @@
 Auto-generated from all feature plans. Last updated: 2025-10-10
 
 ## Active Technologies
-- JavaScript (ES2020+) with React 18.x, JSX transform via bundler + React 18.x, Material UI (MUI) v5.x, papaparse (CSV parsing), bundler (NEEDS CLARIFICATION: webpack vs vite vs esbuild) (001-feature-migrate-popup)
-- JavaScript (ES2020+) with React 18 + React 18, Material UI v5, papaparse, Vite 5.x (001-feature-migrate-popup)
-- `localStorage` (browser) for persisted configuration (001-feature-migrate-popup)
-- JavaScript (ES2020+) (frontend extension + React processor UI) + React 18, Vite bundler (frontend), Material UI v5, papaparse (CSV), jsRofex (NEEDS CLARIFICATION: library availability / API surface), chrome extension APIs (Manifest V3) (004-integrate-jsrofex-to)
-- `localStorage` / `chrome.storage` for session token & sync metadata; in-memory React state for operations list (004-integrate-jsrofex-to)
-- JavaScript (ES2020+) + React 18.x + React 18, Vite 5.x, Material UI v5, papaparse (CSV parsing) (004-show-per-operation)
-- localStorage for persisted fee config & settings (existing settings system); in-memory instrument CfiCode mapping loaded at startup; no external DB (004-show-per-operation)
-- JavaScript / ES2020+ (frontend React 18.x) + React 18.x, Vite (frontend bundler), Material UI (MUI) v5 (existing), papaparse (already used in project for CSV flows) (005-cauciones-repo-fees)
-- Browser localStorage (existing settings system - `frontend/src/services/storage` and `storage-settings.js`) (005-cauciones-repo-fees)
-- JavaScript ES2020+ + React 18.x, Material UI v5.x, papaparse, Vite 5.x (006-arbitraje-de-plazos)
-- localStorage, chrome.storage (006-arbitraje-de-plazos)
-- JavaScript (ES2020+) — repository uses plain JS for extension UI and popup scripts. No new transpilation step. + None new. Reuse existing codebase (frontend/ and root scripts). Avoid adding external libraries to comply with Constitution Principle 4. (008-daily-instruments-sync)
-- Primary persistence will use `chrome.storage.local` (preferred for quota and async API) with a compatibility write to `localStorage.instrumentsWithDetails` for backwards compatibility with UI code that reads that key. Sharding policy described in `data-model.md`. (008-daily-instruments-sync)
-- JavaScript (ES2020+). Implementations live in the existing frontend (React) codebase for UI consumers and a small service module. Compatible with Vite-built frontend. + No new runtime dependencies planned. Use native browser WebSocket API in the frontend. Unit tests use existing test stack (Vitest is present in `frontend/package.json`). (009-marketdata-ws)
 - N/A for persistent DB. Transient in-memory subscription state; optional use of `localStorage`/`chrome.storage` only for user preferences (e.g., default entries/depth) if needed. (009-marketdata-ws)
+- JavaScript (ES2020+) — repository frontend uses modern ES and Vite; implementation will be plain JS module compatible with the existing bundler. + None new. Use native WebSocket API and existing project utilities. Avoid adding external libraries per Constitution Principle 4. (009-marketdata-ws)
+- Ephemeral in-memory subscription state; persistent preferences (if added) via `chrome.storage.local` or `localStorage` following existing patterns in `frontend/src/services/storage`. (009-marketdata-ws)
 
 ## Project Structure
 ```
@@ -36,10 +24,6 @@ Use Powershell style (; instead of & or &&) when executing console commands on W
 ## Code Style
 JavaScript (ES2020+) with React 18.x, JSX transform via bundler: Follow standard conventions
 
-## Recent Changes
-- 009-marketdata-ws: Added JavaScript (ES2020+). Implementations live in the existing frontend (React) codebase for UI consumers and a small service module. Compatible with Vite-built frontend. + No new runtime dependencies planned. Use native browser WebSocket API in the frontend. Unit tests use existing test stack (Vitest is present in `frontend/package.json`).
-- 008-daily-instruments-sync: Added JavaScript (ES2020+) — repository uses plain JS for extension UI and popup scripts. No new transpilation step. + None new. Reuse existing codebase (frontend/ and root scripts). Avoid adding external libraries to comply with Constitution Principle 4.
-- 006-arbitraje-de-plazos: Added JavaScript ES2020+ + React 18.x, Material UI v5.x, papaparse, Vite 5.x
 
 <!-- MANUAL ADDITIONS START -->
 <!-- MANUAL ADDITIONS END -->
