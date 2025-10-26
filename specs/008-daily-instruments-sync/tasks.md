@@ -24,6 +24,8 @@ Purpose: Prepare the repo and add small helpers and strings so story work can be
 Purpose: Implement the core sync primitives and auth checks that all stories rely on. MUST be complete before user stories start.
 
 - [ ] T006 Implement `BrokerSession` adapter (or adapter shim) in `frontend/src/services/brokerSession.js` exposing `isAuthenticated()` and `tryRefresh()` (no-op throw if repo lacks refresh; document TODO).
+ - [ ] T006 Implement `BrokerSession` adapter (or adapter shim) in `frontend/src/services/brokerSession.js` exposing `isAuthenticated()` and `tryRefresh()` (no-op throw if repo lacks refresh; document TODO).
+ - [ ] T034 [P] Validate or implement Broker API client adapter in `frontend/src/services/broker/jsrofex-client.js` (or create `frontend/src/services/broker/client.js`) exposing `fetchInstruments()` used by the sync service; if missing, add a minimal shim and document the adapter interface.
 - [ ] T007 Implement the core sync service `frontend/src/services/instrumentsSyncService.js` with methods: `fetchInstruments()`, `normalizeAndDedup(instruments)`, `saveRecord(record)`, `shouldRunDailySync()` (uses BrokerSession + data-model rules).
 - [ ] T008 Implement `chrome.alarms` registration and handler wiring in `background/instruments-sync.js` (schedule daily alarm at 09:45 ART and call sync handler). Edit `manifest.json` permissions to include `storage`, `alarms` if missing.
 - [ ] T009 Implement storage read/write helpers that use `chrome.storage.local` plus compatibility `localStorage` copy in `frontend/src/services/instrumentsSyncStorage.js` (sharding policy: 256KB parts, metadata key `instrumentsWithDetails.meta`).
