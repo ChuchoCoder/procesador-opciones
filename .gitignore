@@ -4,3 +4,14 @@ logs/
 app_logs/
 app_logs/
 frontend/tests/test-results.json
+dist/
+build/
+*.log
+.env
+.env.local
+.env.*
+.DS_Store
+.vscode/
+coverage/
+.idea/
+.cache/

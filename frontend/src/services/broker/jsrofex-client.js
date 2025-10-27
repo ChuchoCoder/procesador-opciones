@@ -1,3 +1,137 @@
+import marketdataStrings from '../../strings/marketdata-strings.js';
+import { parseMarketDataMessage, validateEntries, computeSnapshotHash } from './parsers.js';
+import { createClientState, addSubscription, removeSubscription, getLastSeen, updateLastSeen, getSubscriptionsForInstrument } from './state.js';
+import { createDevLogger } from '../logging';
+
+const logger = createDevLogger('marketdata-client');
+
+/**
+ * Lightweight JsRofexClient skeleton.
+ * Exposes the API surface described in quickstart.md and tasks.md.
+ */
+export class JsRofexClient {
+  constructor(opts = {}) {
+    this.state = createClientState();
+    this._listeners = new Map(); // event -> Set(handler)
+    this._ws = null;
+    this._config = Object.assign({ maxDepth: 5 }, opts);
+  }
+
+  on(event, handler) {
+    if (!this._listeners.has(event)) this._listeners.set(event, new Set());
+    this._listeners.get(event).add(handler);
+  }
+
+  off(event, handler) {
+    const s = this._listeners.get(event);
+    if (s) s.delete(handler);
+  }
+
+  _emit(event, payload) {
+    const s = this._listeners.get(event);
+    if (s) for (const h of s) { try { h(payload); } catch (e) { /* swallow */ } }
+  }
+
+  async connect(token) {
+    this.state.connectionState = 'connecting';
+    this._emit('connection', { state: 'connecting', msg: marketdataStrings.connection.connecting });
+    logger.log(marketdataStrings.connection.connecting);
+
+    // Prefer header-based auth if available in environment, otherwise use query param as per research.md
+    const baseUrl = this._config.url || 'wss://example-broker/ws';
+    const url = token ? `${baseUrl}?token=${encodeURIComponent(token)}` : baseUrl;
+
+    // Log host only; never log tokens or full URL containing token
+    try {
+      const safeLogUrl = baseUrl.replace(/:\/\/.+/, '://<host>');
+      logger.log(`Connecting to ${safeLogUrl}`);
+    } catch (e) {
+      logger.log('Connecting to broker (hidden host)');
+    }
+
+    // Only attempt to open a real WebSocket if environment provides one
+    if (typeof globalThis.WebSocket === 'function') {
+      try {
+        this._ws = new globalThis.WebSocket(url);
+        this._ws.addEventListener('open', () => {
+          this.state.connectionState = 'connected';
+          this._emit('connection', { state: 'connected', msg: marketdataStrings.connection.connected });
+          logger.log(marketdataStrings.connection.connected);
+        });
+        this._ws.addEventListener('close', () => {
+          this.state.connectionState = 'disconnected';
+          this._emit('connection', { state: 'disconnected', msg: marketdataStrings.connection.disconnected });
+          logger.log(marketdataStrings.connection.disconnected);
+        });
+        this._ws.addEventListener('error', (err) => {
+          this.state.connectionState = 'error';
+          this._emit('connection', { state: 'error', msg: marketdataStrings.errors.websocket, err });
+          logger.warn(marketdataStrings.errors.websocket, { err: String(err && err.message ? err.message : err) });
+        });
+        this._ws.addEventListener('message', (ev) => {
+          let raw;
+          try { raw = JSON.parse(ev.data); } catch (e) { return; }
+          this._onRawMessage(raw);
+        });
+      } catch (e) {
+        this.state.connectionState = 'error';
+        this._emit('connection', { state: 'error', msg: marketdataStrings.errors.websocket, err: e });
+        logger.warn('WebSocket creation failed', e);
+      }
+    } else {
+      logger.log('WebSocket not available in this environment; running in no-op mode');
+      this.state.connectionState = 'disconnected';
+      this._emit('connection', { state: 'disconnected', msg: marketdataStrings.connection.disconnected });
+    }
+  }
+
+  subscribe({ products = [], entries = [], depth = 1 } = {}) {
+    const id = `sub_${Date.now()}_${Math.floor(Math.random()*1000)}`;
+    const canonicalEntries = validateEntries(entries);
+    const subscription = { id, products, entries: canonicalEntries, depth: Math.max(1, Math.min(this._config.maxDepth || 5, Number.parseInt(depth) || 1)) };
+    addSubscription(this.state, id, subscription);
+    // Send batched smd message over socket if connected
+    const payload = { type: 'smd', products: subscription.products, entries: subscription.entries, depth: subscription.depth };
+    const raw = JSON.stringify(payload);
+    if (this._ws && this._ws.readyState === 1) {
+      try { this._ws.send(raw); } catch (e) { /* ignore send failures for now */ }
+    }
+    return id;
+  }
+
+  unsubscribe(subscriptionId) {
+    removeSubscription(this.state, subscriptionId);
+  }
+
+  // Internal handler for incoming raw socket messages (to be wired when socket exists)
+  _onRawMessage(raw) {
+    const parsed = parseMarketDataMessage(raw);
+    if (!parsed) return;
+
+    // Deduplicate: for each entry, compute snapshot hash trimmed to subscription depth if available.
+    const inst = parsed.instrumentId;
+    const instrumentKey = inst ? `${inst.marketId}::${inst.symbol}` : 'unknown';
+    const md = parsed.marketData || {};
+
+    let changed = false;
+    // Determine entries to check
+    const entries = Object.keys(md);
+    for (const e of entries) {
+      const last = getLastSeen(this.state, instrumentKey, e);
+      const hash = computeSnapshotHash(md, [e], Infinity);
+      if (!last || last.snapshotHash !== hash) {
+        changed = true;
+        updateLastSeen(this.state, instrumentKey, e, { snapshotHash: hash, sequenceId: null });
+      }
+    }
+
+    if (changed) this._emit('marketData', parsed);
+  }
+}
+
+// Default singleton for convenience
+const defaultClient = new JsRofexClient();
+export default defaultClient;
 // jsRofex REST API client (T007)
 // Direct REST API calls to Matba Rofex / Primary endpoints
 // Browser-compatible (no Node.js dependencies)

@@ -11,9 +11,9 @@ description: "Task list for Market Data (WebSocket) feature"
 
 ## Phase 1: Setup (Shared Infrastructure)
 
-- [ ] T001 [P] Create directory `frontend/src/services/broker/` (if not present) and add README placeholder in `frontend/src/services/broker/README.md`
-- [ ] T002 Create `frontend/src/strings/marketdata-strings.js` with Spanish (es-AR) diagnostic strings referenced by the plan (`connection states`, `errors`, `subscription messages`)
-- [ ] T003 [P] Ensure `frontend/package.json` dev/test scripts include Vitest (no new dependency required). Add placeholder test script if missing: verify `frontend/package.json` has `test` script.
+- [X] T001 [P] Create directory `frontend/src/services/broker/` (if not present) and add README placeholder in `frontend/src/services/broker/README.md`
+- [X] T002 Create `frontend/src/strings/marketdata-strings.js` with Spanish (es-AR) diagnostic strings referenced by the plan (`connection states`, `errors`, `subscription messages`)
+- [X] T003 [P] Ensure `frontend/package.json` dev/test scripts include Vitest (no new dependency required). Add placeholder test script if missing: verify `frontend/package.json` has `test` script.
 
 ---
 
@@ -21,11 +21,20 @@ description: "Task list for Market Data (WebSocket) feature"
 
 **Purpose**: Core client modules and parsing helpers that ALL user stories will depend on. Must be implemented before story work.
 
-- [ ] T004 Implement `frontend/src/services/broker/parsers.js` — pure functions: `parseSubscriptionMessage(raw)`, `parseMarketDataMessage(raw)`, `validateEntries(entries)`; include JSDoc and edge-case handling per `research.md` (dedup strategy mention)
-- [ ] T005 Implement `frontend/src/services/broker/state.js` — client in-memory state shape per `data-model.md`: connectionState, subscriptions map, lastSeen cache (instrument+entry)
-- [ ] T006 Implement `frontend/src/services/broker/jsrofex-client.js` skeleton exporting API surface per quickstart: `connect(token)`, `disconnect()`, `subscribe({products,entries,depth})`, `unsubscribe(subscriptionId)`, `on(event, handler)`; include internal wiring to `parsers.js` and `state.js`
+- [X] T004 Implement `frontend/src/services/broker/parsers.js` — pure functions: `parseSubscriptionMessage(raw)`, `parseMarketDataMessage(raw)`, `validateEntries(entries)`; include JSDoc and edge-case handling per `research.md` (dedup strategy mention)
+- [X] T005 Implement `frontend/src/services/broker/state.js` — client in-memory state shape per `data-model.md`: connectionState, subscriptions map, lastSeen cache (instrument+entry)
+- [X] T006 Implement `frontend/src/services/broker/jsrofex-client.js` skeleton exporting API surface per quickstart: `connect(token)`, `disconnect()`, `subscribe({products,entries,depth})`, `unsubscribe(subscriptionId)`, `on(event, handler)`; include internal wiring to `parsers.js` and `state.js`
+- [X] T009 [US1] Implement `connect(token)` in `frontend/src/services/broker/jsrofex-client.js` to open a `wss://` WebSocket using the provided token (prefer header-based delivery when the server supports it; otherwise use query parameter as documented in `research.md`) and update `state.connectionState`
+- [X] T010 [P] [US1] Implement `subscribe({products,entries,depth})` in `frontend/src/services/broker/jsrofex-client.js` to send a single batched `smd` message to server and store subscription in `state.subscriptions` (file: `frontend/src/services/broker/jsrofex-client.js`)
+- [X] T011 [US1] Implement event emitter in `frontend/src/services/broker/jsrofex-client.js`: support `on('marketData', handler)` and `on('connection', handler)` and fire `marketData` events when a parsed `Md` is received
+- [X] T012 [US1] Integrate parser: call `parseMarketDataMessage` from `frontend/src/services/broker/parsers.js` when a raw socket message arrives; normalize to `MarketDataMessage` shape and pass to consumers
+- [X] T013 [US1] Implement deduplication using `lastSeen` cache in `frontend/src/services/broker/state.js` for messages lacking `sequenceId` (compare by snapshot hash of price/size arrays) — implemented as helper in `parsers.js` or `state.js`
+- [X] T014 [US1] Add example usage snippet in `frontend/src/services/broker/README.md` showing `connect`, `subscribe`, `on('marketData', handler)` (copy/adapt from `specs/009-marketdata-ws/quickstart.md`)
+- [X] T015 [US1] Add Spanish strings into `frontend/src/strings/marketdata-strings.js` for connection states and key logs (used by T008)
 - [ ] T007 [P] Add `specs/009-marketdata-ws/contracts/marketdata.schema.json` reference in repo docs: create `specs/009-marketdata-ws/CONTRACTS-README.md` with short note pointing to JSON schema and how to use it in contract tests (optional)
 - [ ] T008 Implement logging integration in `frontend/src/services/broker/jsrofex-client.js` using `frontend/src/strings/marketdata-strings.js` for messages (do not log raw tokens)
+ - [ ] T007 [P] Add `specs/009-marketdata-ws/contracts/marketdata.schema.json` reference in repo docs: create `specs/009-marketdata-ws/CONTRACTS-README.md` with short note pointing to JSON schema and how to use it in contract tests (optional)
+ - [X] T008 Implement logging integration in `frontend/src/services/broker/jsrofex-client.js` using `frontend/src/strings/marketdata-strings.js` for messages (do not log raw tokens)
 
 ---
 
@@ -37,13 +46,13 @@ description: "Task list for Market Data (WebSocket) feature"
 
 ### Implementation (no tests requested in spec)
 
-- [ ] T009 [US1] Implement `connect(token)` in `frontend/src/services/broker/jsrofex-client.js` to open `wss://` WebSocket using token as query param (per `research.md`) and update `state.connectionState`
-- [ ] T010 [P] [US1] Implement `subscribe({products,entries,depth})` in `frontend/src/services/broker/jsrofex-client.js` to send a single batched `smd` message to server and store subscription in `state.subscriptions` (file: `frontend/src/services/broker/jsrofex-client.js`)
-- [ ] T011 [US1] Implement event emitter in `frontend/src/services/broker/jsrofex-client.js`: support `on('marketData', handler)` and `on('connection', handler)` and fire `marketData` events when a parsed `Md` is received
-- [ ] T012 [US1] Integrate parser: call `parseMarketDataMessage` from `frontend/src/services/broker/parsers.js` when a raw socket message arrives; normalize to `MarketDataMessage` shape and pass to consumers
-- [ ] T013 [US1] Implement deduplication using `lastSeen` cache in `frontend/src/services/broker/state.js` for messages lacking `sequenceId` (compare by snapshot hash of price/size arrays) — implemented as helper in `parsers.js` or `state.js`
-- [ ] T014 [US1] Add example usage snippet in `frontend/src/services/broker/README.md` showing `connect`, `subscribe`, `on('marketData', handler)` (copy/adapt from `specs/009-marketdata-ws/quickstart.md`)
-- [ ] T015 [US1] Add Spanish strings into `frontend/src/strings/marketdata-strings.js` for connection states and key logs (used by T008)
+- [X] T009 [US1] Implement `connect(token)` in `frontend/src/services/broker/jsrofex-client.js` to open a `wss://` WebSocket using the provided token (prefer header-based delivery when the server supports it; otherwise use query parameter as documented in `research.md`) and update `state.connectionState`
+- [X] T010 [P] [US1] Implement `subscribe({products,entries,depth})` in `frontend/src/services/broker/jsrofex-client.js` to send a single batched `smd` message to server and store subscription in `state.subscriptions` (file: `frontend/src/services/broker/jsrofex-client.js`)
+- [X] T011 [US1] Implement event emitter in `frontend/src/services/broker/jsrofex-client.js`: support `on('marketData', handler)` and `on('connection', handler)` and fire `marketData` events when a parsed `Md` is received
+- [X] T012 [US1] Integrate parser: call `parseMarketDataMessage` from `frontend/src/services/broker/parsers.js` when a raw socket message arrives; normalize to `MarketDataMessage` shape and pass to consumers
+- [X] T013 [US1] Implement deduplication using `lastSeen` cache in `frontend/src/services/broker/state.js` for messages lacking `sequenceId` (compare by snapshot hash of price/size arrays) — implemented as helper in `parsers.js` or `state.js`
+- [X] T014 [US1] Add example usage snippet in `frontend/src/services/broker/README.md` showing `connect`, `subscribe`, `on('marketData', handler)` (copy/adapt from `specs/009-marketdata-ws/quickstart.md`)
+- [X] T015 [US1] Add Spanish strings into `frontend/src/strings/marketdata-strings.js` for connection states and key logs (used by T008)
 
 **Checkpoint**: After these tasks, US1 should be independently usable by UI modules and is MVP.
 
@@ -78,8 +87,8 @@ description: "Task list for Market Data (WebSocket) feature"
 ## Phase N: Polish & Cross-Cutting Concerns
 
 - [ ] T024 [P] Update `specs/009-marketdata-ws/quickstart.md` to include an implementation-accurate example and a CLI/run snippet for local dev (file: `specs/009-marketdata-ws/quickstart.md`)
-- [ ] T025 [P] Add `specs/009-marketdata-ws/tasks.md` (this file) to repo and commit it (file path: `specs/009-marketdata-ws/tasks.md`)
-- [ ] T026 [P] Add lightweight unit tests (optional) in `frontend/src/services/broker/__tests__/parsers.test.js` and `frontend/src/services/broker/__tests__/client.test.js` — *only add if tests later requested* (placeholder tasks)
+- [ ] T025 [P] Verify and commit `specs/009-marketdata-ws/tasks.md` (this file) to the repository and reference it in the PR if not already committed.
+- [ ] T026 [P] Add lightweight unit tests (conditional) in `frontend/src/services/broker/__tests__/parsers.test.js` and `frontend/src/services/broker/__tests__/client.test.js` — only add these tests if `tests_requested: true` in `specs/009-marketdata-ws/spec.md` (placeholder tasks).
 - [ ] T027 [P] Document security notes in `specs/009-marketdata-ws/research.md` (redaction, token usage) and ensure `jsrofex-client.js` does not log tokens
 - [ ] T028 [P] Code cleanup and small refactors; ensure code passes linting in `frontend/` and that no new runtime deps were added
 
@@ -92,6 +101,7 @@ description: "Task list for Market Data (WebSocket) feature"
 - Within a story: implementation tasks that change the same files are sequential; helpers/parsers and state files are foundational so they must exist first.
 
 ### Story Completion Order (recommended for MVP-first)
+
 1. US1 (P1) — MVP
 2. US2 (P2)
 3. US3 (P2)

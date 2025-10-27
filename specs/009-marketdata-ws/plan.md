@@ -24,7 +24,7 @@ Add a client-side Market Data WebSocket handler for the browser extension fronte
 **Target Platform**: Chrome/Chromium extension environment (Manifest V3) — frontend (browser) context.
 **Project Type**: Web extension frontend service (existing `frontend/` directory).
 **Performance Goals**: Process incoming `Md` messages with p95 latency < 500ms for UI propagation under reasonable network/CPU conditions; minimize CPU/memory overhead for large subscription lists.
-**Constraints**: Must follow Constitution (no new heavy deps, Spanish UI strings centralized, tests when requested). Token handling must consider browser WebSocket limitations (cannot set custom headers) — prefer `wss://` + query param token with clear mitigation notes in research.md.
+**Constraints**: Must follow Constitution (no new heavy deps, Spanish UI strings centralized, tests when requested). Token handling must consider browser WebSocket limitations (cannot set custom headers): use `wss://` by default and prefer header-based token delivery when supported by the server; if a query-parameter token is required, document the justification and mitigations in `research.md` (do not log tokens, use short-lived tokens, avoid embedding tokens in persistent links).
 **Scale/Scope**: Support typical user subscriptions (dozens to low hundreds of instruments) in the browser; document behavior / degenerate cases for mass-subscription.
 
 ## Constitution Check

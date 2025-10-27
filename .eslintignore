@@ -1,0 +1,10 @@
+node_modules/
+dist/
+build/
+coverage/
+frontend/tests/test-results.json
+.vscode/
+.idea/
+.cache/
+*.min.js
+.DS_Store

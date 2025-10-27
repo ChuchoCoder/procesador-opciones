@@ -68,12 +68,12 @@ Como usuario, quiero que la app reestablezca la conexión WebSocket y re-aplique
 
 - Actions:
   - Establecer conexión WebSocket autenticada
-  - Enviar mensaje de suscripción `smd` con `products`, `entries`, `level`/`depth`
+  - Enviar mensaje de suscripción `smd` con `products`, `entries` y `depth`
   - Recibir mensajes `Md` por instrumento con `marketData` para las entries solicitadas
   - Re-suscribir automáticamente tras reconexión
 
 - Data:
-  - Mensaje de suscripción (ej. `{"type":"smd","level":1,"entries":["OF"],"products":[{...}],"depth":2}`)
+  - Mensaje de suscripción (ej. `{"type":"smd","entries":["OF"],"products":[{...}],"depth":2}`)
   - Mensaje de Market Data (`{"type":"Md","instrumentId":{...},"marketData":{"OF":[{price,size},...]}}`)
   - Entries: `BI`, `OF`, `LA`, `OP`, `CL`, `SE`, `HI`, `LO`, `TV`, `OI`, `IV`, `EV`, `NV`, `ACP`
 
@@ -97,14 +97,14 @@ Como usuario, quiero que la app reestablezca la conexión WebSocket y re-aplique
 - **FR-009**: El cliente MUST registrar eventos de conexión, reconexión, errores de suscripción y mensajes rechazados en logs de diagnóstico (nivel debug/info según severidad).
 - **FR-010**: El cliente MUST implementar backoff exponencial en reintentos de reconexión y limitar reintentos para evitar bucles continuos (configurable, valor por defecto sugerido: 5 reintentos con backoff creciente).
 - **FR-011**: El cliente MUST permitir suscribir múltiples instrumentos en un único mensaje `smd` (batch) y manejar respuestas de server-side que confirmen o indiquen errores por producto.
-- **FR-012**: Las pruebas automatizadas deben cubrir: conexión y autenticación, suscripción y recepción de `Md`, reconexión y re-suscripción, manejo de `entries` y `depth`, y deduplicación.
+- **FR-012**: Cuando `tests_requested` esté establecido a `true` en este documento, las pruebas automatizadas deberán cubrir: conexión y autenticación, suscripción y recepción de `Md`, reconexión y re-suscripción, manejo de `entries` y `depth`, y deduplicación. Si `tests_requested` es `false`, documentar los pasos de validación manual realizados para cada cambio de lógica conforme al principio 3 de la Constitución.
 - **FR-013**: El cliente de Market Data WebSocket DEBE implementarse en `frontend/src/services/broker/jsrofex-client.js`. Esta implementación DEBE usar el token de sesión autenticado (ya sea en header o en query parameter, según lo permita el servidor) al establecer la conexión WebSocket y al enviar mensajes de suscripción (`smd`).
 
 ### Key Entities *(include if feature involves data)*
 
 ### Non-Functional / Security
 
-- WebSocket connections MAY use either ws:// or wss://, and the session token MAY be provided in either the query parameter or header, as permitted by the server. This approach is chosen for compatibility with server defaults, but implementers should be aware of the security tradeoffs (token in URL can be logged/intercepted; ws:// is not encrypted).
+- WebSocket connections MUST use secure transport by default (i.e. `wss://`). Providing the session token via an Authorization header is preferred when the server and environment allow it. Because browser WebSocket constructors cannot set arbitrary custom headers in some environments, passing the token as a query parameter is permitted only when strictly necessary and MUST be documented in `research.md` with mitigations (do not log the token, use short-lived tokens, and avoid embedding tokens in persistent links). Any deviation from `wss://` or header-based token delivery MUST include justification and an expiry for the deviation.
 
 ## Clarifications
 
@@ -147,13 +147,7 @@ Como usuario, quiero que la app reestablezca la conexión WebSocket y re-aplique
 
 ### Suscribirse a MarketData en tiempo real a través de WebSocket
 
-Utilizando el protocolo Web Socket es posible recibir Market Data de los instrumentos especificados de manera asíncrona cuando esta cambie sin necesidad de hacer un request cada vez que necesitemos.
-
-Para recibir este tipo de mensajes hay que suscribirse indicando los instrumentos de los cuales queremos recibir MD. El servidor enviara un mensaje de MD por cada instrumento al que nos suscribimos cada vez que este cambie.
-
-Utilizando el protocolo Web Socket es posible recibir Market Data de los instrumentos especificados de manera asíncrona cuando esta cambie sin necesidad de hacer un request cada vez que necesitemos.
-
-Para recibir este tipo de mensajes hay que suscribirse indicando los instrumentos de los cuales queremos recibir MD. El servidor enviara un mensaje de MD por cada instrumento al que nos suscribimos cada vez que este cambie.
+Utilizando el protocolo Web Socket es posible recibir Market Data de los instrumentos especificados de manera asíncrona cuando esta cambie sin necesidad de hacer un request cada vez que necesitemos. Para recibir este tipo de mensajes hay que suscribirse indicando los instrumentos de los cuales queremos recibir MD. El servidor enviará un mensaje de MD por cada instrumento al que nos suscribimos cada vez que este cambie.
 
 Con este mensaje nos suscribimos para recibir MD de los instrumentos especificados, el servidor solamente enviará los datos especificados en la lista “entries”. El parámetro “depth” indica la profundidad del book que se desea recibir, por defecto se devuelve el top of book, es decir profundidad 1.
 
@@ -161,22 +155,13 @@ Mensaje enviado:
 
 ```json
 {
-   "type":"smd",
-   "level":1,
-   "entries":[
-      "OF"
-   ],
-   "products":[
-      {
-         "symbol":"DLR/DIC23",
-         "marketId":"ROFX"
-      },
-      {
-         "symbol":"SOJ.ROS/MAY23",
-         "marketId":"ROFX"
-      }
-   ],
-   "depth":2
+  "type": "smd",
+  "entries": ["OF"],
+  "products": [
+    { "symbol": "DLR/DIC23", "marketId": "ROFX" },
+    { "symbol": "SOJ.ROS/MAY23", "marketId": "ROFX" }
+  ],
+  "depth": 2
 }
 ```
 
