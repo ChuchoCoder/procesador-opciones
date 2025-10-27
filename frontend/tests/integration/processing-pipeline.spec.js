@@ -456,6 +456,7 @@ describe('Processing Pipeline - Data Source Decoupling', () => {
           result.meta.parse.excluded.replaced +
           result.meta.parse.excluded.pendingCancel +
           result.meta.parse.excluded.rejected +
+          result.meta.parse.excluded.replacedByOrigClOrdId +
           result.meta.parse.excluded.cancelled;
         
         expect(result.meta.parse.rowCount).toBe(
