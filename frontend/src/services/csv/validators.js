@@ -14,7 +14,7 @@ const STATUS_NORMALIZATION = {
   'parcialmente ejecutada.': 'partially_executed',
 };
 
-const ALLOWED_STATUSES = new Set(['fully_executed', 'partially_executed']);
+const ALLOWED_STATUSES = new Set(['fully_executed', 'partially_executed', 'cancelled']);
 const ALLOWED_SIDES = new Set(['BUY', 'SELL']);
 const ALLOWED_OPTION_TYPES = new Set(['CALL', 'PUT']);
 const ALLOWED_EXEC_TYPES = new Set(['F']);

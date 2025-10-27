@@ -370,6 +370,8 @@ class OperationsProcessor {
         base: modifiedSymbol,
         precio: precio,
         F: putCall,
+        // Preserve original side (BUY/SELL) so we can group by side when averaging
+        side: row.side,
       });
     });
 
@@ -454,9 +456,8 @@ class OperationsProcessor {
     if (!operations || operations.length === 0) {
       return [];
     }
-
-    // Agrupar por strike (base)
-    const strikeGroups = {};
+    // Agrupar por strike (base) y side (BUY/SELL) para evitar mezclar compras y ventas
+    const grouped = {};
 
     operations.forEach((op) => {
       // Ignorar entradas inválidas desde el inicio
@@ -470,69 +471,39 @@ class OperationsProcessor {
       ) {
         return;
       }
-      const strike = op.base;
-      if (!strikeGroups[strike]) {
-        strikeGroups[strike] = {
-          compras: [],
-          ventas: [],
+
+      const strike = parseFloat(op.base);
+      // Preferir el campo side si está disponible, si no inferirlo desde cantidad
+      const side = (op.side && String(op.side).toUpperCase()) || (op.cantidad > 0 ? "BUY" : "SELL");
+      const key = `${strike}_${side}`;
+
+      if (!grouped[key]) {
+        grouped[key] = {
+          strike: strike,
+          side: side,
+          totalQty: 0,
+          weightedSum: 0,
         };
       }
 
-      if (op.cantidad > 0) {
-        strikeGroups[strike].compras.push(op);
-      } else {
-        strikeGroups[strike].ventas.push(op);
-      }
+      const absQty = Math.abs(op.cantidad);
+      grouped[key].totalQty += absQty;
+      grouped[key].weightedSum += op.precio * absQty;
     });
 
     const processedOperations = [];
 
-    // Procesar cada strike
-    Object.keys(strikeGroups).forEach((strike) => {
-      const group = strikeGroups[strike];
+    Object.values(grouped).forEach((g) => {
+      if (g.totalQty <= 0) return;
+      const avgPrice = g.weightedSum / g.totalQty;
+      const signedQty = g.side === "BUY" ? g.totalQty : -g.totalQty;
 
-      // Procesar ventas (cantidades negativas)
-      if (group.ventas.length > 0) {
-        const totalCantidadVentas = group.ventas.reduce(
-          (sum, op) => sum + Math.abs(op.cantidad),
-          0
-        );
-        if (totalCantidadVentas > 0) {
-          const precioPromedioVentas =
-            group.ventas.reduce((sum, op) => {
-              return sum + op.precio * Math.abs(op.cantidad);
-            }, 0) / totalCantidadVentas;
-
-          if (isFinite(precioPromedioVentas)) {
-            processedOperations.push({
-              cantidad: -totalCantidadVentas, // Negativo para ventas
-              base: parseFloat(strike),
-              precio: Math.round(precioPromedioVentas * 10000) / 10000,
-            });
-          }
-        }
-      }
-
-      // Procesar compras (cantidades positivas)
-      if (group.compras.length > 0) {
-        const totalCantidadCompras = group.compras.reduce(
-          (sum, op) => sum + op.cantidad,
-          0
-        );
-        if (totalCantidadCompras > 0) {
-          const precioPromedioCompras =
-            group.compras.reduce((sum, op) => {
-              return sum + op.precio * op.cantidad;
-            }, 0) / totalCantidadCompras;
-
-          if (isFinite(precioPromedioCompras)) {
-            processedOperations.push({
-              cantidad: totalCantidadCompras,
-              base: parseFloat(strike),
-              precio: Math.round(precioPromedioCompras * 10000) / 10000,
-            });
-          }
-        }
+      if (isFinite(avgPrice)) {
+        processedOperations.push({
+          cantidad: signedQty,
+          base: parseFloat(g.strike),
+          precio: Math.round(avgPrice * 10000) / 10000,
+        });
       }
     });
 

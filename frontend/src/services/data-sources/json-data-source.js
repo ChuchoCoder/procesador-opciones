@@ -49,13 +49,30 @@ export class JsonDataSource extends DataSourceAdapter {
     // Track exclusion statistics
     const exclusionStats = {
       replaced: 0,
+      replacedByOrigClOrdId: 0,
       pendingCancel: 0,
       rejected: 0,
       cancelled: 0,
     };
 
+    // Build a set of clOrdIds that have been successfully replaced
+    // Only include origClOrdId from orders that were NOT rejected
+    // (rejected cancel/replace attempts mean the original order was executed)
+    const replacedClOrdIds = new Set();
+    orders.forEach(order => {
+      if (order.origClOrdId && order.status?.toUpperCase() !== 'REJECTED') {
+        replacedClOrdIds.add(order.origClOrdId);
+      }
+    });
+
     // Filter valid orders and track exclusions
     const validOrders = orders.filter(order => {
+      // Exclude orders that have been replaced (their clOrdId appears as origClOrdId in another order)
+      if (order.clOrdId && replacedClOrdIds.has(order.clOrdId)) {
+        exclusionStats.replacedByOrigClOrdId++;
+        return false;
+      }
+
       const shouldInclude = this.shouldIncludeOrder(order);
 
       if (!shouldInclude) {
