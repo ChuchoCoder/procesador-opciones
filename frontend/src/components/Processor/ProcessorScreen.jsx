@@ -51,9 +51,9 @@ const ALL_GROUP_ID = '__ALL__';
 const LAST_SESSION_STORAGE_VERSION = 1;
 
 const createInitialGroupSelections = () => ({
-  [OPERATION_TYPES.OPCIONES]: ALL_GROUP_ID,
-  [OPERATION_TYPES.COMPRA_VENTA]: ALL_GROUP_ID,
-  [OPERATION_TYPES.ARBITRAJES]: ALL_GROUP_ID,
+  [OPERATION_TYPES.OPCIONES]: [],
+  [OPERATION_TYPES.COMPRA_VENTA]: [],
+  [OPERATION_TYPES.ARBITRAJES]: [],
 });
 
 const OPTION_INSTRUMENT_KEY_PREFIX = 'optionInstrument::';
@@ -357,13 +357,43 @@ const computeScopedData = ({
   }
 
   const operations = Array.isArray(report.operations) ? report.operations : [];
-  const allSelected = !selectedGroupId || selectedGroupId === ALL_GROUP_ID;
+  
+  // Support both single selection (string) and multi-selection (array)
+  const selectedIds = Array.isArray(selectedGroupId) 
+    ? selectedGroupId 
+    : selectedGroupId 
+      ? [selectedGroupId] 
+      : [];
+  
+  const allSelected = selectedIds.length === 0 || 
+                      selectedIds.includes(ALL_GROUP_ID) ||
+                      !selectedGroupId || 
+                      selectedGroupId === ALL_GROUP_ID;
+  
   const selectedGroup = allSelected
     ? null
-    : groups.find((group) => group.id === selectedGroupId) ?? null;
+    : groups.find((group) => selectedIds.includes(group.id)) ?? null;
 
-  const groupKey = allSelected ? ALL_GROUP_ID : selectedGroupId;
-  const filteredOperations = groupedOperations.get(groupKey) ?? operations;
+  // Create a unique cache key for multi-selection
+  const groupKey = allSelected 
+    ? ALL_GROUP_ID 
+    : selectedIds.sort().join(',');
+  
+  // For multi-select, combine operations from all selected groups
+  let filteredOperations;
+  if (allSelected) {
+    filteredOperations = operations;
+  } else if (selectedIds.length === 1) {
+    filteredOperations = groupedOperations.get(selectedIds[0]) ?? [];
+  } else {
+    // Merge operations from multiple selected groups
+    const operationSet = new Set();
+    selectedIds.forEach(id => {
+      const groupOps = groupedOperations.get(id) ?? [];
+      groupOps.forEach(op => operationSet.add(op));
+    });
+    filteredOperations = Array.from(operationSet);
+  }
 
   let cachedEntry = cache.get(groupKey);
   if (!cachedEntry || cachedEntry.reportToken !== report) {
@@ -483,7 +513,7 @@ const ProcessorScreen = () => {
   const [activePreview, setActivePreview] = useState(CLIPBOARD_SCOPES.CALLS);
   const [activeOperationType, setActiveOperationType] = useState(OPERATION_TYPES.OPCIONES);
   const [selectedGroupIds, setSelectedGroupIds] = useState(() => createInitialGroupSelections());
-  const selectedGroupId = selectedGroupIds[activeOperationType] ?? ALL_GROUP_ID;
+  const selectedGroupId = selectedGroupIds[activeOperationType] ?? [];
   const scopedDataCacheRef = useRef(new Map());
   const sessionRestoredRef = useRef(false);
   const [brokerLoginError, setBrokerLoginError] = useState(null);
@@ -556,9 +586,12 @@ const ProcessorScreen = () => {
     }
 
     setSelectedGroupIds((prev) => {
-      const currentValue = prev[type] ?? ALL_GROUP_ID;
-      const safeValue = nextValue ?? ALL_GROUP_ID;
-      if (currentValue === safeValue) {
+      const currentValue = prev[type] ?? [];
+      // nextValue should be an array
+      const safeValue = Array.isArray(nextValue) ? nextValue : [];
+      
+      // Compare arrays for equality
+      if (JSON.stringify(currentValue) === JSON.stringify(safeValue)) {
         return prev;
       }
       return {
@@ -575,8 +608,9 @@ const ProcessorScreen = () => {
       let next = prev;
 
       keys.forEach((key) => {
-        const targetValue = initial[key] ?? ALL_GROUP_ID;
-        if ((next[key] ?? ALL_GROUP_ID) !== targetValue) {
+        const targetValue = initial[key] ?? [];
+        const currentValue = prev[key] ?? [];
+        if (JSON.stringify(currentValue) !== JSON.stringify(targetValue)) {
           if (next === prev) {
             next = { ...prev };
           }
@@ -1327,20 +1361,25 @@ const ProcessorScreen = () => {
       Object.entries(prev).forEach(([type, value]) => {
         const allowed = allowedByType[type];
         if (!allowed || allowed.size === 0) {
-          if (value !== ALL_GROUP_ID) {
+          const currentValue = value ?? [];
+          if (currentValue.length > 0) {
             if (next === prev) {
               next = { ...prev };
             }
-            next[type] = ALL_GROUP_ID;
+            next[type] = [];
           }
           return;
         }
 
-        if (!allowed.has(value)) {
+        // Filter out any IDs that are no longer valid
+        const currentIds = Array.isArray(value) ? value : [];
+        const validIds = currentIds.filter(id => allowed.has(id));
+        
+        if (JSON.stringify(currentIds) !== JSON.stringify(validIds)) {
           if (next === prev) {
             next = { ...prev };
           }
-          next[type] = ALL_GROUP_ID;
+          next[type] = validIds;
         }
       });
       return next;
@@ -1369,12 +1408,11 @@ const ProcessorScreen = () => {
 
   const callsOperations = currentView?.calls?.operations ?? [];
   const putsOperations = currentView?.puts?.operations ?? [];
-  const opcionesSelectedGroupId = selectedGroupIds[OPERATION_TYPES.OPCIONES] ?? ALL_GROUP_ID;
+  const opcionesSelectedGroupId = selectedGroupIds[OPERATION_TYPES.OPCIONES] ?? [];
 
   const handleGroupChange = useCallback((nextValue) => {
-    if (nextValue) {
-      setSelectedGroupIdForType(activeOperationType, nextValue);
-    }
+    // nextValue should be an array of selected IDs
+    setSelectedGroupIdForType(activeOperationType, nextValue);
   }, [activeOperationType, setSelectedGroupIdForType]);
 
   const handleCopy = async (scope) => {
@@ -1421,37 +1459,45 @@ const ProcessorScreen = () => {
     }
 
     const optionGroups = groups.filter(isOptionGroup);
-    const currentSelection = opcionesSelectedGroupId;
+    const rawSelection = opcionesSelectedGroupId;
+    
+    // Ensure currentSelection is always an array
+    const currentSelection = Array.isArray(rawSelection) ? rawSelection : [];
 
-    if (currentSelection === ALL_GROUP_ID) {
+    // If no selection (empty array), auto-select single group if available
+    if (currentSelection.length === 0) {
       if (optionGroups.length === 1) {
         const onlyGroupId = optionGroups[0].id;
         if (onlyGroupId !== ALL_GROUP_ID) {
-          setSelectedGroupIdForType(OPERATION_TYPES.OPCIONES, onlyGroupId);
+          setSelectedGroupIdForType(OPERATION_TYPES.OPCIONES, [onlyGroupId]);
         }
       }
       return;
     }
 
-    const selectedGroup = groups.find((group) => group.id === currentSelection);
-    if (isOptionGroup(selectedGroup)) {
+    // Validate that at least one selected group is an option group
+    const hasValidOptionGroup = currentSelection.some(selectedId => {
+      const selectedGroup = groups.find((group) => group.id === selectedId);
+      return isOptionGroup(selectedGroup);
+    });
+    
+    if (hasValidOptionGroup) {
       return;
     }
 
+    // No valid option groups selected, reset
     if (optionGroups.length === 0) {
-      setSelectedGroupIdForType(OPERATION_TYPES.OPCIONES, ALL_GROUP_ID);
+      setSelectedGroupIdForType(OPERATION_TYPES.OPCIONES, []);
       return;
     }
 
     if (optionGroups.length === 1) {
       const onlyGroupId = optionGroups[0].id;
-      if (currentSelection !== onlyGroupId) {
-        setSelectedGroupIdForType(OPERATION_TYPES.OPCIONES, onlyGroupId);
-      }
+      setSelectedGroupIdForType(OPERATION_TYPES.OPCIONES, [onlyGroupId]);
       return;
     }
 
-    setSelectedGroupIdForType(OPERATION_TYPES.OPCIONES, ALL_GROUP_ID);
+    setSelectedGroupIdForType(OPERATION_TYPES.OPCIONES, []);
   }, [activeOperationType, opcionesSelectedGroupId, groups, setSelectedGroupIdForType]);
 
   useEffect(() => {
