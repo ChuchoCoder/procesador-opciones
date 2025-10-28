@@ -11,11 +11,11 @@ description: "Task list for feature: Daily Instruments Sync"
 
 Purpose: Prepare the repo and add small helpers and strings so story work can be implemented safely and in parallel.
 
-- [ ] T001 [P] Create storage helper for instruments sharding and compatibility write in `frontend/src/services/instrumentsSyncStorage.js`
-- [ ] T002 [P] Add or verify localized UI strings for broker sync in `frontend/src/strings/es-AR.js` (keys: `brokerSync.lastSync`, `brokerSync.refresh`, `brokerSync.manualTrigger`, `brokerSync.lastSync`)
-- [ ] T003 [P] Add a background/service-worker entrypoint for alarms at `background/instruments-sync.js` and reference it in `manifest.json` (MV3 service_worker field)
-- [ ] T004 [P] Add a small observability logger helper `frontend/src/services/logging.js` (prefix logs with `PO:instruments-sync`)
-- [ ] T005 [P] Create test harness directory for instrument sync tests at `frontend/tests/instruments-sync/` (empty; test files added in Phase 3)
+- [X] T001 [P] Create storage helper for instruments sharding and compatibility write in `frontend/src/services/instrumentsSyncStorage.js`
+- [X] T002 [P] Add or verify localized UI strings for broker sync in `frontend/src/strings/es-AR.js` (keys: `brokerSync.lastSync`, `brokerSync.refresh`, `brokerSync.manualTrigger`, `brokerSync.lastSync`)
+- [X] T003 [P] Add a background/service-worker entrypoint for alarms at `background/instruments-sync.js` and reference it in `manifest.json` (MV3 service_worker field)
+- [X] T004 [P] Add a small observability logger helper `frontend/src/services/logging.js` (prefix logs with `PO:instruments-sync`)
+- [X] T005 [P] Create test harness directory for instrument sync tests at `frontend/tests/instruments-sync/` (empty; test files added in Phase 3)
 
 ---
 
@@ -23,19 +23,19 @@ Purpose: Prepare the repo and add small helpers and strings so story work can be
 
 Purpose: Implement the core sync primitives and auth checks that all stories rely on. MUST be complete before user stories start.
 
-- [ ] T006 Implement `BrokerSession` adapter (or adapter shim) in `frontend/src/services/brokerSession.js` exposing `isAuthenticated()` and `tryRefresh()` (no-op throw if repo lacks refresh; document TODO).
- - [ ] T006 Implement `BrokerSession` adapter (or adapter shim) in `frontend/src/services/brokerSession.js` exposing `isAuthenticated()` and `tryRefresh()` (no-op throw if repo lacks refresh; document TODO).
- - [ ] T034 [P] Validate or implement Broker API client adapter in `frontend/src/services/broker/jsrofex-client.js` (or create `frontend/src/services/broker/client.js`) exposing `fetchInstruments()` used by the sync service; if missing, add a minimal shim and document the adapter interface.
-- [ ] T007 Implement the core sync service `frontend/src/services/instrumentsSyncService.js` with methods: `fetchInstruments()`, `normalizeAndDedup(instruments)`, `saveRecord(record)`, `shouldRunDailySync()` (uses BrokerSession + data-model rules).
-- [ ] T008 Implement `chrome.alarms` registration and handler wiring in `background/instruments-sync.js` (schedule daily alarm at 09:45 ART and call sync handler). Edit `manifest.json` permissions to include `storage`, `alarms` if missing.
-- [ ] T009 Implement storage read/write helpers that use `chrome.storage.local` plus compatibility `localStorage` copy in `frontend/src/services/instrumentsSyncStorage.js` (sharding policy: 256KB parts, metadata key `instrumentsWithDetails.meta`).
-- [ ] T010 Add retry/backoff utility `frontend/src/services/retryWithBackoff.js` (max 3 retries within 5 minutes, base backoff 2s with jitter ±25%).
-- [ ] T011 Add unit tests scaffold for `instrumentsSyncService` in `frontend/tests/instruments-sync/test_instruments_sync.spec.js` (tests to be filled in Phase 3) — mark as TODO for writing the tests.
-- [ ] T033 Implement market-calendar helper `frontend/src/services/marketCalendar.js` exposing `isMarketBusinessDay(date, marketId)` and `nextMarketBusinessDay(date, marketId)` and integrate it into `shouldRunDailySync()` (document manual validation steps; unit tests optional).
+ - [X] T006 Implement `BrokerSession` adapter (or adapter shim) in `frontend/src/services/brokerSession.js` exposing `isAuthenticated()` and `tryRefresh()` (no-op throw if repo lacks refresh; document TODO).
+ - [X] T006 Implement `BrokerSession` adapter (or adapter shim) in `frontend/src/services/brokerSession.js` exposing `isAuthenticated()` and `tryRefresh()` (no-op throw if repo lacks refresh; document TODO).
+ - [X] T034 [P] Validate or implement Broker API client adapter in `frontend/src/services/broker/jsrofex-client.js` (or create `frontend/src/services/broker/client.js`) exposing `fetchInstruments()` used by the sync service; if missing, add a minimal shim and document the adapter interface.
+ - [X] T007 Implement the core sync service `frontend/src/services/instrumentsSyncService.js` with methods: `fetchInstruments()`, `normalizeAndDedup(instruments)`, `saveRecord(record)`, `shouldRunDailySync()` (uses BrokerSession + data-model rules).
+ - [X] T008 Implement `chrome.alarms` registration and handler wiring in `background/instruments-sync.js` (schedule daily alarm at 09:45 ART and call sync handler). Edit `manifest.json` permissions to include `storage`, `alarms` if missing.
+ - [X] T009 Implement storage read/write helpers that use `chrome.storage.local` plus compatibility `localStorage` copy in `frontend/src/services/instrumentsSyncStorage.js` (sharding policy: 256KB parts, metadata key `instrumentsWithDetails.meta`).
+ - [X] T010 Add retry/backoff utility `frontend/src/services/retryWithBackoff.js` (max 3 retries within 5 minutes, base backoff 2s with jitter ±25%).
+ - [X] T011 Add unit tests scaffold for `instrumentsSyncService` in `frontend/tests/instruments-sync/test_instruments_sync.spec.js` (tests to be filled in Phase 3) — mark as TODO for writing the tests.
+- [X] T033 Implement market-calendar helper `frontend/src/services/marketCalendar.js` exposing `isMarketBusinessDay(date, marketId)` and `nextMarketBusinessDay(date, marketId)` and integrate it into `shouldRunDailySync()` (document manual validation steps; unit tests optional).
 
 ---
 
-## Phase 3: User Story 1 - Automatic daily sync when connected (Priority: P1) 🎯 MVP
+## Phase 3: User Story 1 - Automatic daily sync when connected (Priority: P1) 🎯 MVP ✅ COMPLETE
 
 Goal: When the user is authenticated, run a daily sync (alarms or manual trigger) to fetch instruments from Broker API and save canonical record in storage with metadata.
 
@@ -43,60 +43,64 @@ Independent Test: With a mocked authenticated BrokerSession, invoke the sync han
 
 ### Tests
 
-- [ ] T012 [P] [US1] Create unit test `frontend/tests/instruments-sync/test_instruments_sync_success.spec.js` that mocks Broker API returning instruments and asserts saved metadata and deduplication
-- [ ] T013 [P] [US1] Create unit test `frontend/tests/instruments-sync/test_instruments_sync_fallback.spec.js` that simulates auth failure and asserts fallback to `frontend/InstrumentsWithDetails.json`
+- [X] T012 [P] [US1] Create unit test `frontend/tests/instruments-sync/test_instruments_sync_success.spec.js` that mocks Broker API returning instruments and asserts saved metadata and deduplication
+- [X] T013 [P] [US1] Create unit test `frontend/tests/instruments-sync/test_instruments_sync_fallback.spec.js` that simulates auth failure and asserts fallback to `frontend/InstrumentsWithDetails.json`
 
 ### Implementation
 
-- [ ] T014 [US1] Implement `fetchInstruments()` in `frontend/src/services/instrumentsSyncService.js` to call the broker client in `frontend/src/services/broker/jsrofex-client.js` (use its method to GET `/rest/instruments/details`) and return parsed JSON
-- [ ] T015 [US1] Implement `normalizeAndDedup(instruments)` in `frontend/src/services/instrumentsSyncService.js` following `data-model.md` rules (dedup key `${marketId}|${symbol}`, normalize `maturityDate` to `YYYY-MM-DD`, mark `incomplete` & `issues` when fields missing)
-- [ ] T016 [US1] Implement `saveRecord(record)` in `frontend/src/services/instrumentsSyncStorage.js` with `chrome.storage.local` write, fallback sharding to `localStorage` keys `instrumentsWithDetails.meta` and `instrumentsWithDetails.part.<n>` and compute `versionHash` (sha1 of canonical JSON)
-- [ ] T017 [US1] Implement alarm handler wiring: ensure `background/instruments-sync.js` calls the sync service and records logs in `PO:instruments-sync` namespace
-- [ ] T018 [US1] Add an in-memory memoization cache to `instrumentsSyncService` to prevent re-read overhead in the popup session (store last-read until browser reload)
-- [ ] T019 [US1] Create minimal integration test `frontend/tests/instruments-sync/test_integration_alarm_handler.spec.js` that simulates alarm firing and verifies `saveRecord` invoked (use a simple mock)
+- [X] T014 [US1] Implement `fetchInstruments()` in `frontend/src/services/instrumentsSyncService.js` to call the broker client in `frontend/src/services/broker/jsrofex-client.js` (use its method to GET `/rest/instruments/details`) and return parsed JSON
+- [X] T015 [US1] Implement `normalizeAndDedup(instruments)` in `frontend/src/services/instrumentsSyncService.js` following `data-model.md` rules (dedup key `${marketId}|${symbol}`, normalize `maturityDate` to `YYYY-MM-DD`, mark `incomplete` & `issues` when fields missing)
+- [X] T016 [US1] Implement `saveRecord(record)` in `frontend/src/services/instrumentsSyncStorage.js` with `chrome.storage.local` write, fallback sharding to `localStorage` keys `instrumentsWithDetails.meta` and `instrumentsWithDetails.part.<n>` and compute `versionHash` (sha1 of canonical JSON)
+- [X] T017 [US1] Implement alarm handler wiring: ensure `background/instruments-sync.js` calls the sync service and records logs in `PO:instruments-sync` namespace
+- [X] T018 [US1] Add an in-memory memoization cache to `instrumentsSyncService` to prevent re-read overhead in the popup session (store last-read until browser reload)
+- [X] T019 [US1] Create minimal integration test `frontend/tests/instruments-sync/test_integration_alarm_handler.spec.js` that simulates alarm firing and verifies `saveRecord` invoked (use a simple mock)
 
-**Checkpoint**: After T012–T019 the daily sync flow (fetch → normalize → save) and alarm trigger should be testable independently.
+**Checkpoint**: ✅ After T012–T019 the daily sync flow (fetch → normalize → save) and alarm trigger should be testable independently.
 
 ---
 
-## Phase 4: User Story 2 - Manual refresh and visibility (Priority: P2)
+## Phase 4: User Story 2 - Manual refresh and visibility (Priority: P2) - WEB APPLICATION ONLY
 
-Goal: Provide a UI action to trigger a manual refresh and show the last sync timestamp.
+**Scope**: This user story applies **ONLY to the web application** (`frontend/`), NOT to the Chrome extension popup. The Chrome extension uses automatic background sync only.
 
-Independent Test: With an authenticated session, click the manual refresh control and verify the storage updates and the UI shows the new `fetchedAt` timestamp.
+Goal: Provide a UI action in the web application to trigger a manual refresh and show the last sync timestamp.
+
+Independent Test: With an authenticated session in the web app, click the manual refresh control and verify the storage updates and the UI shows the new `fetchedAt` timestamp.
 
 ### Tests
 
-- [ ] T020 [P] [US2] Create unit test `frontend/tests/instruments-sync/test_manual_refresh_ui.spec.js` that mocks sync and verifies UI updates
+- [ ] T020 [P] [US2] Create unit test `frontend/tests/instruments-sync/test_manual_refresh_ui.spec.js` that mocks sync and verifies web app UI updates
 
 ### Implementation
 
-- [ ] T021 [US2] Add a manual refresh control to the popup UI: modify `popup.html` and `popup.js` to include a button labeled with `strings.brokerSync.manualTrigger` and an area for `strings.brokerSync.lastSync` (file paths: `/popup.html`, `/popup.js`)
-- [ ] T022 [US2] Implement UI handler in `/popup.js` that calls `instrumentsSyncService.syncNow()` and updates displayed last sync time from storage
-- [ ] T023 [US2] Add a small visual indicator (text) in popup to show `fetchedAt` (read from `chrome.storage.local` or recomposed `localStorage` meta) — update `/popup.js` and `/popup.html`
-- [ ] T024 [US2] Add an accessibility label and small unit test for the UI handler `frontend/tests/instruments-sync/test_manual_refresh_ui.spec.js`
+- [ ] T021 [US2] Add a manual refresh control to the web application UI: modify web app components (NOT `popup.html`/`popup.js`) to include a button labeled with `strings.brokerSync.manualTrigger` and an area for `strings.brokerSync.lastSync` — file paths TBD based on web app structure
+- [ ] T022 [US2] Implement UI handler in web app that calls `instrumentsSyncService.syncNow()` and updates displayed last sync time from storage
+- [ ] T023 [US2] Add a small visual indicator (text) in web app to show `fetchedAt` (read from `chrome.storage.local` or recomposed `localStorage` meta)
+- [ ] T024 [US2] Add an accessibility label and small unit test for the web app UI handler `frontend/tests/instruments-sync/test_manual_refresh_ui.spec.js`
 
-**Checkpoint**: Manual refresh UI and display should work independently of other stories.
+**Checkpoint**: Manual refresh UI and display should work independently of other stories in the web application. Chrome extension continues to use automatic background sync only.
 
 ---
 
-## Phase 5: User Story 3 - Resilient startup fallback (Priority: P3)
+## Phase 5: User Story 3 - Resilient startup fallback (Priority: P3) - WEB APPLICATION ONLY
 
-Goal: On startup or when sync fails, load static `frontend/InstrumentsWithDetails.json` as fallback and surface a diagnostic log/limited UI notice.
+**Scope**: This user story applies **ONLY to the web application** (`frontend/`), NOT to the Chrome extension. The Chrome extension already handles fallback in the background sync service.
 
-Independent Test: Simulate fetch/auth failures and verify the app reads `frontend/InstrumentsWithDetails.json` and UI shows a non-blocking warning.
+Goal: On web app startup or when sync fails, load static `frontend/InstrumentsWithDetails.json` as fallback and surface a diagnostic log/limited UI notice in the web application.
+
+Independent Test: In the web app, simulate fetch/auth failures and verify the app reads `frontend/InstrumentsWithDetails.json` and UI shows a non-blocking warning.
 
 ### Tests
 
-- [ ] T025 [P] [US3] Create unit test `frontend/tests/instruments-sync/test_fallback_on_failure.spec.js` that simulates failure and asserts fallback file used
+- [ ] T025 [P] [US3] Create unit test `frontend/tests/instruments-sync/test_fallback_on_failure.spec.js` that simulates failure and asserts fallback file used in web app context
 
 ### Implementation
 
-- [ ] T026 [US3] Implement fallback read logic in `frontend/src/services/instrumentsSyncStorage.js` to load `frontend/InstrumentsWithDetails.json` when no valid record exists or if recomposition/versionHash fails
-- [ ] T027 [US3] Update popup UI (`/popup.js`) to show a small notice when fallback is used; include test hook to detect fallback state
-- [ ] T028 [US3] Ensure deduplication & `incomplete` marking still apply when data comes from static file
+- [ ] T026 [US3] Implement fallback read logic in `frontend/src/services/instrumentsSyncStorage.js` to load `frontend/InstrumentsWithDetails.json` when no valid record exists or if recomposition/versionHash fails (this is already partially implemented in `syncNow()` but may need web-app-specific startup logic)
+- [ ] T027 [US3] Update web app UI (NOT `popup.js`) to show a small notice when fallback is used; include test hook to detect fallback state
+- [ ] T028 [US3] Ensure deduplication & `incomplete` marking still apply when data comes from static file (already implemented in `normalizeAndDedup()`, verify in web app context)
 
-**Checkpoint**: On failure the UI must still render using the static dataset and log the failure details.
+**Checkpoint**: On failure the web app UI must still render using the static dataset and log the failure details. Chrome extension handles fallback automatically via background sync service.
 
 ---
 
@@ -123,7 +127,7 @@ Independent Test: Simulate fetch/auth failures and verify the app reads `fronten
 
 - While Foundational code is written, different files can be implemented in parallel:
   - `frontend/src/services/instrumentsSyncStorage.js` (T009) and `frontend/src/services/instrumentsSyncService.js` (T007) can be worked on concurrently (different files) — mark tasks [P]
-  - UI changes (`/popup.html`, `/popup.js`) (T021) can be implemented while storage helpers (T009) are being built, using mocks in tests (T020)
+  - UI changes (web app components) (T021) can be implemented while storage helpers (T009) are being built, using mocks in tests (T020)
 
 ## Implementation strategy (MVP first)
 

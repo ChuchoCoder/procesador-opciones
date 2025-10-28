@@ -403,6 +403,23 @@
     </div>
 
     <div class="container">
+        <!-- Instruments Sync Status (Phase 4 - US2) -->
+        <div class="section" style="padding: 12px 16px; margin-bottom: 16px;">
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+                <div style="flex: 1;">
+                    <div style="font-size: 12px; color: #6b7280; margin-bottom: 4px;">Instrumentos sincronizados</div>
+                    <div id="lastSyncDisplay" style="font-size: 13px; font-weight: 500; color: #374151;">
+                        Cargando...
+                    </div>
+                </div>
+                <button id="manualRefreshBtn" class="btn btn-small" style="padding: 8px 12px;" aria-label="Sincronizar instrumentos ahora">
+                    <span style="font-size: 14px; margin-right: 4px;">🔄</span>
+                    <span>Sincronizar</span>
+                </button>
+            </div>
+            <div id="syncStatus" style="margin-top: 8px; font-size: 11px; color: #9ca3af;"></div>
+        </div>
+
         <!-- Pestañas principales -->
         <div class="tabs">
             <button class="tab-btn active" data-tab="processor">Procesador</button>

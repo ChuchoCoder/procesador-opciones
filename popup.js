@@ -35,6 +35,10 @@ class PopupManager {
       this.loadConfigToUI();
       console.log("UI cargada");
 
+      // Setup instruments sync UI (Phase 4 - US2)
+      await this.setupInstrumentsSyncUI();
+      console.log("Instruments sync UI configurada");
+
       // Verificar datos guardados con un pequeño delay para asegurar que todo esté listo
       setTimeout(async () => {
         console.log("Iniciando verificación de datos guardados...");
@@ -1052,6 +1056,159 @@ class PopupManager {
     } catch (error) {
       console.error("Error actualizando vencimiento:", error);
       this.showStatus("Error actualizando vencimiento", "error");
+    }
+  }
+
+  // ===== Instruments Sync UI (Phase 4 - US2) =====
+
+  async setupInstrumentsSyncUI() {
+    const manualRefreshBtn = document.getElementById("manualRefreshBtn");
+    if (manualRefreshBtn) {
+      manualRefreshBtn.addEventListener("click", () => this.triggerManualSync());
+    }
+    
+    // Load initial sync status
+    await this.updateSyncDisplay();
+  }
+
+  async updateSyncDisplay() {
+    const lastSyncDisplay = document.getElementById("lastSyncDisplay");
+    const syncStatus = document.getElementById("syncStatus");
+    
+    if (!lastSyncDisplay) return;
+
+    try {
+      // Try to read metadata from chrome.storage.local first
+      const meta = await this.readInstrumentsMeta();
+      
+      if (meta && meta.fetchedAt) {
+        const fetchedDate = new Date(meta.fetchedAt);
+        const now = new Date();
+        const diffMs = now - fetchedDate;
+        const diffMins = Math.floor(diffMs / (1000 * 60));
+        const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+        const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+        let timeAgo;
+        if (diffMins < 1) {
+          timeAgo = "hace menos de 1 minuto";
+        } else if (diffMins < 60) {
+          timeAgo = `hace ${diffMins} minuto${diffMins > 1 ? 's' : ''}`;
+        } else if (diffHours < 24) {
+          timeAgo = `hace ${diffHours} hora${diffHours > 1 ? 's' : ''}`;
+        } else {
+          timeAgo = `hace ${diffDays} día${diffDays > 1 ? 's' : ''}`;
+        }
+
+        lastSyncDisplay.textContent = timeAgo;
+        
+        if (syncStatus) {
+          const source = meta.source === 'broker-api' ? 'Broker API' : 'Archivo local';
+          const count = meta.count || 0;
+          syncStatus.textContent = `Fuente: ${source} • ${count} instrumentos`;
+        }
+      } else {
+        lastSyncDisplay.textContent = "No sincronizado";
+        if (syncStatus) {
+          syncStatus.textContent = "Sincronizá para obtener la lista actualizada";
+        }
+      }
+    } catch (error) {
+      console.error("Error updating sync display:", error);
+      lastSyncDisplay.textContent = "Error al cargar";
+      if (syncStatus) {
+        syncStatus.textContent = "";
+      }
+    }
+  }
+
+  async readInstrumentsMeta() {
+    // Try chrome.storage.local first (preferred)
+    if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+      return new Promise((resolve) => {
+        chrome.storage.local.get(['instrumentsWithDetails.meta'], (result) => {
+          if (result && result['instrumentsWithDetails.meta']) {
+            resolve(result['instrumentsWithDetails.meta']);
+          } else {
+            // Fallback to localStorage
+            resolve(this.readInstrumentsMetaFromLocalStorage());
+          }
+        });
+      });
+    } else {
+      // Fallback to localStorage
+      return this.readInstrumentsMetaFromLocalStorage();
+    }
+  }
+
+  readInstrumentsMetaFromLocalStorage() {
+    try {
+      const metaStr = localStorage.getItem('instrumentsWithDetails.meta');
+      if (metaStr) {
+        return JSON.parse(metaStr);
+      }
+    } catch (e) {
+      console.warn('Could not read instruments meta from localStorage:', e);
+    }
+    return null;
+  }
+
+  async triggerManualSync() {
+    const manualRefreshBtn = document.getElementById("manualRefreshBtn");
+    const lastSyncDisplay = document.getElementById("lastSyncDisplay");
+    const syncStatus = document.getElementById("syncStatus");
+
+    if (!manualRefreshBtn || !lastSyncDisplay) return;
+
+    // Disable button and show loading state
+    manualRefreshBtn.disabled = true;
+    manualRefreshBtn.innerHTML = '<span style="font-size: 14px; margin-right: 4px;">⏳</span><span>Sincronizando...</span>';
+    lastSyncDisplay.textContent = "Sincronizando...";
+    if (syncStatus) {
+      syncStatus.textContent = "Obteniendo instrumentos del broker...";
+    }
+
+    try {
+      // Import the sync service dynamically
+      const { default: instrumentsSyncService } = await import('./frontend/src/services/instrumentsSyncService.js');
+      
+      // Trigger sync
+      const result = await instrumentsSyncService.syncNow();
+
+      if (result.ok) {
+        // Update display immediately
+        await this.updateSyncDisplay();
+        
+        // Show success message briefly
+        if (syncStatus) {
+          const source = result.fallback ? 'archivo local' : 'Broker API';
+          syncStatus.textContent = `✅ Sincronización exitosa desde ${source}`;
+          syncStatus.style.color = '#059669';
+          
+          setTimeout(() => {
+            syncStatus.style.color = '#9ca3af';
+            this.updateSyncDisplay();
+          }, 3000);
+        }
+      } else {
+        throw new Error(result.reason || 'Error desconocido');
+      }
+    } catch (error) {
+      console.error("Manual sync error:", error);
+      lastSyncDisplay.textContent = "Error al sincronizar";
+      if (syncStatus) {
+        syncStatus.textContent = `❌ ${error.message || 'Error al conectar con el broker'}`;
+        syncStatus.style.color = '#dc2626';
+        
+        setTimeout(() => {
+          syncStatus.style.color = '#9ca3af';
+          this.updateSyncDisplay();
+        }, 5000);
+      }
+    } finally {
+      // Re-enable button
+      manualRefreshBtn.disabled = false;
+      manualRefreshBtn.innerHTML = '<span style="font-size: 14px; margin-right: 4px;">🔄</span><span>Sincronizar</span>';
     }
   }
 }
