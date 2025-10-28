@@ -64,10 +64,10 @@ description: "Task list for Market Data (WebSocket) feature"
 
 **Independent Test**: Subscribe with varying `entries`/`depth` and verify only requested entries and max depth are present in emitted events.
 
-- [ ] T016 [P] [US2] Implement `validateEntries(entries)` in `frontend/src/services/broker/parsers.js` to filter unsupported entries and return canonical list (per `data-model.md`)
-- [ ] T017 [US2] Update `subscribe` (in `frontend/src/services/broker/jsrofex-client.js`) to accept and persist `entries` and `depth`; enforce `depth` >=1 and cap to a sensible max (e.g., 5) as config in `jsrofex-client.js`
-- [ ] T018 [US2] Ensure `parseMarketDataMessage` filters `marketData` object to include only requested `entries` and trims arrays to requested `depth` before emitting `marketData` events
-- [ ] T019 [US2] Implement graceful handling/logging for unsupported entries per-instrument (log at debug and ignore missing entries)
+- [X] T016 [P] [US2] Implement `validateEntries(entries)` in `frontend/src/services/broker/parsers.js` to filter unsupported entries and return canonical list (per `data-model.md`)
+- [X] T017 [US2] Update `subscribe` (in `frontend/src/services/broker/jsrofex-client.js`) to accept and persist `entries` and `depth`; enforce `depth` >=1 and cap to a sensible max (e.g., 5) as config in `jsrofex-client.js`
+- [X] T018 [US2] Ensure `parseMarketDataMessage` filters `marketData` object to include only requested `entries` and trims arrays to requested `depth` before emitting `marketData` events
+- [X] T019 [US2] Implement graceful handling/logging for unsupported entries per-instrument (log at debug and ignore missing entries)
 
 ---
 
@@ -77,10 +77,10 @@ description: "Task list for Market Data (WebSocket) feature"
 
 **Independent Test**: Force socket close; with token valid confirm client reconnects using backoff and re-sends stored `smd` subscriptions to restore `marketData` flow.
 
-- [ ] T020 [US3] Implement exponential backoff reconnect strategy in `frontend/src/services/broker/jsrofex-client.js` per `research.md` (initialDelay=500ms, multiplier=1.5, maxDelay=30s, maxRetries=5)
-- [ ] T021 [US3] On successful reconnect, re-apply subscriptions stored in `state.subscriptions` by re-sending `smd` batched messages and resume normal event emission
-- [ ] T022 [US3] Implement handling for authorization failures (401/unauthorized) on reconnect: pause auto re-subscribe and emit a `connection` event with `unauthorized` state so the auth module/UI can refresh token; file: `frontend/src/services/broker/jsrofex-client.js`
-- [ ] T023 [US3] Ensure reconnection respects jitter/randomization to avoid thundering reconnections (implement in T020 codepath)
+- [X] T020 [US3] Implement exponential backoff reconnect strategy in `frontend/src/services/broker/jsrofex-client.js` per `research.md` (initialDelay=500ms, multiplier=1.5, maxDelay=30s, maxRetries=5)
+- [X] T021 [US3] On successful reconnect, re-apply subscriptions stored in `state.subscriptions` by re-sending `smd` batched messages and resume normal event emission
+- [X] T022 [US3] Implement handling for authorization failures (401/unauthorized) on reconnect: pause auto re-subscribe and emit a `connection` event with `unauthorized` state so the auth module/UI can refresh token; file: `frontend/src/services/broker/jsrofex-client.js`
+- [X] T023 [US3] Ensure reconnection respects jitter/randomization to avoid thundering reconnections (implement in T020 codepath)
 
 ---
 

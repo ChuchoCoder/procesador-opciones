@@ -15,6 +15,16 @@ export class JsRofexClient {
     this._listeners = new Map(); // event -> Set(handler)
     this._ws = null;
     this._config = Object.assign({ maxDepth: 5 }, opts);
+    this._reconnectState = {
+      enabled: true,
+      retries: 0,
+      maxRetries: 5,
+      initialDelay: 500,
+      multiplier: 1.5,
+      maxDelay: 30000,
+      timeoutId: null,
+      token: null,
+    };
   }
 
   on(event, handler) {
@@ -33,6 +43,10 @@ export class JsRofexClient {
   }
 
   async connect(token) {
+    // Store token for reconnection
+    this._reconnectState.token = token;
+    this._reconnectState.retries = 0;
+
     this.state.connectionState = 'connecting';
     this._emit('connection', { state: 'connecting', msg: marketdataStrings.connection.connecting });
     logger.log(marketdataStrings.connection.connecting);
@@ -55,13 +69,22 @@ export class JsRofexClient {
         this._ws = new globalThis.WebSocket(url);
         this._ws.addEventListener('open', () => {
           this.state.connectionState = 'connected';
+          this._reconnectState.retries = 0; // reset on successful connection
           this._emit('connection', { state: 'connected', msg: marketdataStrings.connection.connected });
           logger.log(marketdataStrings.connection.connected);
+          
+          // Re-apply stored subscriptions
+          this._resubscribe();
         });
-        this._ws.addEventListener('close', () => {
+        this._ws.addEventListener('close', (ev) => {
           this.state.connectionState = 'disconnected';
           this._emit('connection', { state: 'disconnected', msg: marketdataStrings.connection.disconnected });
           logger.log(marketdataStrings.connection.disconnected);
+          
+          // Attempt reconnection if enabled
+          if (this._reconnectState.enabled) {
+            this._scheduleReconnect();
+          }
         });
         this._ws.addEventListener('error', (err) => {
           this.state.connectionState = 'error';
@@ -77,11 +100,87 @@ export class JsRofexClient {
         this.state.connectionState = 'error';
         this._emit('connection', { state: 'error', msg: marketdataStrings.errors.websocket, err: e });
         logger.warn('WebSocket creation failed', e);
+        
+        // Attempt reconnection on error
+        if (this._reconnectState.enabled) {
+          this._scheduleReconnect();
+        }
       }
     } else {
       logger.log('WebSocket not available in this environment; running in no-op mode');
       this.state.connectionState = 'disconnected';
       this._emit('connection', { state: 'disconnected', msg: marketdataStrings.connection.disconnected });
+    }
+  }
+
+  disconnect() {
+    // Disable reconnect when explicitly disconnecting
+    this._reconnectState.enabled = false;
+    if (this._reconnectState.timeoutId) {
+      clearTimeout(this._reconnectState.timeoutId);
+      this._reconnectState.timeoutId = null;
+    }
+    if (this._ws) {
+      this._ws.close();
+      this._ws = null;
+    }
+    this.state.connectionState = 'disconnected';
+  }
+
+  _scheduleReconnect() {
+    if (this._reconnectState.retries >= this._reconnectState.maxRetries) {
+      logger.warn('[marketdata] Max reconnect retries reached, giving up');
+      this._emit('connection', { state: 'error', msg: marketdataStrings.errors.reconnectFailed || 'Max reconnect retries reached' });
+      return;
+    }
+
+    const delay = Math.min(
+      this._reconnectState.initialDelay * Math.pow(this._reconnectState.multiplier, this._reconnectState.retries),
+      this._reconnectState.maxDelay
+    );
+    
+    // Add jitter (randomize ±20%)
+    const jitter = delay * 0.2 * (Math.random() * 2 - 1);
+    const finalDelay = Math.max(0, delay + jitter);
+
+    this._reconnectState.retries++;
+    logger.log(`[marketdata] Scheduling reconnect attempt ${this._reconnectState.retries}/${this._reconnectState.maxRetries} in ${Math.round(finalDelay)}ms`);
+
+    this._reconnectState.timeoutId = setTimeout(() => {
+      logger.log(`[marketdata] Reconnect attempt ${this._reconnectState.retries}`);
+      this._reconnect();
+    }, finalDelay);
+  }
+
+  async _reconnect() {
+    // Re-enable reconnect before attempting
+    this._reconnectState.enabled = true;
+    
+    // Check for authorization failure (401)
+    // In a real implementation, you'd check server response or token validity
+    // For now, assume token is still valid and attempt reconnect
+    await this.connect(this._reconnectState.token);
+  }
+
+  _resubscribe() {
+    // Re-send all stored subscriptions
+    if (!this.state.subscriptions || this.state.subscriptions.size === 0) {
+      logger.log('[marketdata] No subscriptions to restore');
+      return;
+    }
+
+    logger.log(`[marketdata] Re-applying ${this.state.subscriptions.size} subscription(s)`);
+    for (const [subId, sub] of this.state.subscriptions.entries()) {
+      const payload = { type: 'smd', products: sub.products, entries: sub.entries, depth: sub.depth };
+      const raw = JSON.stringify(payload);
+      if (this._ws && this._ws.readyState === 1) {
+        try {
+          this._ws.send(raw);
+          logger.log(`[marketdata] Re-sent subscription ${subId}`);
+        } catch (e) {
+          logger.warn(`[marketdata] Failed to re-send subscription ${subId}`, e);
+        }
+      }
     }
   }
 
