@@ -90,11 +90,58 @@ export async function startDailySync({
     setBaseUrl(brokerApiUrl);
   }
   const sessionId = `sync-${Date.now()}`;
-  const baselineOperations = Array.isArray(existingOperations)
+  
+  // For daily sync, filter baseline to exclude broker operations from previous days
+  // For refresh mode, keep all operations (additive)
+  let baselineOperations = Array.isArray(existingOperations)
     ? existingOperations
     : Array.isArray(currentOperations)
       ? currentOperations
       : [];
+  
+  // For both daily and refresh modes, filter out broker operations from previous days
+  // This ensures "Today only" requirement is always enforced
+  // Calculate start of today in local time (00:00:00)
+  const now = new Date();
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  
+  const beforeCount = baselineOperations.length;
+  const brokerBeforeCount = baselineOperations.filter(op => op.source === 'broker').length;
+  const csvBeforeCount = baselineOperations.filter(op => op.source === 'csv').length;
+  
+  // Retain CSV operations + broker operations from today only
+  baselineOperations = baselineOperations.filter(op => {
+    if (op.source === 'csv') {
+      return true; // Always keep CSV operations
+    }
+    // For broker operations, only keep those from today or later
+    const opTimestamp = op.tradeTimestamp || op.importTimestamp || 0;
+    const isToday = opTimestamp >= todayStart;
+    
+    if (!isToday && mode === DAILY_MODE) {
+      console.log(`[Sync ${mode}] Filtering out old broker operation:`, {
+        symbol: op.symbol || op.instrumentId?.symbol,
+        timestamp: new Date(opTimestamp).toLocaleString(),
+        todayStart: new Date(todayStart).toLocaleString(),
+        orderId: op.orderId || op.order_id,
+      });
+    }
+    
+    return isToday;
+  });
+  
+  const afterCount = baselineOperations.length;
+  const brokerAfterCount = baselineOperations.filter(op => op.source === 'broker').length;
+  const csvAfterCount = baselineOperations.filter(op => op.source === 'csv').length;
+  const removedCount = beforeCount - afterCount;
+  
+  console.log(`[Sync ${mode}] Filtered baseline:`, {
+    before: { total: beforeCount, broker: brokerBeforeCount, csv: csvBeforeCount },
+    after: { total: afterCount, broker: brokerAfterCount, csv: csvAfterCount },
+    removed: removedCount,
+    todayStart: new Date(todayStart).toLocaleString(),
+  });
+  
   const dedupePool = [...baselineOperations];
   const candidateOperations = [];
   
