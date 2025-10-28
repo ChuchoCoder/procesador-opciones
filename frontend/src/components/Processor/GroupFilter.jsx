@@ -4,6 +4,7 @@ import Typography from '@mui/material/Typography';
 import Chip from '@mui/material/Chip';
 
 const DEFAULT_LABEL = 'Filter by instrument';
+const ALL_OPTION_ID = '__ALL__';
 
 const GroupFilter = ({ options = [], selectedGroupId, onChange, strings = {} }) => {
   if (!options.length) {
@@ -12,9 +13,35 @@ const GroupFilter = ({ options = [], selectedGroupId, onChange, strings = {} }) 
 
   const label = strings.filterLabel ?? DEFAULT_LABEL;
 
+  // Support both single selection (string) and multi-selection (array)
+  const selectedIds = Array.isArray(selectedGroupId) 
+    ? selectedGroupId 
+    : selectedGroupId 
+      ? [selectedGroupId] 
+      : [];
+
   const handleClick = (optionId) => {
-    if (optionId !== selectedGroupId) {
-      onChange(optionId);
+    // Check if this is the "All" option
+    const isAllOption = optionId === ALL_OPTION_ID || 
+                        options.find(opt => opt.id === optionId)?.id === ALL_OPTION_ID;
+
+    if (isAllOption) {
+      // Clicking "All" resets to show all instruments
+      onChange([]);
+      return;
+    }
+
+    // Multi-select behavior
+    const isCurrentlySelected = selectedIds.includes(optionId);
+    
+    if (isCurrentlySelected) {
+      // Deselect: remove from array
+      const newSelection = selectedIds.filter(id => id !== optionId);
+      onChange(newSelection.length === 0 ? [] : newSelection);
+    } else {
+      // Select: add to array
+      const newSelection = [...selectedIds, optionId];
+      onChange(newSelection);
     }
   };
 
@@ -26,20 +53,16 @@ const GroupFilter = ({ options = [], selectedGroupId, onChange, strings = {} }) 
       <Box
         sx={{
           display: 'flex',
+          flexWrap: 'wrap',
           gap: 1,
-          overflowX: 'auto',
           py: 1,
-          '&::-webkit-scrollbar': {
-            height: 8,
-          },
-          '&::-webkit-scrollbar-thumb': {
-            backgroundColor: 'rgba(0, 0, 0, 0.2)',
-            borderRadius: 4,
-          },
         }}
       >
         {options.map((option) => {
-          const selected = selectedGroupId === option.id;
+          const isAllOption = option.id === ALL_OPTION_ID;
+          const selected = isAllOption 
+            ? selectedIds.length === 0 
+            : selectedIds.includes(option.id);
           const baseTestId = option.testId ?? option.id;
           // Provide an alternate simpler test id based on label (sanitized) for robustness
           const labelTestId = option.label.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase();

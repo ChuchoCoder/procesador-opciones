@@ -15,7 +15,7 @@ const groupOperations = (operations, { useAveraging }) => {
     const baseSymbol = operation.matchedSymbol ?? operation.originalSymbol;
 
     const key = useAveraging
-      ? [baseSymbol, operation.optionType, operation.strike, 'averaged'].join('::')
+      ? [baseSymbol, operation.optionType, operation.strike, operation.side, 'averaged'].join('::')
       : [operation.orderId, baseSymbol, operation.optionType].join('::');
 
     if (!groups.has(key)) {
@@ -27,6 +27,8 @@ const groupOperations = (operations, { useAveraging }) => {
         weightedSum: 0,
         netQuantity: 0,
         orderId: operation.orderId,
+        // when averaging we group by side as well
+        side: operation.side,
       });
     }
 
@@ -97,6 +99,7 @@ export const consolidateOperations = (
       optionType: group.optionType,
       strike: group.strike,
       totalQuantity: group.netQuantity,
+      side: group.side,
       averagePrice,
       legs: group.legs,
       orderId: group.orderId,
