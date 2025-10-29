@@ -143,14 +143,14 @@ function getPnLCaucionBreakdown(row) {
           <Typography variant="body2" sx={{ fontWeight: 600, display: 'block', mb: 1, color: 'grey.100' }}>
             Detalle P&L Caución {row.isCaucionColocadora ? "Colocadora" : "Tomadora"}
           </Typography>
-          {Number.isFinite(breakdown.avgTNA) && (
-            <Typography variant="body2" sx={{ display: 'block', mt: 0.5, color: 'primary.light', fontWeight: 500 }}>
-              TNA Promedio: {Number(breakdown.avgTNA).toFixed(2)}%
-            </Typography>
-          )}
           <Typography variant="body2" sx={{ display: 'block', mt: 1, color: 'grey.100' }}>
             Plazo: {row.plazo ?? row.tenorDias ?? breakdown.tenorDays ?? '—'} días
           </Typography>
+          {(Number.isFinite(breakdown.avgTNA) || Number.isFinite(row.avgTNA)) && (
+            <Typography variant="body2" sx={{ display: 'block', mt: 0.5, color: 'primary.light', fontWeight: 500 }}>
+              TNA Promedio: {Number(breakdown.avgTNA ?? row.avgTNA).toFixed(2)}%
+            </Typography>
+          )}
           <Typography variant="body2" sx={{ display: 'block', mt: 1, color: 'grey.100' }}>
             Importe Bruto: {principal !== null ? fmt(principal) : '—'}
           </Typography>
@@ -195,14 +195,19 @@ function getPnLCaucionBreakdown(row) {
         <Typography variant="body2" sx={{ fontWeight: 600, display: 'block', mb: 1, color: 'grey.100' }}>
           Detalle P&L Caución {row.isCaucionColocadora ? "Colocadora" : "Tomadora"}
         </Typography>
+        <Typography variant="body2" sx={{ display: 'block', mt: 1, color: 'grey.100' }}>
+          Plazo: {row.plazo ?? row.tenorDias ?? '—'} días
+        </Typography>
+        {(Number.isFinite(row.avgTNA) && row.avgTNA > 0) && (
+          <Typography variant="body2" sx={{ display: 'block', mt: 0.5, color: 'primary.light', fontWeight: 500 }}>
+            TNA Promedio: {Number(row.avgTNA).toFixed(2)}%
+          </Typography>
+        )}
         <Typography variant="body2" sx={{ color: 'grey.400' }}>
           Datos de caución no disponibles (el servicio no proporcionó breakdown)
         </Typography>
         <Typography variant="body2" sx={{ display: 'block', mt: 1, color: 'grey.100' }}>
           Monto base: {fmt(null)}
-        </Typography>
-        <Typography variant="body2" sx={{ display: 'block', color: 'grey.400', ml: 1 }}>
-          Plazo: {row.plazo ?? row.tenorDias ?? '—'} días
         </Typography>
         <Typography variant="body2" sx={{ display: 'block', mt: 1, color: 'grey.100' }}>
           Interés devengado: {fmt(null)}
@@ -231,7 +236,10 @@ function getPnLCaucionBreakdown(row) {
       <Typography variant="body2" sx={{ fontWeight: 600, display: 'block', mb: 1, color: 'grey.100' }}>
         Detalle P&L Caución {row.isCaucionColocadora ? "Colocadora" : "Tomadora"}
       </Typography>
-      {row.avgTNA > 0 && (
+      <Typography variant="body2" sx={{ display: 'block', mb: 1, color: 'grey.100' }}>
+        Plazo: {row.plazo} días
+      </Typography>
+      {(row.avgTNA > 0 || Number.isFinite(row.avgTNA)) && (
         <Typography variant="body2" sx={{ display: 'block', mb: 1, color: 'primary.light', fontWeight: 500 }}>
           TNA Promedio: {Number(row.avgTNA).toFixed(2)}%
         </Typography>
