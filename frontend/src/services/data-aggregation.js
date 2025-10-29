@@ -317,12 +317,27 @@ void parseOperationsFirstLog;
  * @returns {import('./arbitrage-types.js').Operacion[]}
  */
 export function parseOperations(rawOperations) {
-  return rawOperations
+  const startTime = performance.now();
+  let symbolParseTime = 0;
+  let instrumentDetailsTime = 0;
+  
+  // Cache instrument details to avoid repeated lookups
+  const detailsCache = new Map();
+  const getCachedInstrumentDetails = (key) => {
+    if (!detailsCache.has(key)) {
+      detailsCache.set(key, getInstrumentDetails(key));
+    }
+    return detailsCache.get(key);
+  };
+  
+  const result = rawOperations
     .map((raw) => {
       try {
         // Extract instrument, venue, and plazo from symbol
+        const symbolStart = performance.now();
         const symbolStr = raw.symbol || raw.instrumento || '';
         const { instrument, venue, isCaucion } = parseSymbol(symbolStr);
+        symbolParseTime += performance.now() - symbolStart;
         
         // Skip cauciones - they'll be parsed separately
         if (isCaucion) {
@@ -330,7 +345,12 @@ export function parseOperations(rawOperations) {
         }
         
     // Fetch instrument metadata to normalize price using PriceConversionFactor
-    const instrumentDetails = raw.instrumentDetails || getInstrumentDetails(symbolStr) || getInstrumentDetails(instrument);
+    // Optimize: use cache and try symbolStr first, then instrument
+    const detailsStart = performance.now();
+    const instrumentDetails = raw.instrumentDetails || 
+                             getCachedInstrumentDetails(symbolStr) || 
+                             (symbolStr !== instrument ? getCachedInstrumentDetails(instrument) : null);
+    instrumentDetailsTime += performance.now() - detailsStart;
         const priceConversionFactor = instrumentDetails?.priceConversionFactor ?? 1;
         const contractMultiplier = instrumentDetails?.contractMultiplier ?? 1;
 
@@ -372,6 +392,19 @@ export function parseOperations(rawOperations) {
       }
     })
     .filter((op) => op !== null && op.cantidad > 0 && op.precio > 0);
+  
+  const endTime = performance.now();
+  const totalTime = endTime - startTime;
+  
+  if (totalTime > 100) {
+    console.warn(`[parseOperations] Slow parsing: ${totalTime.toFixed(2)}ms for ${rawOperations.length} operations`, {
+      symbolParseTime: symbolParseTime.toFixed(2) + 'ms',
+      instrumentDetailsTime: instrumentDetailsTime.toFixed(2) + 'ms',
+      resultCount: result.length
+    });
+  }
+  
+  return result;
 }
 
 /**
