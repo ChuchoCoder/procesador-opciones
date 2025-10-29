@@ -396,7 +396,7 @@ function getPnLTotalBreakdown(row) {
 }
 
 /**
- * Render pattern as pill badges (CI/24)
+ * Render pattern as pill badges (CI/24) with buy/sell indicators
  * @param {string} patron - Pattern identifier (e.g., 'VentaCI_Compra24h')
  * @returns {JSX.Element}
  */
@@ -404,17 +404,17 @@ function renderPatternPills(patron) {
   if (patron === PATTERNS.VENTA_CI_COMPRA_24H) {
     return (
       <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center' }}>
-        <Chip label="CI" size="small" color="error" sx={{ fontSize: '0.7rem', height: 20 }} />
+        <Chip label="-CI" size="small" color="error" sx={{ fontSize: '0.7rem', height: 20 }} />
         <Typography variant="caption" sx={{ fontSize: '0.7rem' }}>→</Typography>
-        <Chip label="24" size="small" color="success" sx={{ fontSize: '0.7rem', height: 20 }} />
+        <Chip label="+24h" size="small" color="success" sx={{ fontSize: '0.7rem', height: 20 }} />
       </Box>
     );
   } else if (patron === PATTERNS.COMPRA_CI_VENTA_24H) {
     return (
       <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center' }}>
-        <Chip label="CI" size="small" color="success" sx={{ fontSize: '0.7rem', height: 20 }} />
+        <Chip label="+CI" size="small" color="success" sx={{ fontSize: '0.7rem', height: 20 }} />
         <Typography variant="caption" sx={{ fontSize: '0.7rem' }}>→</Typography>
-        <Chip label="24" size="small" color="error" sx={{ fontSize: '0.7rem', height: 20 }} />
+        <Chip label="-24h" size="small" color="error" sx={{ fontSize: '0.7rem', height: 20 }} />
       </Box>
     );
   }
