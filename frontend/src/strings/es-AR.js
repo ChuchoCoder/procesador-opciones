@@ -10,6 +10,8 @@ const strings = {
     broker: 'Broker',
     settingsGeneral: 'Instrumentos',
     settingsFees: 'Comisiones',
+    mercado: 'Mercado',
+    acciones: 'Acciones',
   },
   processor: {
     filters: {

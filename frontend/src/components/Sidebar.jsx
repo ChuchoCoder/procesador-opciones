@@ -27,6 +27,7 @@ import SyncIcon from '@mui/icons-material/Sync';
 import LogoutIcon from '@mui/icons-material/Logout';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import ShowChartIcon from '@mui/icons-material/ShowChart';
 import { NavLink, useLocation } from 'react-router-dom';
 
 const DRAWER_WIDTH = 240;
@@ -68,6 +69,18 @@ const Sidebar = ({ strings, routes, brokerStatus, onBrokerLogout }) => {
         path: routes.processor,
         label: strings.navigation.processor,
         icon: <PlayCircleOutlineIcon />,
+      },
+      {
+        key: 'mercado',
+        label: strings.navigation.mercado,
+        icon: <ShowChartIcon />,
+        children: [
+          {
+            key: 'acciones',
+            path: routes.acciones,
+            label: strings.navigation.acciones,
+          },
+        ],
       },
       {
         key: 'settings',

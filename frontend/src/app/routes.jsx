@@ -5,6 +5,8 @@ export const ROUTES = {
   settingsPrefixes: '/configuracion/prefijos',
   settingsExpirations: '/configuracion/vencimientos',
   settingsBroker: '/configuracion/broker',
+  mercado: '/mercado',
+  acciones: '/mercado/acciones',
 };
 
 export const APP_ROUTE_SEGMENTS = [

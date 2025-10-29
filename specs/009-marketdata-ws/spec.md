@@ -218,3 +218,85 @@ es posible indicar qué tipo de market data se quiere recibir, esto normalmente 
 | ACP     | AUCTION PRICE                | Precio de cierre del día corriente                          |
 
 Tanto el Entry EV como NV solo van a devolver información en el caso de que se utilice para un instrumento de ByMA, para consultar el Volumen de un instrumento MATBA ROFEX deberían incluír el Entry TV.
+
+### MarketData en tiempo real a través de REST
+
+#### HTTP request
+
+GET https://api.remarkets.primary.com.ar/rest/marketdata/get
+
+#### Parámetros
+
+- marketId (String): Identificador de Ejecución, ejemplo: T3567006 El id del Mercado al que pertenece el instrumento sobre el que se pide info.
+   Valores permitidos:
+      - ROFX
+   Valido para MD de MATBA ROFEX y mercados externos.
+- symbol (String) El símbolo del instrumento. Ejemplo: DLR/DIC23- para futuro de dólar vencimiento Diciembre 202023.
+- entries (List): Es una lista separada por comas que indican la información solicitada sobre ese contrato.
+   Valores permitidos:
+      - BI: Bid
+      - OF: Offer
+      - LA: Last, último precio operado
+      - OP: Open,  precio de apertura
+      - CL: Close, precio de cierre
+      - SE: Settlement
+      - OI: Open Interest
+      - ACP: Precio de cierre del día de la fecha para instrumentos externos a MATBA ROFEX
+   Ejemplo: BI,OF,LA,OP,CL,SE,OI depth Integer Parámetro opcional que indica la profundidad del book que se desea recibir en la market data. Por defecto es 1.
+
+#### Ejemplo
+
+Http Request `https://api.remarkets.primary.com.ar/rest/marketdata/get?marketId=ROFX&symbol=DLR/DIC23&entries=BI,OF,LA,OP,CL,SE,OI&depth=3`
+
+#### Respuesta
+
+```json
+{
+   "status":"OK",
+   "marketData":{
+      "SE":{
+         "price":180.3,
+         "size":null,
+         "date":1669852800000
+      },
+      "LA":{
+         "price":179.85,
+         "size":4,
+         "date":1669995044232
+      },
+      "OI":{
+         "price":null,
+         "size":217596,
+         "date":1664150400000
+      },
+      "OF":[
+         {
+            "price":179.8,
+            "size":1000
+         },
+         {
+            "price":180.35,
+            "size":1000
+         }
+      ],
+      "OP":180.35,
+      "CL":{
+         "price":180.35,
+         "size":null,
+         "date":1669852800000
+      },
+      "BI":[
+         {
+            "price":179.75,
+            "size":275
+         },
+         {
+            "price":178.95,
+            "size":514
+         }
+      ]
+   },
+   "depth":2,
+   "aggregated":true
+}
+```

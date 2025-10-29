@@ -5,6 +5,29 @@ import { createDevLogger } from '../logging';
 
 const logger = createDevLogger('marketdata-client');
 
+// WebSocket Proxy URL configuration (separate from REST API URL)
+// Use environment variable if available, otherwise fallback to localhost
+let WS_PROXY_URL = import.meta.env.VITE_WS_PROXY_URL || 'ws://localhost:8080';
+
+/**
+ * Set the WebSocket proxy URL (separate from REST API)
+ * @param {string} url - WebSocket proxy URL (e.g., 'ws://localhost:8080' or 'wss://proxy.example.com')
+ */
+export function setWebSocketProxyUrl(url) {
+  if (typeof url === 'string' && url.trim()) {
+    WS_PROXY_URL = url.trim();
+    console.log('[jsRofex] WebSocket Proxy URL set to:', WS_PROXY_URL);
+  }
+}
+
+/**
+ * Get the current WebSocket proxy URL
+ * @returns {string} Current WebSocket proxy URL
+ */
+export function getWebSocketProxyUrl() {
+  return WS_PROXY_URL;
+}
+
 /**
  * Lightweight JsRofexClient skeleton.
  * Exposes the API surface described in quickstart.md and tasks.md.
@@ -25,6 +48,24 @@ export class JsRofexClient {
       timeoutId: null,
       token: null,
     };
+  }
+
+  /**
+   * Generate a UUID v4 for connection identification
+   * @private
+   * @returns {string} UUID string
+   */
+  _generateConnectionId() {
+    // Simple UUID v4 generation for browser environments
+    if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+      return crypto.randomUUID();
+    }
+    // Fallback for older browsers
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+      const r = Math.random() * 16 | 0;
+      const v = c === 'x' ? r : (r & 0x3 | 0x8);
+      return v.toString(16);
+    });
   }
 
   on(event, handler) {
@@ -51,9 +92,15 @@ export class JsRofexClient {
     this._emit('connection', { state: 'connecting', msg: marketdataStrings.connection.connecting });
     logger.log(marketdataStrings.connection.connecting);
 
-    // Prefer header-based auth if available in environment, otherwise use query param as per research.md
-    const baseUrl = this._config.url || 'wss://example-broker/ws';
-    const url = token ? `${baseUrl}?token=${encodeURIComponent(token)}` : baseUrl;
+    // Browser WebSocket doesn't support custom headers, so we use a proxy
+    // The proxy adds X-Auth-Token header and expects token as query parameter
+    // Use explicit config.url if provided, otherwise use global WS_PROXY_URL
+    const baseUrl = this._config.url || getWebSocketProxyUrl();
+    
+    // Build URL with token query parameter (expected by proxy)
+    const url = token 
+      ? `${baseUrl}?token=${encodeURIComponent(token)}` 
+      : baseUrl;
 
     // Log host only; never log tokens or full URL containing token
     try {
@@ -88,8 +135,17 @@ export class JsRofexClient {
         });
         this._ws.addEventListener('error', (err) => {
           this.state.connectionState = 'error';
-          this._emit('connection', { state: 'error', msg: marketdataStrings.errors.websocket, err });
-          logger.warn(marketdataStrings.errors.websocket, { err: String(err && err.message ? err.message : err) });
+          // Log more details about the error
+          const errorDetails = {
+            type: err.type,
+            target: err.target ? {
+              url: err.target.url,
+              readyState: err.target.readyState,
+              protocol: err.target.protocol,
+            } : null,
+          };
+          this._emit('connection', { state: 'error', msg: marketdataStrings.errors.websocket, err, errorDetails });
+          logger.warn(marketdataStrings.errors.websocket, { err: String(err && err.message ? err.message : err), details: errorDetails });
         });
         this._ws.addEventListener('message', (ev) => {
           let raw;
@@ -236,15 +292,16 @@ export default defaultClient;
 // Browser-compatible (no Node.js dependencies)
 // Based on jsRofex REST API documentation
 
-// Base URL configuration
-let BASE_URL = 'https://api.remarkets.primary.com.ar';
+// Base URL configuration (REST API only - WebSocket URL configured separately above)
+// Use environment variable if available, otherwise fallback to remarkets
+let BASE_URL = import.meta.env.VITE_REST_API_URL || 'https://api.remarkets.primary.com.ar';
 let currentToken = null;
 let tokenExpiry = null;
 // Reference tokenExpiry to avoid ESLint "assigned but never used" warning (it's read by other helpers)
 void tokenExpiry;
 
 /**
- * Set the base URL for API requests
+ * Set the base URL for API requests (REST API)
  * @param {string} url - Base URL for the broker API
  */
 export function setBaseUrl(url) {

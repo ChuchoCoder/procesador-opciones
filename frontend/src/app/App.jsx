@@ -5,6 +5,7 @@ import { Navigate, Outlet, Route, Routes } from 'react-router-dom';
 
 import { ProcessorScreen } from '../components/Processor/index.js';
 import { SettingsScreen, BrokerFeesScreen } from '../components/Processor/Settings/index.js';
+import { AccionesPage } from '../components/Acciones/index.js';
 import Sidebar from '../components/Sidebar.jsx';
 import { useStrings } from '../strings/index.js';
 import { useConfig } from '../state/index.js';
@@ -48,6 +49,7 @@ const App = () => {
         >
           <Routes>
             <Route path={ROUTES.processor} element={<ProcessorScreen />} />
+            <Route path={ROUTES.acciones} element={<AccionesPage />} />
             <Route path={ROUTES.settings} element={<Outlet />}>
               <Route index element={<SettingsScreen />} />
               <Route path="comisiones" element={<BrokerFeesScreen />} />

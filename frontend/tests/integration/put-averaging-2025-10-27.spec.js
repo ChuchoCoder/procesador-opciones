@@ -38,7 +38,7 @@ describe('Broker JSON -> Averaged PUTs (2025-10-27)', () => {
 
   averagedPuts = (result.views?.averaged?.puts?.operations) || [];
   // helpful debug output when tests fail
-  // eslint-disable-next-line no-console
+   
   console.log('DEBUG averagedPuts:', JSON.stringify(averagedPuts, null, 2));
   }, TEST_TIMEOUT);
 

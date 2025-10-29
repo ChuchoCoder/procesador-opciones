@@ -1,0 +1,25 @@
+services:
+  - type: web
+    name: ws-proxy-cocos
+    env: node
+    plan: free
+    buildCommand: npm ci --production
+    startCommand: node ws-proxy.js
+    
+    # Health check for Render to keep service healthy
+    healthCheckPath: /health
+    
+    # Environment variables
+    envVars:
+      - key: NODE_ENV
+        value: production
+      
+      - key: TZ
+        value: America/Argentina/Buenos_Aires
+      
+      - key: PRIMARY_WS_URL
+        value: wss://api.cocos.xoms.com.ar
+      
+      # Add your frontend domain here
+      - key: ALLOWED_ORIGINS
+        value: https://chuchocoder.github.io,http://localhost:5173,http://localhost:5174,http://localhost:5175

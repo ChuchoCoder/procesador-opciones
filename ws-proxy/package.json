@@ -1,0 +1,29 @@
+{
+  "name": "ws-proxy-cocos",
+  "version": "1.0.0",
+  "description": "WebSocket proxy for Cocos/Primary API - adds X-Auth-Token header support for browser clients",
+  "main": "ws-proxy.js",
+  "scripts": {
+    "start": "node ws-proxy.js",
+    "dev": "nodemon ws-proxy.js"
+  },
+  "keywords": [
+    "websocket",
+    "proxy",
+    "cocos",
+    "primary",
+    "market-data"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "dotenv": "^17.2.3",
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
