@@ -58,6 +58,53 @@ function getPnLColor(value) {
 }
 
 /**
+ * Format price value
+ * @param {number} value
+ * @returns {string}
+ */
+function formatPrice(value) {
+  if (!Number.isFinite(value)) return '—';
+  return new Intl.NumberFormat('es-AR', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 4,
+  }).format(value);
+}
+
+/**
+ * Get weighted average price for CI side
+ * @param {Object} row
+ * @returns {number|null}
+ */
+function getCIPrecio(row) {
+  // VentaCI_Compra24h pattern: use ventaCI_breakdown
+  if (row.ventaCI_breakdown?.avgPrice) {
+    return row.ventaCI_breakdown.avgPrice;
+  }
+  // CompraCI_Venta24h pattern: use compraCI_breakdown
+  if (row.compraCI_breakdown?.avgPrice) {
+    return row.compraCI_breakdown.avgPrice;
+  }
+  return null;
+}
+
+/**
+ * Get weighted average price for 24h side
+ * @param {Object} row
+ * @returns {number|null}
+ */
+function get24hPrecio(row) {
+  // VentaCI_Compra24h pattern: use compra24h_breakdown
+  if (row.compra24h_breakdown?.avgPrice) {
+    return row.compra24h_breakdown.avgPrice;
+  }
+  // CompraCI_Venta24h pattern: use venta24h_breakdown
+  if (row.venta24h_breakdown?.avgPrice) {
+    return row.venta24h_breakdown.avgPrice;
+  }
+  return null;
+}
+
+/**
  * Generate P&L Trade breakdown tooltip
  * Uses pre-calculated breakdown values from P&L service to ensure consistency
  * @param {Object} row - Row data with operations and breakdown
@@ -429,6 +476,8 @@ const ArbitrageRow = memo(function ArbitrageRow({ row, strings, expandedRows, on
           {renderPatternPills(row.patron)}
         </TableCell>
         <TableCell align="right">{row.cantidad.toLocaleString('es-AR')}</TableCell>
+        <TableCell align="right">{formatPrice(getCIPrecio(row))}</TableCell>
+        <TableCell align="right">{formatPrice(get24hPrecio(row))}</TableCell>
         <TableCell align="right">
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 0.5 }}>
             <Typography
@@ -483,7 +532,7 @@ const ArbitrageRow = memo(function ArbitrageRow({ row, strings, expandedRows, on
 
       {/* Expandable details row - lazy loaded */}
       <TableRow>
-        <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={9}>
+        <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={11}>
           <Collapse in={isExpanded} timeout="auto" unmountOnExit>
             {isExpanded && (
               <Suspense fallback={
@@ -713,6 +762,12 @@ const ArbitrageTable = ({ data = [], strings = {}, onSort }) => {
               >
                 {columnsStrings.cantidad || 'Cantidad'}
               </TableSortLabel>
+            </TableCell>
+            <TableCell align="right">
+              {columnsStrings.precioCi || 'Precio CI'}
+            </TableCell>
+            <TableCell align="right">
+              {columnsStrings.precio24h || 'Precio 24h'}
             </TableCell>
             <TableCell align="right">
               <TableSortLabel
