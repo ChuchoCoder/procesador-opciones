@@ -1,5 +1,5 @@
 /* eslint-env node, jest */
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeAll } from 'vitest';
 import { readFile } from 'fs/promises';
 import { resolve } from 'path';
 import { fileURLToPath } from 'url';
@@ -38,7 +38,7 @@ describe('Broker JSON -> Averaged PUTs (2025-10-27)', () => {
 
   averagedPuts = (result.views?.averaged?.puts?.operations) || [];
   // helpful debug output when tests fail
-  // eslint-disable-next-line no-console
+   
   console.log('DEBUG averagedPuts:', JSON.stringify(averagedPuts, null, 2));
   }, TEST_TIMEOUT);
 

@@ -513,7 +513,7 @@ const ProcessorScreen = () => {
   const [activePreview, setActivePreview] = useState(CLIPBOARD_SCOPES.CALLS);
   const [activeOperationType, setActiveOperationType] = useState(OPERATION_TYPES.OPCIONES);
   const [selectedGroupIds, setSelectedGroupIds] = useState(() => createInitialGroupSelections());
-  const selectedGroupId = selectedGroupIds[activeOperationType] ?? [];
+  const selectedGroupId = useMemo(() => selectedGroupIds[activeOperationType] ?? [], [selectedGroupIds, activeOperationType]);
   const scopedDataCacheRef = useRef(new Map());
   const sessionRestoredRef = useRef(false);
   const [brokerLoginError, setBrokerLoginError] = useState(null);
@@ -1137,7 +1137,7 @@ const ProcessorScreen = () => {
       const ops = Array.isArray(report?.operations) ? report.operations : [];
       const parsed = parseCauciones(ops);
       return calculateAvgTNAByCurrency(parsed || []);
-    } catch (e) {
+    } catch {
       return {};
     }
   }, [report?.operations]);
@@ -1408,7 +1408,7 @@ const ProcessorScreen = () => {
 
   const callsOperations = currentView?.calls?.operations ?? [];
   const putsOperations = currentView?.puts?.operations ?? [];
-  const opcionesSelectedGroupId = selectedGroupIds[OPERATION_TYPES.OPCIONES] ?? [];
+  const opcionesSelectedGroupId = useMemo(() => selectedGroupIds[OPERATION_TYPES.OPCIONES] ?? [], [selectedGroupIds]);
 
   const handleGroupChange = useCallback((nextValue) => {
     // nextValue should be an array of selected IDs

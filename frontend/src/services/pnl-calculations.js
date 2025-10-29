@@ -50,7 +50,7 @@ export async function calculatePnL(grupo) {
  * @returns {import('./arbitrage-types.js').ResultadoPatron|null}
  */
 async function calculatePatronVentaCICompra24h(grupo) {
-  const { ventasCI, compras24h, cauciones, plazo } = grupo;
+  const { ventasCI, compras24h, plazo } = grupo;
 
   if (ventasCI.length === 0 && compras24h.length === 0) {
     return null;
@@ -215,7 +215,7 @@ async function calculatePatronVentaCICompra24h(grupo) {
  * @returns {import('./arbitrage-types.js').ResultadoPatron|null}
  */
 async function calculatePatronCompraCIVenta24h(grupo) {
-  const { comprasCI, ventas24h, cauciones, plazo } = grupo;
+  const { comprasCI, ventas24h, plazo } = grupo;
 
   if (comprasCI.length === 0 && ventas24h.length === 0) {
     return null;
@@ -444,6 +444,7 @@ function calculateWeightedAverageCommissions(operations) {
  * @param {string} tipo - 'colocadora' or 'tomadora'
  * @returns {import('./arbitrage-types.js').Caucion[]}
  */
+// eslint-disable-next-line no-unused-vars
 function filterCaucionesByType(cauciones, tipo) {
   return cauciones.filter((c) => c.tipo === tipo);
 }
@@ -458,6 +459,7 @@ function filterCaucionesByType(cauciones, tipo) {
  * @param {number} plazo - Settlement days
  * @returns {number}
  */
+// eslint-disable-next-line no-unused-vars
 function calculateCaucionPnL(cauciones, matchedQty, plazo) {
   if (cauciones.length === 0) return 0;
 
