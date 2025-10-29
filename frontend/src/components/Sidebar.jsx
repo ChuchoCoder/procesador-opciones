@@ -22,7 +22,6 @@ import SettingsIcon from '@mui/icons-material/Settings';
 import MenuIcon from '@mui/icons-material/Menu';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import CloudDoneIcon from '@mui/icons-material/CloudDone';
-import CloudOffIcon from '@mui/icons-material/CloudOff';
 import SyncIcon from '@mui/icons-material/Sync';
 import LogoutIcon from '@mui/icons-material/Logout';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
@@ -31,6 +30,7 @@ import { NavLink, useLocation } from 'react-router-dom';
 
 const DRAWER_WIDTH = 240;
 const DRAWER_WIDTH_COLLAPSED = 64;
+const SUBMENU_BORDER_COLOR = '#9c27b0';
 
 const Sidebar = ({ strings, routes, brokerStatus, onBrokerLogout }) => {
   const location = useLocation();
@@ -128,9 +128,7 @@ const Sidebar = ({ strings, routes, brokerStatus, onBrokerLogout }) => {
 
   const handleLogout = () => {
     handleBrokerPopoverClose();
-    if (onBrokerLogout) {
-      onBrokerLogout();
-    }
+    onBrokerLogout?.();
   };
 
   const handleSubmenuToggle = (key) => {
@@ -300,45 +298,37 @@ const Sidebar = ({ strings, routes, brokerStatus, onBrokerLogout }) => {
                               sx={(theme) => ({
                                 minHeight: 36,
                                 justifyContent: open ? 'flex-start' : 'center',
-                                pl: open ? 7 : 2.5,
-                                pr: open ? 2 : 0,
-                                mx: open ? 1 : 0,
+                                pl: open ? 3.5 : 2.5,
+                                pr: open ? 2.5 : 0,
+                                ml: open ? 0.5 : 0,
+                                mr: open ? 0.5 : 0,
                                 borderRadius: 1,
-                                alignItems: 'center',
-                                transition: 'background-color 0.2s ease, border-color 0.2s ease',
-                                color: childIsActive
-                                  ? theme.palette.text.primary
-                                  : theme.palette.text.secondary,
-                                borderLeft: open
-                                  ? `3px solid ${childIsActive ? theme.palette.primary.main : 'transparent'}`
-                                  : 0,
+                                transition: 'background-color 0.2s ease, box-shadow 0.2s ease',
+                                color: childIsActive ? theme.palette.text.primary : theme.palette.text.secondary,
+                                border: 'none',
+                                borderLeft: 'none !important',
+                                boxShadow: open && childIsActive ? `inset 3px 0 0 0 ${SUBMENU_BORDER_COLOR}` : 'none',
                                 '&:hover': {
                                   backgroundColor: theme.palette.action.hover,
                                 },
                                 '& .MuiListItemText-primary': {
                                   fontSize: theme.typography.body2.fontSize,
+                                  fontWeight: childIsActive ? 600 : 500,
                                 },
                                 '&.Mui-selected': {
                                   backgroundColor: theme.palette.action.selected,
                                   color: theme.palette.text.primary,
+                                  pl: open ? '28px !important' : '20px !important',
+                                  borderLeft: 'none !important',
+                                  boxShadow: open ? `inset 3px 0 0 0 ${SUBMENU_BORDER_COLOR} !important` : 'none',
                                   '&:hover': {
                                     backgroundColor: theme.palette.action.selected,
-                                  },
-                                  '& .MuiListItemText-primary': {
-                                    fontWeight: 600,
                                   },
                                 },
                               })}
                               data-testid={`sidebar-nav-${child.key}`}
                             >
-                              {open && (
-                                <ListItemText
-                                  primary={child.label}
-                                  primaryTypographyProps={{
-                                    fontWeight: childIsActive ? 600 : 500,
-                                  }}
-                                />
-                              )}
+                              {open && <ListItemText primary={child.label} />}
                             </ListItemButton>
                           </ListItem>
                         );
@@ -402,14 +392,8 @@ const Sidebar = ({ strings, routes, brokerStatus, onBrokerLogout }) => {
               open={Boolean(brokerPopoverAnchor)}
               anchorEl={brokerPopoverAnchor}
               onClose={handleBrokerPopoverClose}
-              anchorOrigin={{
-                vertical: 'top',
-                horizontal: 'right',
-              }}
-              transformOrigin={{
-                vertical: 'bottom',
-                horizontal: 'left',
-              }}
+              anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+              transformOrigin={{ vertical: 'bottom', horizontal: 'left' }}
             >
               <Box sx={{ p: 2, minWidth: 220 }}>
                 <Stack spacing={1.5}>
@@ -498,20 +482,11 @@ const Sidebar = ({ strings, routes, brokerStatus, onBrokerLogout }) => {
         open={Boolean(submenuPopoverAnchor)}
         anchorEl={submenuPopoverAnchor}
         onClose={handleSubmenuPopoverClose}
-        anchorOrigin={{
-          vertical: 'top',
-          horizontal: 'right',
-        }}
-        transformOrigin={{
-          vertical: 'top',
-          horizontal: 'left',
-        }}
+        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+        transformOrigin={{ vertical: 'top', horizontal: 'left' }}
         slotProps={{
           paper: {
-            sx: {
-              ml: 1,
-              minWidth: 200,
-            },
+            sx: { ml: 1, minWidth: 200 },
           },
         }}
       >
@@ -528,9 +503,7 @@ const Sidebar = ({ strings, routes, brokerStatus, onBrokerLogout }) => {
                   sx={(theme) => ({
                     minHeight: 40,
                     px: 2,
-                    color: childIsActive
-                      ? theme.palette.primary.main
-                      : theme.palette.text.primary,
+                    color: childIsActive ? theme.palette.primary.main : theme.palette.text.primary,
                     '&.Mui-selected': {
                       backgroundColor: theme.palette.action.selected,
                       '&:hover': {
