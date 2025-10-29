@@ -1,15 +1,12 @@
 /* global global */
 /* eslint-env node, jest */
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import {
   getAllSymbols,
   loadSymbolConfig,
   saveSymbolConfig,
   deleteSymbolConfig,
   symbolExists,
-  loadRepoFeeDefaults,
-  getRepoFeeConfig,
-  setRepoFeeConfig,
 } from '../../src/services/storage-settings.js';
 
 // Mock localStorage
