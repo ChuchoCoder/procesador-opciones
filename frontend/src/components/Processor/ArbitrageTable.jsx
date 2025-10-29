@@ -3,7 +3,7 @@
  * Implements User Story 1, 2, 3 from specs/006-arbitraje-de-plazos
  */
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, lazy, Suspense, memo } from 'react';
 import Box from '@mui/material/Box';
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
@@ -21,10 +21,13 @@ import TableSortLabel from '@mui/material/TableSortLabel';
 import Chip from '@mui/material/Chip';
 import Tooltip from '@mui/material/Tooltip';
 import InfoIcon from '@mui/icons-material/Info';
+import CircularProgress from '@mui/material/CircularProgress';
 
 import { formatCurrency } from '../../services/pnl-calculations.js';
 import { PATTERNS, ESTADOS, LADOS } from '../../services/arbitrage-types.js';
-import ArbitrageOperationsDetail from './ArbitrageOperationsDetail.jsx';
+
+// Lazy load the operations detail component
+const ArbitrageOperationsDetail = lazy(() => import('./ArbitrageOperationsDetail.jsx'));
 
 const tooltipSlotProps = {
   tooltip: {
@@ -394,8 +397,9 @@ function getEstadoColor(estado) {
 
 /**
  * Row component with expandable details
+ * Memoized to prevent unnecessary re-renders
  */
-function ArbitrageRow({ row, strings, expandedRows, onToggleRow }) {
+const ArbitrageRow = memo(function ArbitrageRow({ row, strings, expandedRows, onToggleRow }) {
   const isExpanded = expandedRows.has(row.id);
   const arbitrageStrings = strings?.arbitrage || {};
   const detailsStrings = arbitrageStrings?.details || {};
@@ -477,76 +481,86 @@ function ArbitrageRow({ row, strings, expandedRows, onToggleRow }) {
         </TableCell>
       </TableRow>
 
-      {/* Expandable details row */}
+      {/* Expandable details row - lazy loaded */}
       <TableRow>
         <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={9}>
           <Collapse in={isExpanded} timeout="auto" unmountOnExit>
-            <Box sx={{ margin: 2 }}>
-              <Typography variant="subtitle2" gutterBottom component="div" sx={{ fontWeight: 600 }}>
-                {detailsStrings.title || 'Detalles de cálculo'}
-              </Typography>
-
-              {/* Operations details - side-by-side tables */}
-              {row.operations && row.operations.length > 0 && (
-                <Box sx={{ mb: 2 }}>
-                  <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, display: 'block', mb: 1 }}>
-                    {detailsStrings.operations || 'Operaciones'}
-                  </Typography>
-                  <ArbitrageOperationsDetail operations={row.operations} patron={row.patron} />
+            {isExpanded && (
+              <Suspense fallback={
+                <Box sx={{ margin: 2, display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 100 }}>
+                  <CircularProgress size={24} />
                 </Box>
-              )}
-
-              {/* Cauciones table */}
-              {row.cauciones && row.cauciones.length > 0 && (
-                <Box>
-                  <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>
-                    {detailsStrings.cauciones || 'Cauciones'}
+              }>
+                <Box sx={{ margin: 2 }}>
+                  <Typography variant="subtitle2" gutterBottom component="div" sx={{ fontWeight: 600 }}>
+                    {detailsStrings.title || 'Detalles de cálculo'}
                   </Typography>
-                  <Table size="small" sx={{ mt: 1 }} aria-label="tabla de cauciones detalladas">
-                    <TableHead>
-                      <TableRow>
-                        <TableCell>{detailsStrings.operationId || 'ID'}</TableCell>
-                        <TableCell>{detailsStrings.caucionTipo || 'Tipo'}</TableCell>
-                        <TableCell align="right">{detailsStrings.caucionMonto || 'Monto'}</TableCell>
-                        <TableCell align="right">{detailsStrings.caucionTasa || 'Tasa'}</TableCell>
-                        <TableCell align="right">{detailsStrings.caucionTenor || 'Tenor (días)'}</TableCell>
-                        <TableCell align="right">{detailsStrings.caucionInteres || 'Interés'}</TableCell>
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {row.cauciones.map((cau, index) => (
-                        <TableRow key={`${cau.id}-${index}`}>
-                          <TableCell>{cau.id}</TableCell>
-                          <TableCell>{cau.tipo}</TableCell>
-                          <TableCell align="right">{formatCurrency(cau.monto)}</TableCell>
-                          <TableCell align="right">{cau.tasa}%</TableCell>
-                          <TableCell align="right">{cau.tenorDias}</TableCell>
-                          <TableCell align="right">{formatCurrency(cau.interes)}</TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+
+                  {/* Operations details - side-by-side tables */}
+                  {row.operations && row.operations.length > 0 && (
+                    <Box sx={{ mb: 2 }}>
+                      <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, display: 'block', mb: 1 }}>
+                        {detailsStrings.operations || 'Operaciones'}
+                      </Typography>
+                      <ArbitrageOperationsDetail operations={row.operations} patron={row.patron} />
+                    </Box>
+                  )}
+
+                  {/* Cauciones table */}
+                  {row.cauciones && row.cauciones.length > 0 && (
+                    <Box>
+                      <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>
+                        {detailsStrings.cauciones || 'Cauciones'}
+                      </Typography>
+                      <Table size="small" sx={{ mt: 1 }} aria-label="tabla de cauciones detalladas">
+                        <TableHead>
+                          <TableRow>
+                            <TableCell>{detailsStrings.operationId || 'ID'}</TableCell>
+                            <TableCell>{detailsStrings.caucionTipo || 'Tipo'}</TableCell>
+                            <TableCell align="right">{detailsStrings.caucionMonto || 'Monto'}</TableCell>
+                            <TableCell align="right">{detailsStrings.caucionTasa || 'Tasa'}</TableCell>
+                            <TableCell align="right">{detailsStrings.caucionTenor || 'Tenor (días)'}</TableCell>
+                            <TableCell align="right">{detailsStrings.caucionInteres || 'Interés'}</TableCell>
+                          </TableRow>
+                        </TableHead>
+                        <TableBody>
+                          {row.cauciones.map((cau, index) => (
+                            <TableRow key={`${cau.id}-${index}`}>
+                              <TableCell>{cau.id}</TableCell>
+                              <TableCell>{cau.tipo}</TableCell>
+                              <TableCell align="right">{formatCurrency(cau.monto)}</TableCell>
+                              <TableCell align="right">{cau.tasa}%</TableCell>
+                              <TableCell align="right">{cau.tenorDias}</TableCell>
+                              <TableCell align="right">{formatCurrency(cau.interes)}</TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </Box>
+                  )}
+
+                  {(!row.operations || row.operations.length === 0) &&
+                    (!row.cauciones || row.cauciones.length === 0) && (
+                      <Typography variant="body2" color="text.secondary">
+                        {detailsStrings.noOperations || 'Sin operaciones'}
+                      </Typography>
+                    )}
                 </Box>
-              )}
-
-              {(!row.operations || row.operations.length === 0) &&
-                (!row.cauciones || row.cauciones.length === 0) && (
-                  <Typography variant="body2" color="text.secondary">
-                    {detailsStrings.noOperations || 'Sin operaciones'}
-                  </Typography>
-                )}
-            </Box>
+              </Suspense>
+            )}
           </Collapse>
         </TableCell>
       </TableRow>
     </>
   );
-}
+});
 
 /**
  * ArbitrageTable component
  */
 const ArbitrageTable = ({ data = [], strings = {}, onSort }) => {
+  const renderStartTime = performance.now();
+  
   const [expandedRows, setExpandedRows] = useState(new Set());
   const [orderBy, setOrderBy] = useState('pnl_total');
   const [order, setOrder] = useState('desc');
@@ -556,10 +570,11 @@ const ArbitrageTable = ({ data = [], strings = {}, onSort }) => {
 
   // Calculate totals from data
   const totals = useMemo(() => {
+    const calcStart = performance.now();
     if (!data || data.length === 0) {
       return { pnlTrade: 0, pnlCaucion: 0, pnlTotal: 0 };
     }
-    return data.reduce(
+    const result = data.reduce(
       (acc, row) => {
         acc.pnlTrade += row.pnl_trade || 0;
         acc.pnlCaucion += row.pnl_caucion || 0;
@@ -568,6 +583,11 @@ const ArbitrageTable = ({ data = [], strings = {}, onSort }) => {
       },
       { pnlTrade: 0, pnlCaucion: 0, pnlTotal: 0 }
     );
+    const calcEnd = performance.now();
+    if (calcEnd - calcStart > 5) {
+      console.warn(`[ArbitrageTable] Slow totals calculation: ${(calcEnd - calcStart).toFixed(2)}ms for ${data.length} rows`);
+    }
+    return result;
   }, [data]);
 
   const handleToggleRow = (rowId) => {
@@ -593,9 +613,10 @@ const ArbitrageTable = ({ data = [], strings = {}, onSort }) => {
   };
 
   const sortedData = useMemo(() => {
+    const sortStart = performance.now();
     if (!data) return [];
     
-    return [...data].sort((a, b) => {
+    const result = [...data].sort((a, b) => {
       // Always sort by Instrumento (asc) as primary
       const instrumentoCompare = (a.instrumento || '').localeCompare(b.instrumento || '');
       if (instrumentoCompare !== 0) return instrumentoCompare;
@@ -624,7 +645,21 @@ const ArbitrageTable = ({ data = [], strings = {}, onSort }) => {
       
       return 0;
     });
+    
+    const sortEnd = performance.now();
+    if (sortEnd - sortStart > 10) {
+      console.warn(`[ArbitrageTable] Slow sorting: ${(sortEnd - sortStart).toFixed(2)}ms for ${data.length} rows`);
+    }
+    
+    return result;
   }, [data, orderBy, order]);
+
+  // Log total render time
+  const renderEndTime = performance.now();
+  const renderDuration = renderEndTime - renderStartTime;
+  if (renderDuration > 50) {
+    console.warn(`[ArbitrageTable] Slow render: ${renderDuration.toFixed(2)}ms for ${data?.length || 0} rows`);
+  }
 
   if (!data || data.length === 0) {
     return (

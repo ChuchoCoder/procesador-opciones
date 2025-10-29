@@ -130,25 +130,44 @@ const ArbitrajesView = ({
         return;
       }
 
+      const prepareId = `prepare-${Date.now()}`;
+      console.time(`[ArbitrajesView] Total preparation time (${prepareId})`);
       setIsCalculating(true);
 
       // Allow UI to update first
       setTimeout(async () => {
         try {
+          const enrichOpsId = `enrich-ops-${Date.now()}`;
+          console.time(`[ArbitrajesView] Enrich operations (${enrichOpsId})`);
           // Enrich operations with fee calculations FIRST
           const enrichedOperations = await enrichArbitrageOperations(operations);
+          console.timeEnd(`[ArbitrajesView] Enrich operations (${enrichOpsId})`);
+          console.log('[ArbitrajesView] Enriched operations count:', enrichedOperations.length);
 
+          const parseOpsId = `parse-ops-${Date.now()}`;
+          console.time(`[ArbitrajesView] Parse operations (${parseOpsId})`);
           // Parse operations and cauciones using the service layer
           const parsedOperations = parseOperations(enrichedOperations);
-          const parsedCauciones = parseCauciones(enrichedOperations);
+          console.timeEnd(`[ArbitrajesView] Parse operations (${parseOpsId})`);
+          console.log('[ArbitrajesView] Parsed operations count:', parsedOperations.length);
 
+          const parseCaucId = `parse-cauc-${Date.now()}`;
+          console.time(`[ArbitrajesView] Parse cauciones (${parseCaucId})`);
+          const parsedCauciones = parseCauciones(enrichedOperations);
+          console.timeEnd(`[ArbitrajesView] Parse cauciones (${parseCaucId})`);
+          console.log('[ArbitrajesView] Parsed cauciones count:', parsedCauciones.length);
+
+          const enrichCaucId = `enrich-cauc-${Date.now()}`;
+          console.time(`[ArbitrajesView] Enrich cauciones (${enrichCaucId})`);
           // Enrich cauciones with fees
           const enrichedCauciones = await enrichCauciones(parsedCauciones);
+          console.timeEnd(`[ArbitrajesView] Enrich cauciones (${enrichCaucId})`);
 
           if (cancelled) return;
 
           setParsedOperationsState(parsedOperations);
           setEnrichedCaucionesState(enrichedCauciones || []);
+          console.timeEnd(`[ArbitrajesView] Total preparation time (${prepareId})`);
 
           // Debug sample
           try {
@@ -217,16 +236,25 @@ const ArbitrajesView = ({
       await new Promise((resolve) => setTimeout(resolve, 50));
 
       try {
+        const aggId = `agg-${Date.now()}`;
+        console.time(`[ArbitrajesView] Total aggregation & P&L time (${aggId})`);
         const jornada = new Date();
 
+        const aggByInstId = `agg-by-inst-${Date.now()}`;
+        console.time(`[ArbitrajesView] Aggregate by instrumento/plazo (${aggByInstId})`);
         // ALWAYS aggregate ALL operations to know which instruments have arbitrage data
         // The filtering by selectedGroupId will happen AFTER on the table rows
         const grupos = aggregateByInstrumentoPlazo(parsedOperationsState, enrichedCaucionesState, jornada, effectiveAvgTNAByCurrency);
         const allGrupos = Array.from(grupos.values());
+        console.timeEnd(`[ArbitrajesView] Aggregate by instrumento/plazo (${aggByInstId})`);
+        console.log('[ArbitrajesView] Total grupos:', allGrupos.length);
 
         // Calculate P&L for ALL instruments to build the complete availableInstruments set
         const allRows = [];
         const instrumentsWithResults = new Set();
+        
+        const calcPnlId = `calc-pnl-${Date.now()}`;
+        console.time(`[ArbitrajesView] Calculate P&L for all grupos (${calcPnlId})`);
         for (const grupo of allGrupos) {
           if (cancelled) break;
           const resultados = await calculatePnL(grupo);
@@ -239,9 +267,17 @@ const ArbitrajesView = ({
             }
           });
         }
+        console.timeEnd(`[ArbitrajesView] Calculate P&L for all grupos (${calcPnlId})`);
+        console.log('[ArbitrajesView] Total rows with results:', allRows.length);
 
+        const filterRowsId = `filter-rows-${Date.now()}`;
+        console.time(`[ArbitrajesView] Filter rows by selection (${filterRowsId})`);
         // Filter rows based on selectedGroupId for display
         const displayRows = filterRowsBySelection(allRows, selectedGroupId, groupOptions);
+        console.timeEnd(`[ArbitrajesView] Filter rows by selection (${filterRowsId})`);
+        console.log('[ArbitrajesView] Display rows after filtering:', displayRows.length);
+
+        console.timeEnd(`[ArbitrajesView] Total aggregation & P&L time (${aggId})`);
 
         if (!cancelled) {
           setTableData(displayRows);

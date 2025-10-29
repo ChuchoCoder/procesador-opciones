@@ -18,6 +18,7 @@ import { getRepoFeeConfig } from './fees/broker-fees-storage.js';
  * @returns {import('./arbitrage-types.js').ResultadoPatron[]}
  */
 export async function calculatePnL(grupo) {
+  const startTime = performance.now();
   const resultados = [];
 
   // Pattern 1: VentaCI → Compra24h
@@ -30,6 +31,14 @@ export async function calculatePnL(grupo) {
   const patron2 = await calculatePatronCompraCIVenta24h(grupo);
   if (patron2) {
     resultados.push(patron2);
+  }
+
+  const endTime = performance.now();
+  const duration = endTime - startTime;
+  
+  // Only log if it takes more than 10ms (potential performance issue)
+  if (duration > 10) {
+    console.warn(`[PnL] Slow calculation for ${grupo.instrumento}-${grupo.plazo}: ${duration.toFixed(2)}ms`);
   }
 
   return resultados;
