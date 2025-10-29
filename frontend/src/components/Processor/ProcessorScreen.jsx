@@ -1639,15 +1639,19 @@ const ProcessorScreen = () => {
           />
         );
 
-      case OPERATION_TYPES.ARBITRAJES:
+      case OPERATION_TYPES.ARBITRAJES: {
+        // For Arbitrajes, pass all operations (unfiltered) so the view can manage its own filtering
+        // This allows the filter UI to show all available instruments regardless of current selection
+        const allOperations = report?.operations || [];
         return (
           <ArbitrajesView
             {...commonProps}
             groupOptions={allGroupOptions}
-            operations={scopedData.filteredOperations || []}
+            operations={allOperations}
             avgTNAByCurrency={avgTNAByCurrency}
           />
         );
+      }
 
       default:
         return null;

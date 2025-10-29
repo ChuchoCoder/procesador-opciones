@@ -53,6 +53,42 @@ function transformToTableRow(grupo, resultado) {
   return row;
 }
 
+/**
+ * Filter rows based on selected group IDs
+ * Returns all rows if "All" is selected or no selection made
+ */
+function filterRowsBySelection(allRows, selectedGroupId, groupOptions) {
+  // Normalize selectedGroupId to array
+  const selectedIds = Array.isArray(selectedGroupId) 
+    ? selectedGroupId 
+    : selectedGroupId 
+      ? [selectedGroupId] 
+      : [];
+  
+  // Check if "All" is selected or no selection
+  const allSelected = selectedIds.length === 0 || 
+                      selectedIds.includes('__ALL__') ||
+                      selectedGroupId === '__ALL__';
+  
+  if (allSelected) {
+    return allRows;
+  }
+  
+  // Build set of selected instrument names from group options
+  const selectedInstruments = new Set();
+  selectedIds.forEach(id => {
+    const option = groupOptions?.find(opt => opt.id === id);
+    if (option?.label) {
+      selectedInstruments.add(option.label);
+    }
+  });
+  
+  // Filter rows by selected instruments
+  return selectedInstruments.size > 0
+    ? allRows.filter(row => selectedInstruments.has(row.instrumento))
+    : allRows;
+}
+
 const ArbitrajesView = ({
   operations = [],
   groupOptions,
@@ -63,11 +99,20 @@ const ArbitrajesView = ({
 }) => {
   // Show the spinner immediately if the parent passed operations already
   // (prevents a flash of "no data" before parsing starts).
-  const [isCalculating, setIsCalculating] = useState(() => Boolean(operations && operations.length > 0));
+  const [isCalculating, setIsCalculating] = useState(() => operations?.length > 0);
   const [tableData, setTableData] = useState([]);
+  // Track instruments that actually have arbitrage results (to filter groupOptions)
+  const [availableInstruments, setAvailableInstruments] = useState(new Set());
 
   const filterStrings = strings?.filters ?? {};
   const arbitrageStrings = strings?.arbitrage ?? {};
+
+  // Helper function to clear all state
+  const clearState = () => {
+    setTableData([]);
+    setAvailableInstruments(new Set());
+    setIsCalculating(false);
+  };
 
   // We'll split processing into two stages so we can memoize the avgTNAByCurrency
   // using React's useMemo hook. Stage 1: parse & enrich inputs and store in state.
@@ -81,8 +126,7 @@ const ArbitrajesView = ({
       if (!operations || operations.length === 0) {
         setParsedOperationsState([]);
         setEnrichedCaucionesState([]);
-        setTableData([]);
-        setIsCalculating(false);
+        clearState();
         return;
       }
 
@@ -126,8 +170,7 @@ const ArbitrajesView = ({
           console.error('ArbitrajesView prepare error', error);
           setParsedOperationsState([]);
           setEnrichedCaucionesState([]);
-          setTableData([]);
-          setIsCalculating(false);
+          clearState();
         }
       }, 100);
     };
@@ -162,43 +205,54 @@ const ArbitrajesView = ({
           // parsing/aggregation still in progress — keep spinner visible
           return;
         }
-
-        setTableData([]);
-        setIsCalculating(false);
+        clearState();
         return;
       }
 
-  setIsCalculating(true);
+      setIsCalculating(true);
 
-  // Allow the browser to paint the loading spinner before we run
-  // potentially CPU/IO-heavy aggregation and P&L calculations.
-  // A short timeout yields control to the event loop so the UI updates.
-  await new Promise((resolve) => setTimeout(resolve, 50));
+      // Allow the browser to paint the loading spinner before we run
+      // potentially CPU/IO-heavy aggregation and P&L calculations.
+      // A short timeout yields control to the event loop so the UI updates.
+      await new Promise((resolve) => setTimeout(resolve, 50));
 
-  try {
+      try {
         const jornada = new Date();
 
-  // Pass the precomputed mapping into the aggregator (prefer caller-provided mapping)
-  const grupos = aggregateByInstrumentoPlazo(parsedOperationsState, enrichedCaucionesState, jornada, effectiveAvgTNAByCurrency);
-        const filteredGrupos = Array.from(grupos.values());
+        // ALWAYS aggregate ALL operations to know which instruments have arbitrage data
+        // The filtering by selectedGroupId will happen AFTER on the table rows
+        const grupos = aggregateByInstrumentoPlazo(parsedOperationsState, enrichedCaucionesState, jornada, effectiveAvgTNAByCurrency);
+        const allGrupos = Array.from(grupos.values());
 
-        const rows = [];
-        for (const grupo of filteredGrupos) {
+        // Calculate P&L for ALL instruments to build the complete availableInstruments set
+        const allRows = [];
+        const instrumentsWithResults = new Set();
+        for (const grupo of allGrupos) {
           if (cancelled) break;
           const resultados = await calculatePnL(grupo);
           resultados.forEach((resultado) => {
             if (resultado.matchedQty > 0) {
               const row = transformToTableRow(grupo, resultado);
-              rows.push(row);
+              allRows.push(row);
+              // Track ALL instruments that have valid arbitrage results
+              instrumentsWithResults.add(grupo.instrumento);
             }
           });
         }
 
-        if (!cancelled) setTableData(rows);
+        // Filter rows based on selectedGroupId for display
+        const displayRows = filterRowsBySelection(allRows, selectedGroupId, groupOptions);
+
+        if (!cancelled) {
+          setTableData(displayRows);
+          setAvailableInstruments(instrumentsWithResults);
+        }
       } catch (error) {
         console.error('Error calculating arbitrage P&L:', error);
         console.error('Error stack:', error.stack);
-        if (!cancelled) setTableData([]);
+        if (!cancelled) {
+          clearState();
+        }
       } finally {
         if (!cancelled) setIsCalculating(false);
       }
@@ -209,15 +263,33 @@ const ArbitrajesView = ({
     return () => {
       cancelled = true;
     };
-  }, [parsedOperationsState, enrichedCaucionesState, avgTNAByCurrencyMemo, avgTNAProp]);
+    // Note: isCalculating is intentionally excluded from deps to prevent infinite loops
+    // effectiveAvgTNAByCurrency is derived from avgTNAByCurrencyMemo/avgTNAProp which are already tracked
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [parsedOperationsState, enrichedCaucionesState, avgTNAByCurrencyMemo, avgTNAProp, selectedGroupId, groupOptions]);
+
+  // Filter groupOptions to only show instruments that have arbitrage data
+  const filteredGroupOptions = useMemo(() => {
+    if (!groupOptions?.length || availableInstruments.size === 0) {
+      return [];
+    }
+
+    // Filter options to only include those that have arbitrage results
+    // Always keep the "All" option
+    return groupOptions.filter((opt) => {
+      return opt.id === '__ALL__' || 
+             opt.label === (filterStrings.all || 'All') ||
+             availableInstruments.has(opt.label);
+    });
+  }, [groupOptions, availableInstruments, filterStrings.all]);
 
   return (
     <Stack spacing={2} sx={{ flex: 1, minHeight: 0, p: 2 }}>
       {/* Filters */}
       <Stack direction="row" spacing={2} alignItems="center">
-        {groupOptions && groupOptions.length > 0 && (
+        {filteredGroupOptions && filteredGroupOptions.length > 0 && (
           <GroupFilter
-            options={groupOptions}
+            options={filteredGroupOptions}
             selectedGroupId={selectedGroupId}
             onChange={onGroupChange}
             strings={filterStrings}
