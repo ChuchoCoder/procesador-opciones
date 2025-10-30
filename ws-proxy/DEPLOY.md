@@ -81,7 +81,7 @@ Root Directory: ws-proxy
 
 Runtime: Node (18.x LTS)
 
-Build Command: npm ci --production
+Build Command: npm ci --omit=dev
   ℹ️ Este comando:
   - Instala solo dependencies (no devDependencies)
   - Es más rápido y ligero que npm install

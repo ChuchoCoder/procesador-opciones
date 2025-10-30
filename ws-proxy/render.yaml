@@ -3,7 +3,7 @@ services:
     name: ws-proxy-cocos
     env: node
     plan: free
-    buildCommand: npm ci --production
+    buildCommand: npm ci --omit=dev
     startCommand: node ws-proxy.js
     
     # Health check for Render to keep service healthy

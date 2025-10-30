@@ -65,7 +65,7 @@ git push -u origin main
 5. Configure:
    - **Name**: `ws-proxy-cocos`
    - **Environment**: `Node`
-   - **Build Command**: `npm ci --production`
+   - **Build Command**: `npm ci --omit=dev`
    - **Start Command**: `node ws-proxy.js`
    - **Plan**: `Free`
 6. Add Environment Variables:
@@ -118,7 +118,7 @@ const MARKET_END_HOUR = 17;   // 5 PM
 
 ### WebSocket Endpoint
 ```
-wss://your-proxy.onrender.com?token=YOUR_TOKEN
+wss://ws-proxy-cocos.onrender.com?token=YOUR_TOKEN
 ```
 
 Connect with authentication token in query parameter.
@@ -232,7 +232,7 @@ curl -i -N -H "Connection: Upgrade" \
   -H "Upgrade: websocket" \
   -H "Sec-WebSocket-Version: 13" \
   -H "Sec-WebSocket-Key: test" \
-  "https://your-proxy.onrender.com?token=YOUR_TOKEN"
+  "https://ws-proxy-cocos.onrender.com?token=YOUR_TOKEN"
 ```
 
 ### Cold Start Takes Too Long

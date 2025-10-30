@@ -139,7 +139,7 @@ const server = http.createServer((req, res) => {
             ⏱️ Uptime: ${Math.floor((Date.now() - stats.startTime) / 1000)}s
           </div>
           <h2>Usage</h2>
-          <pre>const ws = new WebSocket('wss://your-proxy.onrender.com?token=YOUR_TOKEN');</pre>
+          <pre>const ws = new WebSocket('wss://ws-proxy-cocos.onrender.com?token=YOUR_TOKEN');</pre>
           <h2>Endpoints</h2>
           <ul>
             <li><code>GET /health</code> - Health check</li>
