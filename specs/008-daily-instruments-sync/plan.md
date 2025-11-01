@@ -11,21 +11,23 @@
 
 ## Technical Context
 
-<!--
-  ACTION REQUIRED: Replace the content in this section with the technical details
-  for the project. The structure here is presented in advisory capacity to guide
-  the iteration process.
--->
+**Language/Version**: JavaScript (ES2020+) — repository uses plain JS for extension UI and popup scripts. No new transpilation step.
+**Primary Dependencies**: None new. Reuse existing codebase (frontend/ and root scripts). Avoid adding external libraries to comply with Constitution Principle 4.
+**Storage**: Primary persistence will use `chrome.storage.local` (preferred for quota and async API) with a compatibility write to `localStorage.instrumentsWithDetails` for backwards compatibility with UI code that reads that key. Sharding policy described in `data-model.md`.
+**Testing**: Project already contains unit/integration test infra in `frontend/tests` (vitest). Tests were not explicitly requested in the spec, but acceptance tests are described and will be provided as simple unit tests if PR requests add them (Principle 3). Manual validation steps are included in `quickstart.md`.
+**Target Platform**: Chrome/Chromium extension (Manifest V3) — code will run in popup scripts and the service worker (background). The implementation will use `chrome.alarms` + service worker to support a daily scheduled sync and a popup/manual trigger.
+**Project Type**: Browser extension frontend-only change (no backend modifications). Files touched: root popup scripts (popup.js), background/service worker (if needed), and `frontend` read-paths. Changes will be kept minimal and feature-scoped.
+**Performance Goals**: UI must load instruments from storage and render initial list <1.5s for catalogs up to 5k items on desktop-class machines. Reads should be asynchronous and memoized in-memory after first load.
+**Constraints**: Respect extension storage quotas and avoid heavy synchronous CPU work on the popup. Respect Broker API rate-limits and retry policy (max 3 retries with exponential backoff in a 5-minute window). Keep all user-visible strings in the centralized `frontend/src/strings` or existing root strings module (Principle 5).
+**Scale/Scope**: Expect catalogs up to ~5k instruments. Implement deduplication and sharding to handle large payloads.
 
-**Language/Version**: [e.g., Python 3.11, Swift 5.9, Rust 1.75 or NEEDS CLARIFICATION]  
-**Primary Dependencies**: [e.g., FastAPI, UIKit, LLVM or NEEDS CLARIFICATION]  
-**Storage**: [if applicable, e.g., PostgreSQL, CoreData, files or N/A]  
-**Testing**: [e.g., pytest, XCTest, cargo test or NEEDS CLARIFICATION]  
-**Target Platform**: [e.g., Linux server, iOS 15+, WASM or NEEDS CLARIFICATION]
-**Project Type**: [single/web/mobile - determines source structure]  
-**Performance Goals**: [domain-specific, e.g., 1000 req/s, 10k lines/sec, 60 fps or NEEDS CLARIFICATION]  
-**Constraints**: [domain-specific, e.g., <200ms p95, <100MB memory, offline-capable or NEEDS CLARIFICATION]  
-**Scale/Scope**: [domain-specific, e.g., 10k users, 1M LOC, 50 screens or NEEDS CLARIFICATION]
+### Known open questions (NEEDS CLARIFICATION)
+
+- Scheduling when the browser extension is not open: prefer `chrome.alarms` in the service worker for reliable daily scheduling vs. only checking on popup load. Decision in `research.md`.
+- Storage API choice: spec mentions `localStorage` but `chrome.storage.local` provides larger quota and async API; plan adopts a compatibility approach (write to both) — justification in `research.md`.
+- Shard size and recomposition policy for large payloads: chosen default shard size 256KB based on practical quotas; details in `data-model.md`.
+- Broker token refresh behavior and whether the sync should attempt refresh: plan assumes existing `BrokerSession` helper exposes `isAuthenticated` and `tryRefresh()`; if missing, we limit to `isAuthenticated` and surface a diagnostic log — further work noted in Complexity Tracking.
+
 
 ## Constitution Check
 
