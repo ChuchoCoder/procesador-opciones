@@ -338,6 +338,19 @@ export class JsonDataSource extends DataSourceAdapter {
   /**
    * Determine if order should be included in output
    * Filters out replaced, pending, rejected, and pure cancellations
+   * 
+   * INCLUDES:
+   * - FILLED orders (completed executions)
+   * - PARTIALLY_FILLED orders (active with cumQty > 0)
+   * - NEW orders (active, not yet executed)
+   * - CANCELLED orders with cumQty > 0 (partial executions before cancel)
+   * 
+   * EXCLUDES:
+   * - CANCELLED orders with "REPLACED" text (superseded by newer order)
+   * - PENDING_CANCEL orders (cancellation in progress)
+   * - REJECTED orders (failed to enter market)
+   * - CANCELLED orders with cumQty = 0 (pure cancellations, no executions)
+   * 
    * @param {Object} order - Broker order
    * @returns {boolean} True if order should be included
    */
@@ -366,7 +379,7 @@ export class JsonDataSource extends DataSourceAdapter {
       return false;
     }
 
-    // Include everything else (FILLED, partial fills, etc.)
+    // Include everything else: FILLED, PARTIALLY_FILLED, NEW, and partial cancellations
     return true;
   }
 
