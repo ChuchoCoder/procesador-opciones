@@ -7,6 +7,8 @@ const STATUS_NORMALIZATION = {
   partially_executed: 'partially_executed',
   filled: 'fully_executed',
   partial_fill: 'partially_executed',
+  partially_filled: 'partially_executed', // Broker API format
+  new: 'new', // Active orders not yet executed
   ejecutada: 'fully_executed',
   'ejecutada.': 'fully_executed',
   'parcialmente ejecutada': 'partially_executed',
@@ -14,7 +16,7 @@ const STATUS_NORMALIZATION = {
   'parcialmente ejecutada.': 'partially_executed',
 };
 
-const ALLOWED_STATUSES = new Set(['fully_executed', 'partially_executed', 'cancelled']);
+const ALLOWED_STATUSES = new Set(['fully_executed', 'partially_executed', 'cancelled', 'new']);
 const ALLOWED_SIDES = new Set(['BUY', 'SELL']);
 const ALLOWED_OPTION_TYPES = new Set(['CALL', 'PUT']);
 const ALLOWED_EXEC_TYPES = new Set(['F']);
