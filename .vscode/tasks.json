@@ -1,0 +1,12 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Bundle instrumentsSyncService for background",
+			"type": "shell",
+			"command": "npx esbuild \"frontend/src/services/instrumentsSyncService.js\" --bundle --platform=browser --format=esm --target=es2020 --outfile=background/instrumentsSyncService.bundle.js",
+			"isBackground": false,
+			"problemMatcher": []
+		}
+	]
+}
