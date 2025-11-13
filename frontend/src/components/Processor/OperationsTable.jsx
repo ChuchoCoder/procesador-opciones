@@ -21,6 +21,7 @@ import ArrowCircleUpIcon from '@mui/icons-material/ArrowCircleUp';
 import ArrowCircleDownIcon from '@mui/icons-material/ArrowCircleDown';
 
 import FeeTooltip from './FeeTooltip.jsx';
+import AddStrikeExceptionButton from './AddStrikeExceptionButton.jsx';
 
 const quantityFormatter = typeof Intl !== 'undefined'
   ? new Intl.NumberFormat('es-AR', {
@@ -301,7 +302,20 @@ const OperationsTable = ({
                   <TableCell sx={quantityValue < 0 ? { color: 'error.main', fontWeight: 600 } : undefined}>
                     {formatQuantity(quantityValue)}
                   </TableCell>
-                  <TableCell align="right">{formatDecimal(operation.strike)}</TableCell>
+                  <TableCell 
+                    align="right"
+                    sx={{
+                      '&:hover .strike-exception-button': {
+                        opacity: 1,
+                        visibility: 'visible',
+                      }
+                    }}
+                  >
+                    <Stack direction="row" alignItems="center" justifyContent="flex-end">
+                      <span>{formatDecimal(operation.strike)}</span>
+                      <AddStrikeExceptionButton operation={operation} strings={strings} />
+                    </Stack>
+                  </TableCell>
                   <TableCell align="right">{formatDecimal(operation.averagePrice)}</TableCell>
                   <TableCell align="right">
                     <FeeTooltip

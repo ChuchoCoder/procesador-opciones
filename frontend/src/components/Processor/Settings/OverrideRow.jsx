@@ -5,6 +5,8 @@ import {
   IconButton,
   Button,
   Alert,
+  FormControlLabel,
+  Checkbox,
 } from '@mui/material';
 import { Delete as DeleteIcon, Add as AddIcon } from '@mui/icons-material';
 import strings from '../../../strings';
@@ -27,6 +29,7 @@ export default function OverrideRow({ override, onRemove, isNew, existingRawToke
 
   const [rawToken, setRawToken] = useState('');
   const [formatted, setFormatted] = useState('');
+  const [skipFormatting, setSkipFormatting] = useState(false);
   const [error, setError] = useState('');
 
   if (isNew) {
@@ -62,6 +65,7 @@ export default function OverrideRow({ override, onRemove, isNew, existingRawToke
       const newOverride = {
         raw: rawToken.trim(),
         formatted: formatted.trim(),
+        ...(skipFormatting && { skipDecimalFormatting: true }),
       };
 
       if (onAdd) {
@@ -71,6 +75,7 @@ export default function OverrideRow({ override, onRemove, isNew, existingRawToke
       // Clear inputs
       setRawToken('');
       setFormatted('');
+      setSkipFormatting(false);
       setError('');
     };
 
@@ -81,7 +86,7 @@ export default function OverrideRow({ override, onRemove, isNew, existingRawToke
             {error}
           </Alert>
         )}
-        <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', mb: 1 }}>
+        <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', mb: 1, flexWrap: 'wrap' }}>
           <TextField
             size="small"
             label={s.rawTokenLabel}
@@ -97,6 +102,17 @@ export default function OverrideRow({ override, onRemove, isNew, existingRawToke
             value={formatted}
             onChange={(e) => setFormatted(e.target.value)}
             sx={{ width: 150 }}
+          />
+          <FormControlLabel
+            control={
+              <Checkbox
+                checked={skipFormatting}
+                onChange={(e) => setSkipFormatting(e.target.checked)}
+                size="small"
+              />
+            }
+            label={s.skipFormattingLabel || 'Usar valor exacto'}
+            sx={{ ml: 1 }}
           />
           <Button
             variant="outlined"
@@ -119,7 +135,7 @@ export default function OverrideRow({ override, onRemove, isNew, existingRawToke
   };
 
   return (
-    <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', mb: 1 }}>
+    <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', mb: 1, flexWrap: 'wrap' }}>
       <TextField
         size="small"
         label={s.rawTokenLabel}
@@ -134,6 +150,14 @@ export default function OverrideRow({ override, onRemove, isNew, existingRawToke
         InputProps={{ readOnly: true }}
         sx={{ width: 150 }}
       />
+      {override.skipDecimalFormatting && (
+        <FormControlLabel
+          control={<Checkbox checked disabled size="small" />}
+          label={s.skipFormattingLabel || 'Usar valor exacto'}
+          disabled
+          sx={{ ml: 1 }}
+        />
+      )}
       <IconButton
         size="small"
         color="error"
