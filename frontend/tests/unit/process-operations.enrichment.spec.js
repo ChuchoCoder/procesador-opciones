@@ -126,6 +126,135 @@ describe('enrichOperationRow', () => {
     expect(result.meta.prefixRule).toBe('GGAL');
     expect(result.meta.strikeDecimals).toBe(2);
   });
+
+  it('applies skipDecimalFormatting override to use formatted value directly', async () => {
+    const row = buildRow({
+      symbol: '',
+      expiration: '',
+      strike: null,
+      option_type: null,
+      security_id: 'GGALC10177D',
+    });
+
+    const configuration = {
+      prefixMap: {
+        GGAL: {
+          symbol: 'GGAL',
+          prefix: 'GGAL',
+          defaultDecimals: 1,
+          strikeDefaultDecimals: 1,
+          expirations: {
+            D: {
+              suffixes: ['D', 'DIC'],
+              decimals: 1,
+              overrides: [
+                {
+                  raw: '10177',
+                  formatted: '10177',
+                  skipDecimalFormatting: true,
+                },
+              ],
+            },
+          },
+          updatedAt: Date.now(),
+        },
+      },
+    };
+
+    const result = await enrichOperationRow(row, configuration);
+
+    expect(result.symbol).toBe('GGAL');
+    expect(result.expiration).toBe('D');
+    expect(result.type).toBe('CALL');
+    expect(result.strike).toBe(10177); // Exact value, no decimal operation
+    expect(result.meta.prefixRule).toBe('GGAL');
+    expect(result.meta.strikeDecimals).toBeUndefined(); // No decimals reported for skip-formatting
+  });
+
+  it('applies normal decimal formatting when skipDecimalFormatting is false', async () => {
+    const row = buildRow({
+      symbol: '',
+      expiration: '',
+      strike: null,
+      option_type: null,
+      security_id: 'GGALC47343D',
+    });
+
+    const configuration = {
+      prefixMap: {
+        GGAL: {
+          symbol: 'GGAL',
+          prefix: 'GGAL',
+          defaultDecimals: 1,
+          strikeDefaultDecimals: 1,
+          expirations: {
+            D: {
+              suffixes: ['D', 'DIC'],
+              decimals: 1,
+              overrides: [
+                {
+                  raw: '47343',
+                  formatted: '4734.3',
+                  skipDecimalFormatting: false,
+                },
+              ],
+            },
+          },
+          updatedAt: Date.now(),
+        },
+      },
+    };
+
+    const result = await enrichOperationRow(row, configuration);
+
+    expect(result.symbol).toBe('GGAL');
+    expect(result.expiration).toBe('D');
+    expect(result.type).toBe('CALL');
+    expect(result.strike).toBeCloseTo(4734.3, 5); // Decimal formatting applied
+    expect(result.meta.prefixRule).toBe('GGAL');
+    expect(result.meta.strikeDecimals).toBe(1);
+  });
+
+  it('handles skipDecimalFormatting with decimal value in formatted field', async () => {
+    const row = buildRow({
+      symbol: '',
+      expiration: '',
+      strike: null,
+      option_type: null,
+      security_id: 'GGALC10177D',
+    });
+
+    const configuration = {
+      prefixMap: {
+        GGAL: {
+          symbol: 'GGAL',
+          prefix: 'GGAL',
+          defaultDecimals: 1,
+          strikeDefaultDecimals: 1,
+          expirations: {
+            D: {
+              suffixes: ['D', 'DIC'],
+              decimals: 1,
+              overrides: [
+                {
+                  raw: '10177',
+                  formatted: '1017.7',
+                  skipDecimalFormatting: true,
+                },
+              ],
+            },
+          },
+          updatedAt: Date.now(),
+        },
+      },
+    };
+
+    const result = await enrichOperationRow(row, configuration);
+
+    expect(result.symbol).toBe('GGAL');
+    expect(result.strike).toBeCloseTo(1017.7, 5); // Uses formatted value exactly
+    expect(result.meta.strikeDecimals).toBeUndefined(); // No decimals reported for skip-formatting
+  });
 });
 
 describe('deriveGroups', () => {

@@ -34,7 +34,7 @@ describe('instrument mapping with RoundLot', () => {
   });
 
   it('should use RoundLot as contractMultiplier when ContractMultiplier is 1', () => {
-    const details = getInstrumentDetails('MERV - XMEV - GFGC50131O - 24hs');
+    const details = getInstrumentDetails('MERV - XMEV - GFGC11000D - 24hs');
     
     expect(details).not.toBeNull();
     expect(details.contractMultiplier).toBe(100.0); // Should use RoundLot (100) not ContractMultiplier (1)
@@ -42,7 +42,7 @@ describe('instrument mapping with RoundLot', () => {
   });
 
   it('should use ContractMultiplier when it is not 1', () => {
-    const details = getInstrumentDetails('GGAL/OCT25');
+    const details = getInstrumentDetails('GGAL/DIC25');
     
     expect(details).not.toBeNull();
     expect(details.contractMultiplier).toBe(100.0); // Should use ContractMultiplier (100)
@@ -50,8 +50,8 @@ describe('instrument mapping with RoundLot', () => {
   });
 
   it('should find instrument by partial symbol match (tokenized symbol)', () => {
-    // CSV might have "GFGC50131O" but JSON has "MERV - XMEV - GFGC50131O - 24hs"
-    const details = getInstrumentDetails('GFGC50131O');
+    // CSV might have "GFGC11000D" but JSON has "MERV - XMEV - GFGC50131O - 24hs"
+    const details = getInstrumentDetails('GFGC11000D');
     
     expect(details).not.toBeNull();
     expect(details.contractMultiplier).toBe(100.0);

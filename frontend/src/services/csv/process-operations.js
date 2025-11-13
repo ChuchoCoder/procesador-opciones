@@ -366,13 +366,20 @@ const resolveStrikeDecimals = ({ symbolConfig, strikeToken, expirationCode }) =>
       // Check for strike-specific override at expiration level
       if (strikeToken && Array.isArray(expirationConfig.overrides)) {
         const override = expirationConfig.overrides.find(o => o.raw === strikeToken);
-        if (override && override.formatted) {
-          // Calculate decimals from formatted string
-          const decimalIndex = override.formatted.indexOf('.');
-          if (decimalIndex >= 0) {
-            decimals = override.formatted.length - decimalIndex - 1;
-          } else {
-            decimals = 0;
+        if (override) {
+          // If skipDecimalFormatting is true, return sentinel value to bypass decimal operations
+          if (override.skipDecimalFormatting === true) {
+            return -1; // Sentinel value: use formatted value directly
+          }
+          
+          if (override.formatted) {
+            // Calculate decimals from formatted string
+            const decimalIndex = override.formatted.indexOf('.');
+            if (decimalIndex >= 0) {
+              decimals = override.formatted.length - decimalIndex - 1;
+            } else {
+              decimals = 0;
+            }
           }
         }
       }
@@ -399,14 +406,30 @@ const applyPrefixRule = ({ tokenMatch, symbolConfig, explicitExpiration }) => {
     expirationCode,
   });
 
-  const formattedStrike = strikeToken
-    ? formatStrikeTokenValue(strikeToken, decimals)
-    : null;
+  let formattedStrike;
+
+  // Handle skip-formatting case: use formatted value directly
+  if (decimals === -1) {
+    const override = symbolConfig.expirations?.[expirationCode]?.overrides?.find(
+      o => o.raw === (strikeToken ? strikeToken.toUpperCase() : '')
+    );
+    if (override?.formatted) {
+      const parsed = Number.parseFloat(override.formatted);
+      formattedStrike = Number.isFinite(parsed) ? parsed : null;
+    } else {
+      formattedStrike = null;
+    }
+  } else {
+    // Standard decimal formatting
+    formattedStrike = strikeToken
+      ? formatStrikeTokenValue(strikeToken, decimals)
+      : null;
+  }
 
   return {
     symbol: symbolConfig.symbol ? toUpperCase(symbolConfig.symbol) : null,
     strike: formattedStrike ?? tokenMatch?.strike ?? null,
-    decimalsApplied: decimals,
+    decimalsApplied: decimals === -1 ? null : decimals, // Don't report decimals for skip-formatting
   };
 };
 

@@ -53,7 +53,8 @@ Fields
 ```json
 {
   "raw": "47343",
-  "formatted": "4734.3"
+  "formatted": "4734.3",
+  "skipDecimalFormatting": false
 }
 ```
 
@@ -61,6 +62,7 @@ Fields
 
 - `raw` (string of digits): the raw numeric token to match; uniqueness required within an expiration.
 - `formatted` (string): the desired formatted strike representation (must respect decimals constraints).
+- `skipDecimalFormatting` (boolean, optional): when `true`, the system uses the `formatted` value directly without applying any decimal operations. Useful for strikes that should be treated as-is (e.g., "10177" → "10177" instead of "1.0177"). Defaults to `false` when omitted.
 
 ## Storage Schema & Key Patterns
 

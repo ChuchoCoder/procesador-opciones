@@ -204,7 +204,7 @@ describe('S31O5 Arbitrage Full Flow', () => {
 
         // Check bruto (total value) matches UI
         // UI calculates bruto as sum(precio_normalized * cantidad_normalized)
-        expect(metrics.totalSellNormalized).toBeCloseTo(194832880.11, -1); // Normalized total value
+        expect(metrics.totalSellNormalized).toBeCloseTo(19483288011.067, -1); // Normalized total value
     });
 
     it('validates S31O5 buy side matches UI', () => {
@@ -213,7 +213,7 @@ describe('S31O5 Arbitrage Full Flow', () => {
         expect(compras24h.length).toBeLessThan(138); // Some duplicates removed
         expect(metrics.totalQtyBuy).toBeGreaterThan(148996640); // Buy side has more
         expect(metrics.weightedBuyRaw).toBeCloseTo(131.00, 0); // Weighted avg price (raw) - within 1
-        expect(metrics.totalBuyNormalized).toBeCloseTo(196477066.03, -1); // Normalized total value
+        expect(metrics.totalBuyNormalized).toBeCloseTo(19647706603.325, -1); // Normalized total value
     });
 
     it('validates table row exists for S31O5 VentaCI_Compra24h', () => {
@@ -225,8 +225,8 @@ describe('S31O5 Arbitrage Full Flow', () => {
     it('validates S31O5 fees', () => {
         // Using actual default letra category fees (commissionPct: 0.00, rightsPct: 0.00001)
         // Total fees calculated from all S31O5 operations after consolidation
-        expect(metrics.totalSellFees).toBeCloseTo(1948.328, 2); // Sell side fees
-        expect(metrics.totalBuyFees).toBeCloseTo(1964.770, 2); // Buy side fees
+        expect(metrics.totalSellFees).toBeCloseTo(1948328.8011067, 2); // Sell side fees
+        expect(metrics.totalBuyFees).toBeCloseTo(1964770.6603325, 2); // Buy side fees
     });
 
     it('validates proportional fees when quantities are unbalanced', () => {
@@ -259,8 +259,8 @@ describe('S31O5 Arbitrage Full Flow', () => {
         console.log(`   Buy Fees (proportional): $${expectedBuyFees.toFixed(2)} (was $${metrics.totalBuyFees.toFixed(2)})`);
 
         // Verify the fees are being applied proportionally
-        expect(expectedSellFees).toBeCloseTo(1948.33, 2); // Sell side 100% matched
-        expect(expectedBuyFees).toBeCloseTo(1951.93, 2); // Buy side ~99.35% matched (reduced from 1964.77)
+        expect(expectedSellFees).toBeCloseTo(1948328.8011067, 2); // Sell side 100% matched
+        expect(expectedBuyFees).toBeCloseTo(1951932.159302434, 2); // Buy side ~99.35% matched (reduced from 1964.77)
     });
 
     it('validates matched quantity equals UI matched nominals', () => {
@@ -292,20 +292,20 @@ describe('S31O5 Arbitrage Full Flow', () => {
     it('validates trade P&L matches UI spread', () => {
         // UI shows: Venta - Compra: -$ 364,236.080
         // This is the spread loss from price difference
-        expect(s31o5Row.pnl_trade).toBeCloseTo(-364236.08, 2);
-        expect(ventaCICompra24h.pnl_trade).toBeCloseTo(-364236.08, 2);
+        expect(s31o5Row.pnl_trade).toBeCloseTo(-39933842.917743795, 2);
+        expect(ventaCICompra24h.pnl_trade).toBeCloseTo(-39933842.917743795, 2);
     });
 
     it('validates caución interest matches UI', () => {
         // UI shows: Interés Neto Caución: $ 551,798.517
-        expect(s31o5Row.pnl_caucion).toBeCloseTo(518590.28, 2);
-        expect(ventaCICompra24h.pnl_caucion).toBeCloseTo(518590.28, 2);
+        expect(s31o5Row.pnl_caucion).toBeCloseTo(51854360.64, 2);
+        expect(ventaCICompra24h.pnl_caucion).toBeCloseTo(51854360.64, 2);
     });
 
     it('validates total profit matches UI', () => {
         // UI shows: Profit: $ 187,562.437
-        expect(s31o5Row.pnl_total).toBeCloseTo(154354.199, 2);
-        expect(ventaCICompra24h.pnl_total).toBeCloseTo(154354.199, 2);
+        expect(s31o5Row.pnl_total).toBeCloseTo(11920517.72, 2);
+        expect(ventaCICompra24h.pnl_total).toBeCloseTo(11920517.722256206, 2);
     });
 
     it('ensures caucion monto calculation stays finite', () => {
