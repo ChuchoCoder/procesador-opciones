@@ -102,52 +102,49 @@ export async function startDailySync({
   // For both daily and refresh modes, filter out broker operations from previous days
   // This ensures "Today only" requirement is always enforced
   // Calculate start of today in local time (00:00:00)
-  const now = new Date();
-  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-  
+  // Count operations before filtering
   const beforeCount = baselineOperations.length;
   const brokerBeforeCount = baselineOperations.filter(op => op.source === 'broker').length;
   const csvBeforeCount = baselineOperations.filter(op => op.source === 'csv').length;
   
-  // Retain CSV operations + broker operations from today only
-  baselineOperations = baselineOperations.filter(op => {
-    if (op.source === 'csv') {
-      return true; // Always keep CSV operations
-    }
-    // For broker operations, only keep those from today or later
-    const opTimestamp = op.tradeTimestamp || op.importTimestamp || 0;
-    const isToday = opTimestamp >= todayStart;
+  // Filtering strategy depends on sync mode:
+  // - DAILY: Discard ALL broker ops (fresh start daily)
+  // - REFRESH: Keep existing broker ops for deduplication (incremental)
+  if (mode === DAILY_MODE) {
+    // DAILY: Discard all broker operations - start fresh
+    const csvOperations = baselineOperations.filter(op => op.source === 'csv');
+    baselineOperations = csvOperations;
     
-    if (!isToday && mode === DAILY_MODE) {
-      console.log(`[Sync ${mode}] Filtering out old broker operation:`, {
-        symbol: op.symbol || op.instrumentId?.symbol,
-        timestamp: new Date(opTimestamp).toLocaleString(),
-        todayStart: new Date(todayStart).toLocaleString(),
-        orderId: op.orderId || op.order_id,
-      });
-    }
+    const afterCount = baselineOperations.length;
+    const csvAfterCount = baselineOperations.length;
+    const removedCount = brokerBeforeCount;
     
-    return isToday;
-  });
-  
-  const afterCount = baselineOperations.length;
-  const brokerAfterCount = baselineOperations.filter(op => op.source === 'broker').length;
-  const csvAfterCount = baselineOperations.filter(op => op.source === 'csv').length;
-  const removedCount = beforeCount - afterCount;
-  
-  console.log(`[Sync ${mode}] Filtered baseline:`, {
-    before: { total: beforeCount, broker: brokerBeforeCount, csv: csvBeforeCount },
-    after: { total: afterCount, broker: brokerAfterCount, csv: csvAfterCount },
-    removed: removedCount,
-    todayStart: new Date(todayStart).toLocaleString(),
-  });
+    console.log(`[Sync ${mode}] Filtered baseline - DAILY FRESH SYNC (all broker ops discarded):`, {
+      before: { total: beforeCount, broker: brokerBeforeCount, csv: csvBeforeCount },
+      after: { total: afterCount, csv: csvAfterCount },
+      removedBrokerOps: removedCount,
+    });
+  } else {
+    // REFRESH: Keep existing operations for deduplication
+    console.log(`[Sync ${mode}] Keeping baseline for incremental refresh:`, {
+      total: beforeCount,
+      broker: brokerBeforeCount,
+      csv: csvBeforeCount,
+    });
+  }
   
   const dedupePool = [...baselineOperations];
   const candidateOperations = [];
   
   // DEBUG: Log baseline for deduplication
    
-  console.log(`[Sync ${mode}] Starting with ${baselineOperations.length} baseline operations`);
+  if (mode === DAILY_MODE) {
+    console.log(`[Sync ${mode}] Starting DAILY sync - fresh start (broker ops discarded)`);
+    console.log(`[Sync ${mode}] Baseline: ${baselineOperations.length} CSV operations only`);
+  } else {
+    console.log(`[Sync ${mode}] Starting REFRESH sync - incremental update`);
+    console.log(`[Sync ${mode}] Baseline: ${baselineOperations.length} total operations (for deduplication)`);
+  }
   
   let pageToken = null;
   let pageIndex = 0;
@@ -272,14 +269,16 @@ export async function startDailySync({
       return { success: false, canceled: true, operationsAdded: 0, mode };
     }
     
-    // Step 4: Deduplicate and merge with existing operations
+    // Step 4: Merge baseline operations with NEW broker operations
+    // DAILY: baseline = CSV only (fresh broker sync)
+    // REFRESH: baseline = CSV + existing broker (incremental dedupe)
     const { mergedOps, newOrdersCount, newOpsCount } = mergeBrokerBatch(
       baselineOperations,
       candidateOperations,
     );
     
      
-    console.log(`[Sync ${mode}] Final merge: ${baselineOperations.length} baseline + ${candidateOperations.length} candidates = ${mergedOps.length} total (${newOpsCount} new)`);
+    console.log(`[Sync ${mode}] Sync complete: ${baselineOperations.length} baseline + ${candidateOperations.length} new = ${mergedOps.length} total (${newOpsCount} new ops)`);
 
     // Step 5: Atomic commit
     commitSync(mergedOps, {
