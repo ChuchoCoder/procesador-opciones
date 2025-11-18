@@ -145,7 +145,8 @@ export const reducer = (state, action) => {
       });
     }
     case 'COMMIT_SYNC': {
-      // payload: { operations: Array (final operations list), syncMeta: Object }
+      // payload: { operations: Array (fresh broker ops + CSV ops) }, syncMeta: Object }
+      // NOTE: All previous broker operations are discarded - this is a FRESH sync
       const endTime = Date.now();
       const newOperationsCount = Math.max(
         action.payload.syncMeta?.newOperationsCount ??
@@ -166,7 +167,7 @@ export const reducer = (state, action) => {
         mode,
       };
       return applyChanges(state, {
-        operations: action.payload.operations,
+        operations: action.payload.operations, // Fresh sync: CSV ops + new broker ops
         sync: {
           ...state.sync,
           status: 'success',
