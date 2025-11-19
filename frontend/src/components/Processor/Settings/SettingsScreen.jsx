@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Container, Box, Typography, Button, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, Stack, Alert } from '@mui/material';
+import { Container, Box, Typography, Button, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, Stack, Alert, Divider } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import RestoreIcon from '@mui/icons-material/Restore';
 import AddSymbol from './AddSymbol.jsx';
 import SymbolTabs from './SymbolTabs.jsx';
 import SymbolSettings from './SymbolSettings.jsx';
+import InstrumentsSync from '../../Settings/InstrumentsSync.jsx';
 import { getAllSymbols, loadSymbolConfig, deleteSymbolConfig, clearAllSymbols } from '../../../services/storage-settings.js';
 import { seedDefaultSymbols } from '../../../services/bootstrap-defaults.js';
 import strings from '../../../strings/es-AR.js';
@@ -104,6 +105,14 @@ export default function SettingsScreen() {
 
   return (
     <Container maxWidth={false} sx={{ py: 3, px: 4 }}>
+      {/* Instruments Sync Section */}
+      <Box sx={{ mb: 4 }}>
+        <InstrumentsSync strings={strings.brokerSync} />
+      </Box>
+
+      <Divider sx={{ mb: 4 }} />
+
+      {/* Symbol Settings Section */}
       <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <Box>
           <Typography variant="h4" component="h1" gutterBottom>
