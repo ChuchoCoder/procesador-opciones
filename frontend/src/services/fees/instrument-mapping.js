@@ -15,8 +15,12 @@ let _unknownCfiCodes = null;
  * Adjust as needed per market specifications.
  */
 const CFI_PATTERNS = {
-  // Opciones: OPxxxx / OCxxxx (puts/calls)
+  // Opciones: OPxxxx / OCxxxx (puts/calls) - Note: MUST check for options BEFORE futures
+  // Options have specific strike/expiry patterns like "DLR/DIC25 1340 C"
   option: /^O[CP]/,
+  // Futuros: FXxxxx (futures contracts like DLR/NOV25, DLR/DIC25)
+  // Important: This should be checked BEFORE the bonds pattern to avoid misclassification
+  future: /^F[XM]/,
   // Acciones/CEDEARs: Exxxxx (all equities - shares, rights, entitlements, CEDEARs, etc.)
   accionCedear: /^E/,
   // Letras: DTxxxx legacy codes + DYxxxx (money-market short term instruments) + DBxxxx
@@ -51,17 +55,30 @@ function buildCfiCodeMap(instrumentsData) {
     if (typeof cfi === 'string' && cfi.length > 0) {
       let category = 'bonds'; // default fallback
 
-      // Match patterns
+      // Match patterns - ORDER MATTERS: check specific patterns before general ones
+      // Check options first (most specific)
       if (CFI_PATTERNS.option.test(cfi)) {
         category = 'option';
-      } else if (CFI_PATTERNS.accionCedear.test(cfi)) {
-        category = 'accionCedear';
-      } else if (CFI_PATTERNS.letra.test(cfi)) {
-        category = 'letra';
-      } else if (CFI_PATTERNS.bonds.test(cfi)) {
-        category = 'bonds';
-      } else if (CFI_PATTERNS.caucion.test(cfi)) {
+      } 
+      // Check futures (must be before caucion to avoid FR confusion)
+      else if (CFI_PATTERNS.future.test(cfi)) {
+        category = 'bonds'; // Futures use same fee structure as bonds/default derivatives
+      }
+      // Check cauciones (repos)
+      else if (CFI_PATTERNS.caucion.test(cfi)) {
         category = 'caucion';
+      }
+      // Check equities
+      else if (CFI_PATTERNS.accionCedear.test(cfi)) {
+        category = 'accionCedear';
+      }
+      // Check letras (short-term debt)
+      else if (CFI_PATTERNS.letra.test(cfi)) {
+        category = 'letra';
+      }
+      // Check bonds (longer-term debt)
+      else if (CFI_PATTERNS.bonds.test(cfi)) {
+        category = 'bonds';
       }
 
       map.set(cfi, category);
