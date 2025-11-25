@@ -122,4 +122,31 @@ describe('DLR Futures Misclassification Issue', () => {
     // Should be classified as bonds (default for derivatives) or ideally 'future'
     expect(['bonds', 'future']).toContain(category);
   });
+
+  it('should not classify DLR futures as CALL or PUT when processing operations', async () => {
+    // Import the enrichOperationRow function that determines operation type
+    const { enrichOperationRow } = await import('../../src/services/csv/process-operations.js');
+    
+    // Test DLR/NOV25 row
+    const dlrNov25Row = csvData.find(row => row.symbol === 'DLR/NOV25');
+    expect(dlrNov25Row).toBeDefined();
+    
+    const enrichedNov25 = await enrichOperationRow(dlrNov25Row);
+    
+    // The type should NOT be CALL or PUT
+    expect(enrichedNov25.type).not.toBe('CALL');
+    expect(enrichedNov25.type).not.toBe('PUT');
+    expect(enrichedNov25.type).toBe('UNKNOWN'); // Futures don't have a type
+    
+    // Test DLR/DIC25 row - this one is particularly problematic because "DIC25" contains "C25"
+    const dlrDic25Row = csvData.find(row => row.symbol === 'DLR/DIC25');
+    expect(dlrDic25Row).toBeDefined();
+    
+    const enrichedDic25 = await enrichOperationRow(dlrDic25Row);
+    
+    // The type should NOT be CALL (even though "DIC25" could be parsed as "DI" + "C" + "25")
+    expect(enrichedDic25.type).not.toBe('CALL');
+    expect(enrichedDic25.type).not.toBe('PUT');
+    expect(enrichedDic25.type).toBe('UNKNOWN'); // Futures don't have a type
+  });
 });

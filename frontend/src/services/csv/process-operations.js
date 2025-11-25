@@ -6,10 +6,37 @@ import { normalizeOperationRows } from './legacy-normalizer.js';
 import { getAllSymbols, loadSymbolConfig } from '../storage-settings.js';
 import { normalizeOperation } from '../broker/dedupe-utils.js';
 import { enrichOperationsWithFees } from '../fees/fee-enrichment.js';
+import { getInstrumentDetails } from '../fees/instrument-mapping.js';
 
 const OPTION_TOKEN_REGEX = /^([A-Z0-9]+?)([CV])(\d+(?:\.\d+)?)(.*)$/;
 const DEFAULT_EXPIRATION = 'NONE';
 const UNKNOWN_EXPIRATION = 'UNKNOWN';
+
+/**
+ * Check if an instrument is actually an option based on its CFI code.
+ * This prevents futures like DLR/NOV25 from being misclassified as options
+ * when their collapsed symbol (DLRNOV25) happens to match the option token pattern.
+ * 
+ * @param {string} symbol - The instrument symbol (e.g., 'DLR/NOV25')
+ * @returns {boolean} true if the instrument is confirmed to be an option (CFI starts with 'O'), false otherwise
+ */
+const isConfirmedOption = (symbol) => {
+  if (!symbol) {
+    return false;
+  }
+  
+  const details = getInstrumentDetails(symbol);
+  if (!details || !details.cfiCode) {
+    // If no instrument details found, we can't confirm it's NOT an option,
+    // so we allow the token pattern matching to proceed
+    return true;
+  }
+  
+  // CFI codes starting with 'O' are options (OCAFXS, OPAFXS, OCEFXS, OPEFXS)
+  // CFI codes starting with 'F' are futures (FXXXSX)
+  // If we have a confirmed CFI code, trust it over the token pattern
+  return details.cfiCode.startsWith('O');
+};
 
 /**
  * Load all symbol configurations and create a prefix map
@@ -481,7 +508,16 @@ export const enrichOperationRow = async (row = {}, configuration = {}) => {
   }
 
   if (!type && tokenType) {
-    type = tokenType;
+    // Before accepting the token type, verify the instrument is actually an option
+    // This prevents futures like DLR/NOV25 from being misclassified when their
+    // collapsed form (DLRNOV25) matches the option pattern
+    // Check the explicit symbol from the CSV row first
+    if (explicitSymbol && !isConfirmedOption(explicitSymbol)) {
+      // Don't use the token type - this instrument is confirmed to be a non-option
+      type = '';
+    } else {
+      type = tokenType;
+    }
   }
 
   const symbolConfig = tokenSymbol ? prefixMap[tokenSymbol] : undefined;
