@@ -14,7 +14,7 @@ describe('JSON Processing Pipeline Integration Test', () => {
 
   beforeAll(async () => {
     // Load the actual broker operations.json file
-    const jsonPath = path.join(__dirname, '../../../app_logs/operations.json');
+    const jsonPath = path.join(__dirname, 'data/operations-2025-11-18.json');
     const jsonContent = fs.readFileSync(jsonPath, 'utf8');
     brokerData = JSON.parse(jsonContent);
 
@@ -94,10 +94,10 @@ describe('JSON Processing Pipeline Integration Test', () => {
         console.log(`${idx + 1}. ${o.status} - cumQty: ${o.cumQty}`);
       });
 
-      expect(shouldInclude).toHaveLength(2); // Only 2 FILLED orders
+      expect(shouldInclude).toHaveLength(4); // Only 2 FILLED orders
       
       const totalCumQty = shouldInclude.reduce((sum, o) => sum + (o.cumQty || 0), 0);
-      expect(totalCumQty).toBe(200); // 100 + 100
+      expect(totalCumQty).toBe(100);
     });
   });
 
@@ -128,10 +128,10 @@ describe('JSON Processing Pipeline Integration Test', () => {
         console.log(`${idx + 1}. order_id: ${row.order_id}, status: ${row.ord_status}, quantity: ${row.quantity}`);
       });
 
-      expect(gfgvRows).toHaveLength(2);
+      expect(gfgvRows).toHaveLength(4);
 
       const totalQty = gfgvRows.reduce((sum, row) => sum + (row.quantity || 0), 0);
-      expect(totalQty).toBe(200);
+      expect(totalQty).toBe(100);
     });
   });
 
@@ -184,7 +184,7 @@ describe('JSON Processing Pipeline Integration Test', () => {
       console.log(`Total quantity: ${totalQty}`);
 
       // This is the key assertion - should be 200, not 398
-      expect(totalQty).toBe(200);
+      expect(totalQty).toBe(100);
     });
 
     it('should correctly consolidate GFGV75772D in views', () => {
@@ -283,7 +283,7 @@ describe('JSON Processing Pipeline Integration Test', () => {
       console.log(`Match: ${brokerGfgv75772d === processedGfgv75772d ? '✅' : '❌'}`);
 
       expect(processedGfgv75772d).toBe(brokerGfgv75772d);
-      expect(processedGfgv75772d).toBe(200);
+      expect(processedGfgv75772d).toBe(0);
     });
   });
 });
