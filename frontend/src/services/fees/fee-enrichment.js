@@ -536,21 +536,19 @@ export function enrichOperationWithFee(operation, effectiveRates, options = {}) 
   const priceConversionFactor = instrumentDetails?.priceConversionFactor ?? 1;
   const contractMultiplier = instrumentDetails?.contractMultiplier ?? (category === 'option' ? 100 : 1);
   
-  // Calculate gross notional: quantity × contractMultiplier × price
-  // Note: price here is the raw CSV price (monetary value before normalization)
-  // Fee is calculated on monetary notional, then normalized later
-  const grossNotional = Math.abs(quantity) * contractMultiplier * price;
+  // Calculate gross notional: quantity × contractMultiplier × price × priceConversionFactor
+  // The priceConversionFactor converts from price per 100 face value (e.g., bonds) to actual monetary value.
+  // For instruments like AL30D with priceConversionFactor=0.01, price 64.9304 means 64.9304% of face value.
+  // Example: 1,000,000 nominales × 64.9304 × 0.01 = 649,304 USD actual monetary value
+  const grossNotional = Math.abs(quantity) * contractMultiplier * price * priceConversionFactor;
 
   // Calculate fee using pure calculator (fee is in monetary units)
   const feeResult = calculateFee({ grossNotional, category }, effectiveRates);
-  
-  // Normalize the fee amount to match normalized price scale
-  const normalizedFeeAmount = feeResult.feeAmount * priceConversionFactor;
 
   const repoBreakdown = maybeCalculateRepoBreakdown(operation, instrumentDetails, repoFeeConfig);
   const useRepoBreakdown = isRepoBreakdown(repoBreakdown);
   const feeBreakdown = useRepoBreakdown ? repoBreakdown : feeResult.feeBreakdown;
-  const feeAmount = useRepoBreakdown ? (repoBreakdown.totalExpenses ?? 0) : normalizedFeeAmount;
+  const feeAmount = useRepoBreakdown ? (repoBreakdown.totalExpenses ?? 0) : feeResult.feeAmount;
   const resolvedCategory = useRepoBreakdown ? 'caucion' : category;
   const resolvedCfiCode = useRepoBreakdown && repoBreakdown?.instrument?.cfiCode
     ? repoBreakdown.instrument.cfiCode
