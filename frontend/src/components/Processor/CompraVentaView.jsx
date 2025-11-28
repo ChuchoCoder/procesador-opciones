@@ -69,6 +69,24 @@ const formatFee = (value) => {
   }).format(value);
 };
 
+/**
+ * Format net total with sign prefix based on operation side.
+ * BUY operations: show as negative (money out)
+ * SELL operations: show with + prefix (money in)
+ */
+const formatNetTotal = (value, side) => {
+  if (!Number.isFinite(value)) {
+    return '';
+  }
+  const formattedValue = formatFee(value);
+  // BUY operations: show negative
+  if (side === 'BUY') {
+    return `-${formattedValue}`;
+  }
+  // SELL operations: show with + prefix
+  return `+${formattedValue}`;
+};
+
 const roundAmount = (value, digits = 2) => {
   if (!Number.isFinite(value)) {
     return value;
@@ -722,11 +740,17 @@ const BuySellTable = ({
                     {formatQuantity(row.quantity)}
                   </TableCell>
                   <TableCell align="right">{formatDecimal(row.price)}</TableCell>
-                  <TableCell align="right">
+                  <TableCell 
+                    align="right"
+                    sx={{
+                      color: row.side === 'BUY' ? 'error.main' : 'success.main',
+                      fontWeight: 600,
+                    }}
+                  >
                     {serviceCaucionBreakdown?.source?.startsWith('repo') ? (
                       <TooltipRepoFees breakdown={serviceCaucionBreakdown} strings={strings}>
-                        <Typography variant="body2" component="span">
-                          {formatFee(netTotal)}
+                        <Typography variant="body2" component="span" sx={{ fontWeight: 'inherit', color: 'inherit' }}>
+                          {formatNetTotal(netTotal, row.side)}
                         </Typography>
                       </TooltipRepoFees>
                     ) : (
@@ -737,8 +761,8 @@ const BuySellTable = ({
                         totalQuantity={row.quantity}
                         strings={strings}
                       >
-                        <Typography variant="body2" component="span">
-                          {formatFee(netTotal)}
+                        <Typography variant="body2" component="span" sx={{ fontWeight: 'inherit', color: 'inherit' }}>
+                          {formatNetTotal(netTotal, row.side)}
                         </Typography>
                       </FeeTooltip>
                     )}
