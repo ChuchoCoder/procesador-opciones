@@ -76,6 +76,24 @@ const formatFee = (value) => {
 };
 
 /**
+ * Format net total with sign prefix based on operation type.
+ * BUY operations (positive quantity): show as negative (money out)
+ * SELL operations (negative quantity): show with + prefix (money in)
+ */
+const formatNetTotal = (value, totalQuantity) => {
+  if (!Number.isFinite(value)) {
+    return '—';
+  }
+  const formattedValue = formatFee(value);
+  // BUY operations (positive quantity): show negative
+  if (totalQuantity > 0) {
+    return `-${formattedValue}`;
+  }
+  // SELL operations (negative quantity): show with + prefix
+  return `+${formattedValue}`;
+};
+
+/**
  * Calculate net total based on operation type.
  * BUY operations (positive quantity): add fees to gross total
  * SELL operations (negative quantity): subtract fees from gross total
@@ -317,7 +335,13 @@ const OperationsTable = ({
                     </Stack>
                   </TableCell>
                   <TableCell align="right">{formatDecimal(operation.averagePrice)}</TableCell>
-                  <TableCell align="right">
+                  <TableCell 
+                    align="right"
+                    sx={{
+                      color: quantityValue > 0 ? 'error.main' : 'success.main',
+                      fontWeight: 600,
+                    }}
+                  >
                     <FeeTooltip
                       feeBreakdown={feeBreakdown}
                       grossNotional={grossNotional}
@@ -325,8 +349,8 @@ const OperationsTable = ({
                       totalQuantity={quantityValue}
                       strings={strings}
                     >
-                      <Typography variant="body2" component="span">
-                        {formatFee(netTotal)}
+                      <Typography variant="body2" component="span" sx={{ fontWeight: 'inherit', color: 'inherit' }}>
+                        {formatNetTotal(netTotal, quantityValue)}
                       </Typography>
                     </FeeTooltip>
                   </TableCell>
