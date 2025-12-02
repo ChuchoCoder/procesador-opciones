@@ -95,20 +95,43 @@ export class JsonDataSource extends DataSourceAdapter {
     });
 
     // Normalize broker JSON format to expected row format
-  const rows = validOrders.map((order, index) => this.normalizeOrder(order, index, _config));
+    const rows = validOrders.map((order, index) => this.normalizeOrder(order, index, _config));
 
-    const rowCount = rows.length;
+    // Deduplicate rows by order_id + operation uniqueness (safety net for stale localStorage data)
+    // Use a composite key of orderId/clOrdId + execId to identify unique operations
+    const seenKeys = new Set();
+    const dedupedRows = rows.filter(row => {
+      // Build a deduplication key from primary identifiers
+      const orderId = row.order_id || row.id || '';
+      const execId = row._original?.execId || '';
+      const key = `${orderId}::${execId}`;
+      
+      if (seenKeys.has(key)) {
+        return false;
+      }
+      seenKeys.add(key);
+      return true;
+    });
+
+    // Track if any duplicates were removed
+    const duplicatesRemoved = rows.length - dedupedRows.length;
+    if (duplicatesRemoved > 0) {
+      console.warn(`[JsonDataSource] Removed ${duplicatesRemoved} duplicate operations`);
+    }
+
+    const rowCount = dedupedRows.length;
     const meta = {
       rowCount,
       totalOrders: orders.length,
       excluded: exclusionStats,
+      duplicatesRemoved,
       exceededMaxRows: rowCount > MAX_ROWS,
       warningThresholdExceeded: rowCount > LARGE_FILE_WARNING_THRESHOLD,
       errors: [],
     };
 
     // Truncate if needed
-    const truncatedRows = rowCount > MAX_ROWS ? rows.slice(0, MAX_ROWS) : rows;
+    const truncatedRows = rowCount > MAX_ROWS ? dedupedRows.slice(0, MAX_ROWS) : dedupedRows;
 
     return {
       rows: truncatedRows,
