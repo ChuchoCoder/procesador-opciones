@@ -259,3 +259,132 @@ export async function listOperations({ date, token = currentToken, accountId }) 
     throw new Error(`LIST_OPERATIONS_ERROR: ${error.message}`);
   }
 }
+
+/**
+ * Get all available instruments with their details
+ * Retrieves the complete list of tradeable instruments from the Primary/Matba Rofex REST API
+ * 
+ * @param {string} token - Session token (optional, uses stored token if not provided)
+ * @returns {Promise<{instruments: Array}>} Object containing array of instrument details
+ * @throws {Error} On network failure, auth error, or server error
+ */
+export async function getAllInstruments(token = currentToken) {
+  if (!token) {
+    throw new Error('AUTH_REQUIRED: No authentication token available');
+  }
+
+  try {
+    console.log('[jsRofex] getAllInstruments using BASE_URL:', BASE_URL);
+    
+    const response = await fetch(`${BASE_URL}/rest/instruments/all`, {
+      method: 'GET',
+      headers: {
+        'X-Auth-Token': token,
+      },
+    });
+
+    if (!response.ok) {
+      if (response.status === 401 || response.status === 403) {
+        throw new Error('AUTH_REQUIRED: Token invalid or expired');
+      }
+      throw new Error(`GET_INSTRUMENTS_ERROR: HTTP ${response.status}`);
+    }
+
+    const data = await response.json();
+    
+    // API returns { instruments: [...] }
+    return {
+      instruments: data.instruments || [],
+    };
+  } catch (error) {
+    if (error.message.includes('AUTH_REQUIRED')) {
+      throw error;
+    }
+    if (error.message.includes('429')) {
+      throw new Error('RATE_LIMITED: Retry after 60 seconds');
+    }
+    if (error.message.includes('500') || error.message.includes('502') || error.message.includes('503')) {
+      throw new Error(`SERVER_ERROR: ${error.message}`);
+    }
+    throw new Error(`GET_INSTRUMENTS_ERROR: ${error.message}`);
+  }
+}
+
+/**
+ * Get trade history for a specific instrument
+ * Retrieves historical trades from the Primary/Matba Rofex REST API
+ * 
+ * @param {Object} options - Query options
+ * @param {string} options.marketId - Market identifier (e.g., 'ROFX')
+ * @param {string} options.symbol - Instrument symbol (e.g., 'MERV - XMEV - GGAL - 24hs')
+ * @param {string} options.dateFrom - Start date in YYYY-MM-DD format
+ * @param {string} options.dateTo - End date in YYYY-MM-DD format
+ * @param {boolean} [options.external=false] - Set to true for instruments from external markets (non Matba Rofex)
+ * @param {string} options.token - Session token (optional, uses stored token if not provided)
+ * @returns {Promise<{trades: Array}>} Object containing array of trade records
+ * @throws {Error} On network failure, auth error, or server error
+ */
+export async function getTrades({ marketId, symbol, dateFrom, dateTo, external = false, token = currentToken }) {
+  if (!token) {
+    throw new Error('AUTH_REQUIRED: No authentication token available');
+  }
+
+  if (!marketId || !symbol || !dateFrom || !dateTo) {
+    throw new Error('INVALID_PARAMS: marketId, symbol, dateFrom, and dateTo are required');
+  }
+
+  try {
+    console.log('[jsRofex] getTrades using BASE_URL:', BASE_URL);
+    
+    // Build query string
+    const params = new URLSearchParams({
+      marketId,
+      symbol,
+      dateFrom,
+      dateTo,
+    });
+    
+    // Add external parameter if true (for non Matba Rofex instruments)
+    if (external) {
+      params.append('external', 'true');
+    }
+    
+    const url = `${BASE_URL}/rest/data/getTrades?${params.toString()}`;
+    console.log('[jsRofex] getTrades URL:', url);
+    
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'X-Auth-Token': token,
+      },
+    });
+
+    if (!response.ok) {
+      if (response.status === 401 || response.status === 403) {
+        throw new Error('AUTH_REQUIRED: Token invalid or expired');
+      }
+      throw new Error(`GET_TRADES_ERROR: HTTP ${response.status}`);
+    }
+
+    const data = await response.json();
+    
+    // API returns { trades: [...] } or similar structure
+    return {
+      trades: data.trades || data || [],
+    };
+  } catch (error) {
+    if (error.message.includes('AUTH_REQUIRED')) {
+      throw error;
+    }
+    if (error.message.includes('INVALID_PARAMS')) {
+      throw error;
+    }
+    if (error.message.includes('429')) {
+      throw new Error('RATE_LIMITED: Retry after 60 seconds');
+    }
+    if (error.message.includes('500') || error.message.includes('502') || error.message.includes('503')) {
+      throw new Error(`SERVER_ERROR: ${error.message}`);
+    }
+    throw new Error(`GET_TRADES_ERROR: ${error.message}`);
+  }
+}
