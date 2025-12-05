@@ -14,11 +14,15 @@ const UNKNOWN_EXPIRATION = 'UNKNOWN';
 
 /**
  * Check if an instrument is actually an option based on its CFI code.
- * This prevents futures like DLR/NOV25 from being misclassified as options
- * when their collapsed symbol (DLRNOV25) happens to match the option token pattern.
+ * This prevents non-options like bonds (AL30C) or futures (DLR/NOV25) from being 
+ * misclassified as options when their symbol happens to match the option token pattern.
  * 
- * @param {string} symbol - The instrument symbol (e.g., 'DLR/NOV25')
- * @returns {boolean} true if the instrument is confirmed to be an option (CFI starts with 'O'), false otherwise
+ * CFI Code is the authoritative source for instrument classification.
+ * If an instrument is found in InstrumentsWithDetails.json with a non-option CFI code,
+ * it will NOT be treated as an option regardless of symbol pattern.
+ * 
+ * @param {string} symbol - The instrument symbol (e.g., 'DLR/NOV25', 'AL30C')
+ * @returns {boolean} true if the instrument is confirmed to be an option (CFI starts with 'O'), false if confirmed non-option, false if unknown
  */
 const isConfirmedOption = (symbol) => {
   if (!symbol) {
@@ -27,13 +31,14 @@ const isConfirmedOption = (symbol) => {
   
   const details = getInstrumentDetails(symbol);
   if (!details || !details.cfiCode) {
-    // If no instrument details found, we can't confirm it's NOT an option,
-    // so we allow the token pattern matching to proceed
-    return true;
+    // If no instrument details found, we cannot confirm via CFI
+    // Return null to indicate "unknown" - caller should check Symbol Prefix config
+    return null;
   }
   
   // CFI codes starting with 'O' are options (OCAFXS, OPAFXS, OCEFXS, OPEFXS)
   // CFI codes starting with 'F' are futures (FXXXSX)
+  // CFI codes starting with 'D' are bonds (DBXXXX) - e.g., AL30C
   // If we have a confirmed CFI code, trust it over the token pattern
   return details.cfiCode.startsWith('O');
 };
@@ -190,6 +195,14 @@ const getTokenCandidates = (row) => {
   return candidates;
 };
 
+/**
+ * Find a token match from row data that matches the option token pattern.
+ * This extracts strike, expiration, and potential option type from the token.
+ * Note: The extracted type should be verified via CFI Code before being used.
+ * 
+ * @param {Object} row - The operation row data
+ * @returns {Object|null} Parsed token match or null if no pattern match found
+ */
 const findTokenMatch = (row) => {
   const candidates = getTokenCandidates(row);
 
@@ -507,20 +520,36 @@ export const enrichOperationRow = async (row = {}, configuration = {}) => {
     strike = tokenStrike;
   }
 
+  // Determine symbol configuration from prefix map BEFORE type assignment
+  const symbolConfig = tokenSymbol ? prefixMap[tokenSymbol] : undefined;
+
   if (!type && tokenType) {
-    // Before accepting the token type, verify the instrument is actually an option
-    // This prevents futures like DLR/NOV25 from being misclassified when their
-    // collapsed form (DLRNOV25) matches the option pattern
-    // Check the explicit symbol from the CSV row first
-    if (explicitSymbol && !isConfirmedOption(explicitSymbol)) {
-      // Don't use the token type - this instrument is confirmed to be a non-option
+    // Before accepting the token type, verify the instrument is actually an option.
+    // Use two sources of truth:
+    // 1. CFI Code from InstrumentsWithDetails.json (authoritative)
+    // 2. Symbol Prefix configuration (user-defined option prefixes)
+    //
+    // If CFI confirms it's NOT an option (e.g., bonds like AL30C), reject the token type.
+    // If CFI is unknown but Symbol Prefix is configured, accept it as an option.
+    // If neither CFI nor Symbol Prefix confirms it, reject the token type.
+    
+    const cfiResult = explicitSymbol ? isConfirmedOption(explicitSymbol) : null;
+    
+    if (cfiResult === false) {
+      // CFI confirms this is NOT an option (e.g., bond, future, equity)
       type = '';
-    } else {
+    } else if (cfiResult === true) {
+      // CFI confirms this IS an option
       type = tokenType;
+    } else if (symbolConfig) {
+      // CFI unknown, but Symbol Prefix is configured - trust the configuration
+      type = tokenType;
+    } else {
+      // Neither CFI nor Symbol Prefix confirms this is an option - reject
+      type = '';
     }
   }
 
-  const symbolConfig = tokenSymbol ? prefixMap[tokenSymbol] : undefined;
   let appliedDecimals = null;
 
   if (symbolConfig) {

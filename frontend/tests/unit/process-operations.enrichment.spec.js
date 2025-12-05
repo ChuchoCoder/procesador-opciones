@@ -312,13 +312,27 @@ describe('operation classification', () => {
     expect(explicitResult.type).toBe('PUT');
     expect(explicitResult.meta.detectedFromToken).toBe(false);
 
+    // Token-based type detection requires either:
+    // 1. CFI Code confirmation from InstrumentsWithDetails.json, OR
+    // 2. Symbol Prefix configuration
+    // This test uses Symbol Prefix configuration to enable token-based detection
     const tokenTypeRow = buildRow({
       option_type: null,
       symbol: '',
       strike: null,
       security_id: 'GGALV110ENE24',
     });
-    const tokenTypeResult = await enrichOperationRow(tokenTypeRow);
+    const configuration = {
+      prefixMap: {
+        GGAL: {
+          symbol: 'GGAL',
+          prefix: 'GGAL',
+          defaultDecimals: 0,
+          strikeDefaultDecimals: 0,
+        },
+      },
+    };
+    const tokenTypeResult = await enrichOperationRow(tokenTypeRow, configuration);
     expect(tokenTypeResult.type).toBe('PUT');
     expect(tokenTypeResult.symbol).toBe('GGAL');
     expect(tokenTypeResult.expiration).toBe('ENE24');
