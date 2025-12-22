@@ -47,6 +47,17 @@ const createReport = ({
 });
 
 describe('clipboard-service', () => {
+  const numberFormatter = new Intl.NumberFormat(globalThis?.navigator?.language || undefined, {
+    useGrouping: false,
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 4,
+  });
+  const priceFormatter = new Intl.NumberFormat(globalThis?.navigator?.language || undefined, {
+    useGrouping: false,
+    minimumFractionDigits: 4,
+    maximumFractionDigits: 4,
+  });
+  const fmt = (n) => (Number.isInteger(n) ? n.toString() : numberFormatter.format(n));
   describe('buildClipboardPayload', () => {
     it('formats CALLS scope into tab-delimited rows with date as first column', () => {
       const report = createReport({
@@ -72,8 +83,10 @@ describe('clipboard-service', () => {
       });
       
       // Check the numeric parts (skipping date as format varies)
-      expect(lines[0]).toMatch(/\t3\t120\t10.5$/);
-      expect(lines[1]).toMatch(/\t-2\t125.5\t9.75$/);
+      const expected1 = `\t${fmt(3)}\t${fmt(120)}\t${fmt(10.5)}$`;
+      const expected2 = `\t${fmt(-2)}\t${fmt(125.5)}\t${fmt(9.75)}$`;
+      expect(lines[0]).toMatch(new RegExp(expected1));
+      expect(lines[1]).toMatch(new RegExp(expected2));
     });
 
     it('formats COMBINED scope including section titles and blank separator', () => {
@@ -87,10 +100,16 @@ describe('clipboard-service', () => {
 
       const lines = payload.split('\n');
       expect(lines[0]).toBe('OPERACIONES CALLS (CON PROMEDIOS)');
-      expect(lines[1]).toMatch(/\t-2\t110\t9.75$/);
+      {
+        const expected = `\t${fmt(-2)}\t${fmt(110)}\t${fmt(9.75)}$`;
+        expect(lines[1]).toMatch(new RegExp(expected));
+      }
       expect(lines[2]).toBe('');
       expect(lines[3]).toBe('OPERACIONES PUTS (CON PROMEDIOS)');
-      expect(lines[4]).toMatch(/\t5\t95.5\t1.2345$/);
+      {
+        const expected = `\t${fmt(5)}\t${fmt(95.5)}\t${fmt(1.2345)}$`;
+        expect(lines[4]).toMatch(new RegExp(expected));
+      }
     });
 
     it('throws Spanish error when there is no data for the requested scope', () => {
@@ -116,7 +135,10 @@ describe('clipboard-service', () => {
       // Should still have 4 columns, with empty date
       const lines = payload.split('\n');
       expect(lines).toHaveLength(1);
-      expect(lines[0]).toMatch(/^\t3\t120\t10.5$/);
+      {
+        const expected = `^\t${fmt(3)}\t${fmt(120)}\t${fmt(10.5)}$`;
+        expect(lines[0]).toMatch(new RegExp(expected));
+      }
     });
 
     it('includes date from legs when operation is consolidated', () => {
@@ -143,7 +165,10 @@ describe('clipboard-service', () => {
       const lines = payload.split('\n');
       expect(lines).toHaveLength(1);
       // Should have date from legs, followed by quantity, strike, price
-      expect(lines[0]).toMatch(/\t3\t120\t10.5$/);
+      {
+        const expected = `\t${fmt(3)}\t${fmt(120)}\t${fmt(10.5)}$`;
+        expect(lines[0]).toMatch(new RegExp(expected));
+      }
       expect(lines[0]).not.toMatch(/^\t/); // Should NOT start with tab (date should be present)
     });
   });
@@ -167,7 +192,10 @@ describe('clipboard-service', () => {
       expect(writeText).toHaveBeenCalledTimes(1);
       const calledPayload = writeText.mock.calls[0][0];
       // Should have date followed by quantity, strike, price
-      expect(calledPayload).toMatch(/\t1\t100\t12.3456$/);
+      {
+        const expected = `\t${fmt(1)}\t${fmt(100)}\t${fmt(12.3456)}$`;
+        expect(calledPayload).toMatch(new RegExp(expected));
+      }
     });
 
     it('throws Spanish error when clipboard API is unavailable', async () => {

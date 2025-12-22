@@ -616,6 +616,32 @@ class OperationsProcessor {
    */
   generateCopyData(type = "all") {
     let data = [];
+    const userLocale = (typeof navigator !== 'undefined' && navigator.language) ? navigator.language : undefined;
+    const strikeAndQtyFormatter = (typeof Intl !== 'undefined')
+      ? new Intl.NumberFormat(userLocale, { useGrouping: false, minimumFractionDigits: 0, maximumFractionDigits: 4 })
+      : null;
+    const priceFormatter = (typeof Intl !== 'undefined')
+      ? new Intl.NumberFormat(userLocale, { useGrouping: false, minimumFractionDigits: 4, maximumFractionDigits: 4 })
+      : null;
+
+    const fmtQty = (value) => {
+      const num = Number(value);
+      if (!Number.isFinite(num)) return String(value ?? '');
+      if (Number.isInteger(num)) return num.toString();
+      return strikeAndQtyFormatter ? strikeAndQtyFormatter.format(num) : String(num);
+    };
+
+    const fmtStrike = (value) => {
+      const num = Number(value);
+      if (!Number.isFinite(num)) return String(value ?? '');
+      return strikeAndQtyFormatter ? strikeAndQtyFormatter.format(num) : String(num);
+    };
+
+    const fmtPrice = (value) => {
+      const num = Number(value);
+      if (!Number.isFinite(num)) return String(value ?? '');
+      return priceFormatter ? priceFormatter.format(num) : num.toFixed(4);
+    };
 
     if (type === "all") {
       // Para "todo" incluir encabezados y información
@@ -627,9 +653,9 @@ class OperationsProcessor {
         data.push(`OPERACIONES CALLS${modeText}`);
         data.push("Cantidad\tBase\tPrecio");
         this.callsData.forEach((op) => {
-          const cantidad = op.cantidad.toString().replace(".", ",");
-          const base = op.base.toString().replace(".", ",");
-          const precio = Number(op.precio).toFixed(4).replace(".", ",");
+          const cantidad = fmtQty(op.cantidad);
+          const base = fmtStrike(op.base);
+          const precio = fmtPrice(op.precio);
           data.push(`${cantidad}\t${base}\t${precio}`);
         });
         data.push("");
@@ -639,26 +665,26 @@ class OperationsProcessor {
         data.push(`OPERACIONES PUTS${modeText}`);
         data.push("Cantidad\tBase\tPrecio");
         this.putsData.forEach((op) => {
-          const cantidad = op.cantidad.toString().replace(".", ",");
-          const base = op.base.toString().replace(".", ",");
-          const precio = op.precio.toString().replace(".", ",");
+          const cantidad = fmtQty(op.cantidad);
+          const base = fmtStrike(op.base);
+          const precio = fmtPrice(op.precio);
           data.push(`${cantidad}\t${base}\t${precio}`);
         });
       }
     } else if (type === "calls") {
       // Para "calls" solo los datos, sin encabezados
       this.callsData.forEach((op) => {
-        const cantidad = op.cantidad.toString().replace(".", ",");
-        const base = op.base.toString().replace(".", ",");
-        const precio = Number(op.precio).toFixed(4).replace(".", ",");
+        const cantidad = fmtQty(op.cantidad);
+        const base = fmtStrike(op.base);
+        const precio = fmtPrice(op.precio);
         data.push(`${cantidad}\t${base}\t${precio}`);
       });
     } else if (type === "puts") {
       // Para "puts" solo los datos, sin encabezados
       this.putsData.forEach((op) => {
-        const cantidad = op.cantidad.toString().replace(".", ",");
-        const base = op.base.toString().replace(".", ",");
-        const precio = Number(op.precio).toFixed(4).replace(".", ",");
+        const cantidad = fmtQty(op.cantidad);
+        const base = fmtStrike(op.base);
+        const precio = fmtPrice(op.precio);
         data.push(`${cantidad}\t${base}\t${precio}`);
       });
     }

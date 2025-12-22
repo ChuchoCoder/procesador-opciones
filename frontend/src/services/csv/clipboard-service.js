@@ -24,7 +24,7 @@ const DATE_FORMATTER = typeof Intl !== 'undefined'
   : null;
 
 const STRIKE_FORMATTER = typeof Intl !== 'undefined'
-  ? new Intl.NumberFormat('en-US', {
+  ? new Intl.NumberFormat(navigator?.language || undefined, {
       useGrouping: false,
       minimumFractionDigits: 0,
       maximumFractionDigits: 4,
@@ -32,7 +32,7 @@ const STRIKE_FORMATTER = typeof Intl !== 'undefined'
   : null;
 
 const PRICE_FORMATTER = typeof Intl !== 'undefined'
-  ? new Intl.NumberFormat('en-US', {
+  ? new Intl.NumberFormat(navigator?.language || undefined, {
       useGrouping: false,
       minimumFractionDigits: 0,
       maximumFractionDigits: 4,
