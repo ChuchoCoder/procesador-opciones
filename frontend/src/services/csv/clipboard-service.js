@@ -16,35 +16,50 @@ export const CLIPBOARD_ERROR_MESSAGES = {
 const HEADERS = ['Fecha', 'Cantidad', 'Strike', 'Precio'];
 
 const DATE_FORMATTER = typeof Intl !== 'undefined'
-  ? new Intl.DateTimeFormat(navigator?.language || 'es-AR', {
+  ? new Intl.DateTimeFormat(undefined, {
       year: 'numeric',
       month: '2-digit',
       day: '2-digit',
     })
   : null;
 
-const STRIKE_FORMATTER = typeof Intl !== 'undefined'
-  ? new Intl.NumberFormat(navigator?.language || undefined, {
-      useGrouping: false,
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 4,
-    })
-  : null;
+// Create formatters lazily to capture runtime navigator.language
+let strikeFormatter = null;
+let priceFormatter = null;
 
-const PRICE_FORMATTER = typeof Intl !== 'undefined'
-  ? new Intl.NumberFormat(navigator?.language || undefined, {
+const getStrikeFormatter = () => {
+  if (!strikeFormatter && typeof Intl !== 'undefined') {
+    // Use system default locale (no argument) to respect Windows Regional Format
+    strikeFormatter = new Intl.NumberFormat(undefined, {
       useGrouping: false,
       minimumFractionDigits: 0,
       maximumFractionDigits: 4,
-    })
-  : null;
+    });
+    console.log('[Clipboard] Strike formatter test 242.07:', strikeFormatter.format(242.07));
+  }
+  return strikeFormatter;
+};
+
+const getPriceFormatter = () => {
+  if (!priceFormatter && typeof Intl !== 'undefined') {
+    // Use system default locale (no argument) to respect Windows Regional Format
+    priceFormatter = new Intl.NumberFormat(undefined, {
+      useGrouping: false,
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 4,
+    });
+    console.log('[Clipboard] Price formatter test 10.154:', priceFormatter.format(10.154));
+  }
+  return priceFormatter;
+};
 
 const formatStrike = (strike) => {
   if (!Number.isFinite(strike)) {
     return '';
   }
-  if (STRIKE_FORMATTER) {
-    return STRIKE_FORMATTER.format(strike);
+  const formatter = getStrikeFormatter();
+  if (formatter) {
+    return formatter.format(strike);
   }
   return String(strike);
 };
@@ -53,8 +68,9 @@ const formatPrice = (price) => {
   if (!Number.isFinite(price)) {
     return '';
   }
-  if (PRICE_FORMATTER) {
-    return PRICE_FORMATTER.format(price);
+  const formatter = getPriceFormatter();
+  if (formatter) {
+    return formatter.format(price);
   }
   return String(price);
 };
@@ -68,8 +84,9 @@ const formatQuantity = (quantity) => {
     return quantity.toString();
   }
 
-  if (PRICE_FORMATTER) {
-    return PRICE_FORMATTER.format(quantity);
+  const formatter = getPriceFormatter();
+  if (formatter) {
+    return formatter.format(quantity);
   }
 
   return String(quantity);

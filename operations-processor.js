@@ -616,12 +616,12 @@ class OperationsProcessor {
    */
   generateCopyData(type = "all") {
     let data = [];
-    const userLocale = (typeof navigator !== 'undefined' && navigator.language) ? navigator.language : undefined;
+    // Use system default locale (undefined) to respect Windows Regional Format, not browser language
     const strikeAndQtyFormatter = (typeof Intl !== 'undefined')
-      ? new Intl.NumberFormat(userLocale, { useGrouping: false, minimumFractionDigits: 0, maximumFractionDigits: 4 })
+      ? new Intl.NumberFormat(undefined, { useGrouping: false, minimumFractionDigits: 0, maximumFractionDigits: 4 })
       : null;
     const priceFormatter = (typeof Intl !== 'undefined')
-      ? new Intl.NumberFormat(userLocale, { useGrouping: false, minimumFractionDigits: 4, maximumFractionDigits: 4 })
+      ? new Intl.NumberFormat(undefined, { useGrouping: false, minimumFractionDigits: 4, maximumFractionDigits: 4 })
       : null;
 
     const fmtQty = (value) => {
@@ -709,14 +709,40 @@ class OperationsProcessor {
       ? " (CON PROMEDIOS)"
       : " (SIN PROMEDIOS)";
 
+    // CSV files should always use dots (standard format), not regional format
+    const numberFormatter = (typeof Intl !== 'undefined')
+      ? new Intl.NumberFormat('en-US', { useGrouping: false, minimumFractionDigits: 0, maximumFractionDigits: 4 })
+      : null;
+    const priceFormatter = (typeof Intl !== 'undefined')
+      ? new Intl.NumberFormat('en-US', { useGrouping: false, minimumFractionDigits: 4, maximumFractionDigits: 4 })
+      : null;
+
+    const fmtQty = (value) => {
+      const num = Number(value);
+      if (!Number.isFinite(num)) return String(value ?? '');
+      if (Number.isInteger(num)) return num.toString();
+      return numberFormatter ? numberFormatter.format(num) : String(num);
+    };
+
+    const fmtStrike = (value) => {
+      const num = Number(value);
+      if (!Number.isFinite(num)) return String(value ?? '');
+      return numberFormatter ? numberFormatter.format(num) : String(num);
+    };
+
+    const fmtPrice = (value) => {
+      const num = Number(value);
+      if (!Number.isFinite(num)) return String(value ?? '');
+      return priceFormatter ? priceFormatter.format(num) : num.toFixed(4);
+    };
+
     // Hoja CALLS
     csvContent += `OPERACIONES CALLS${modeText}\n`;
     csvContent += "Cantidad;Base;Precio\n"; // Usar punto y coma como separador para formato europeo
     this.callsData.forEach((op) => {
-      // Formatear números con coma decimal
-      const cantidad = op.cantidad.toString().replace(".", ",");
-      const base = op.base.toString().replace(".", ",");
-      const precio = Number(op.precio).toFixed(4).replace(".", ",");
+      const cantidad = fmtQty(op.cantidad);
+      const base = fmtStrike(op.base);
+      const precio = fmtPrice(op.precio);
       csvContent += `${cantidad};${base};${precio}\n`;
     });
 
@@ -726,10 +752,9 @@ class OperationsProcessor {
     csvContent += `OPERACIONES PUTS${modeText}\n`;
     csvContent += "Cantidad;Base;Precio\n"; // Usar punto y coma como separador para formato europeo
     this.putsData.forEach((op) => {
-      // Formatear números con coma decimal
-      const cantidad = op.cantidad.toString().replace(".", ",");
-      const base = op.base.toString().replace(".", ",");
-      const precio = Number(op.precio).toFixed(4).replace(".", ",");
+      const cantidad = fmtQty(op.cantidad);
+      const base = fmtStrike(op.base);
+      const precio = fmtPrice(op.precio);
       csvContent += `${cantidad};${base};${precio}\n`;
     });
 
@@ -761,12 +786,39 @@ class OperationsProcessor {
       ? " (CON PROMEDIOS)"
       : " (SIN PROMEDIOS)";
 
+    // CSV files should always use dots (standard format), not regional format
+    const numberFormatter = (typeof Intl !== 'undefined')
+      ? new Intl.NumberFormat('en-US', { useGrouping: false, minimumFractionDigits: 0, maximumFractionDigits: 4 })
+      : null;
+    const priceFormatter = (typeof Intl !== 'undefined')
+      ? new Intl.NumberFormat('en-US', { useGrouping: false, minimumFractionDigits: 4, maximumFractionDigits: 4 })
+      : null;
+
+    const fmtQty = (value) => {
+      const num = Number(value);
+      if (!Number.isFinite(num)) return String(value ?? '');
+      if (Number.isInteger(num)) return num.toString();
+      return numberFormatter ? numberFormatter.format(num) : String(num);
+    };
+
+    const fmtStrike = (value) => {
+      const num = Number(value);
+      if (!Number.isFinite(num)) return String(value ?? '');
+      return numberFormatter ? numberFormatter.format(num) : String(num);
+    };
+
+    const fmtPrice = (value) => {
+      const num = Number(value);
+      if (!Number.isFinite(num)) return String(value ?? '');
+      return priceFormatter ? priceFormatter.format(num) : num.toFixed(4);
+    };
+
     csvContent += `OPERACIONES CALLS${modeText}\n`;
     csvContent += "Cantidad;Base;Precio\n";
     this.callsData.forEach((op) => {
-      const cantidad = op.cantidad.toString().replace(".", ",");
-      const base = op.base.toString().replace(".", ",");
-      const precio = Number(op.precio).toFixed(4).replace(".", ",");
+      const cantidad = fmtQty(op.cantidad);
+      const base = fmtStrike(op.base);
+      const precio = fmtPrice(op.precio);
       csvContent += `${cantidad};${base};${precio}\n`;
     });
 
@@ -797,12 +849,39 @@ class OperationsProcessor {
       ? " (CON PROMEDIOS)"
       : " (SIN PROMEDIOS)";
 
+    // CSV files should always use dots (standard format), not regional format
+    const numberFormatter = (typeof Intl !== 'undefined')
+      ? new Intl.NumberFormat('en-US', { useGrouping: false, minimumFractionDigits: 0, maximumFractionDigits: 4 })
+      : null;
+    const priceFormatter = (typeof Intl !== 'undefined')
+      ? new Intl.NumberFormat('en-US', { useGrouping: false, minimumFractionDigits: 4, maximumFractionDigits: 4 })
+      : null;
+
+    const fmtQty = (value) => {
+      const num = Number(value);
+      if (!Number.isFinite(num)) return String(value ?? '');
+      if (Number.isInteger(num)) return num.toString();
+      return numberFormatter ? numberFormatter.format(num) : String(num);
+    };
+
+    const fmtStrike = (value) => {
+      const num = Number(value);
+      if (!Number.isFinite(num)) return String(value ?? '');
+      return numberFormatter ? numberFormatter.format(num) : String(num);
+    };
+
+    const fmtPrice = (value) => {
+      const num = Number(value);
+      if (!Number.isFinite(num)) return String(value ?? '');
+      return priceFormatter ? priceFormatter.format(num) : num.toFixed(4);
+    };
+
     csvContent += `OPERACIONES PUTS${modeText}\n`;
     csvContent += "Cantidad;Base;Precio\n";
     this.putsData.forEach((op) => {
-      const cantidad = op.cantidad.toString().replace(".", ",");
-      const base = op.base.toString().replace(".", ",");
-      const precio = op.precio.toString().replace(".", ",");
+      const cantidad = fmtQty(op.cantidad);
+      const base = fmtStrike(op.base);
+      const precio = fmtPrice(op.precio);
       csvContent += `${cantidad};${base};${precio}\n`;
     });
 

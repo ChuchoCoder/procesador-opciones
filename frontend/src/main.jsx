@@ -6,11 +6,12 @@ import './index.css';
 import App from './app/App.jsx';
 import ToastContainer from './components/Toast/ToastContainer.jsx';
 import { ConfigProvider } from './state/config-context.jsx';
-import { bootstrapFeeServices } from './services/bootstrap-defaults.js';
+import { bootstrapFeeServices, seedDefaultSymbols } from './services/bootstrap-defaults.js';
 
 const startApplication = async () => {
   try {
     await bootstrapFeeServices();
+    await seedDefaultSymbols();
   } catch (error) {
      
     console.error('PO: bootstrapFeeServices failed', error);
