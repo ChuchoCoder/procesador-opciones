@@ -48,6 +48,10 @@
  * @property {number} totalValue - Total value of operations
  * @property {number} avgPrice - Average price
  * @property {number} totalFees - Total fees (proportional to matched qty)
+ * @property {number} [commissionAmount] - Total broker commissions (proportional to matched qty)
+ * @property {number} [rightsAmount] - Total derechos de mercado (proportional to matched qty)
+ * @property {number} [commissionPct] - Average commission percentage
+ * @property {number} [rightsPct] - Average rights percentage
  * @property {number} quantity - Total quantity
  */
 

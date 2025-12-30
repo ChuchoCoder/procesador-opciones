@@ -120,7 +120,13 @@ function getPnLTradeBreakdown(row) {
     const totalValue = Number.isFinite(data.totalValue) ? data.totalValue : 0;
     const avgPrice = Number.isFinite(data.avgPrice) ? data.avgPrice : 0;
     const totalFees = Number.isFinite(data.totalFees) ? data.totalFees : 0;
+    const commissionAmount = Number.isFinite(data.commissionAmount) ? data.commissionAmount : 0;
+    const rightsAmount = Number.isFinite(data.rightsAmount) ? data.rightsAmount : 0;
+    const commissionPct = Number.isFinite(data.commissionPct) ? data.commissionPct : 0;
+    const rightsPct = Number.isFinite(data.rightsPct) ? data.rightsPct : 0;
     const net = isSell ? (totalValue - totalFees) : (totalValue + totalFees);
+
+    const hasBreakdown = commissionAmount > 0 || rightsAmount > 0;
 
     return (
       <Box sx={{ mb: 0.5 }}>
@@ -131,9 +137,26 @@ function getPnLTradeBreakdown(row) {
           <Typography variant="body2" sx={{ display: 'block', color: 'grey.400', fontSize: '0.75rem' }}>
             {'\u2022'} Precio promedio: {formatCurrency(avgPrice)}
           </Typography>
-          <Typography variant="body2" sx={{ display: 'block', color: 'grey.400', fontSize: '0.75rem' }}>
-            {'\u2022'} Comisiones: {formatCurrency(totalFees)}
-          </Typography>
+          {hasBreakdown ? (
+            <>
+              <Typography variant="body2" sx={{ display: 'block', color: 'grey.400', fontSize: '0.75rem' }}>
+                {'\u2022'} Comisiones: {formatCurrency(commissionAmount)}
+                {commissionPct > 0 && (
+                  <span style={{ opacity: 0.7 }}> ({(commissionPct * 100).toFixed(4)}%)</span>
+                )}
+              </Typography>
+              <Typography variant="body2" sx={{ display: 'block', color: 'grey.400', fontSize: '0.75rem' }}>
+                {'\u2022'} Derechos de mercado: {formatCurrency(rightsAmount)}
+                {rightsPct > 0 && (
+                  <span style={{ opacity: 0.7 }}> ({(rightsPct * 100).toFixed(4)}%)</span>
+                )}
+              </Typography>
+            </>
+          ) : (
+            <Typography variant="body2" sx={{ display: 'block', color: 'grey.400', fontSize: '0.75rem' }}>
+              {'\u2022'} Comisiones: {formatCurrency(totalFees)}
+            </Typography>
+          )}
           <Typography variant="body2" sx={{ display: 'block', color: isSell ? 'error.main' : 'success.main', fontSize: '0.75rem' }}>
             {'\u2022'} Neto: {formatCurrency(net)}
           </Typography>
@@ -213,17 +236,29 @@ function getPnLCaucionBreakdown(row) {
           </Typography>
           <Typography variant="body2" sx={{ display: 'block', color: 'grey.400', ml: 1 }}>
             Arancel: {fmtSigned(arancel)}
+            {Number.isFinite(breakdown?.rates?.arancelPercent) && breakdown.rates.arancelPercent > 0 && (
+              <span style={{ opacity: 0.7 }}> ({breakdown.rates.arancelPercent.toFixed(2)}% anual)</span>
+            )}
           </Typography>
           <Typography variant="body2" sx={{ display: 'block', color: 'grey.400', ml: 1 }}>
             Derechos de mercado: {fmtSigned(derechos)}
+            {Number.isFinite(breakdown?.rates?.derechosDailyPercent) && breakdown.rates.derechosDailyPercent > 0 && (
+              <span style={{ opacity: 0.7 }}> ({breakdown.rates.derechosDailyPercent.toFixed(4)}% diario)</span>
+            )}
           </Typography>
           {Number.isFinite(gastosGarantia) && (
             <Typography variant="body2" sx={{ display: 'block', color: 'grey.400', ml: 1 }}>
               Gastos de garantía: {fmtSigned(gastosGarantia)}
+              {Number.isFinite(breakdown?.rates?.gastosDailyPercent) && breakdown.rates.gastosDailyPercent > 0 && (
+                <span style={{ opacity: 0.7 }}> ({breakdown.rates.gastosDailyPercent.toFixed(4)}% diario)</span>
+              )}
             </Typography>
           )}
           <Typography variant="body2" sx={{ display: 'block', color: 'grey.400', ml: 1 }}>
             IVA sobre gastos: {fmtSigned(iva)}
+            {Number.isFinite(breakdown?.rates?.ivaRate) && breakdown.rates.ivaRate > 0 && (
+              <span style={{ opacity: 0.7 }}> ({(breakdown.rates.ivaRate * 100).toFixed(2)}%)</span>
+            )}
           </Typography>
 
           <Typography variant="body2" sx={{ display: 'block', mt: 1, fontWeight: 600, borderTop: '1px solid', borderColor: 'grey.700', pt: 0.5, color: 'grey.100' }}>
@@ -342,17 +377,29 @@ function getPnLCaucionBreakdown(row) {
             </Typography>
             <Typography variant="body2" sx={{ display: 'block', color: 'grey.400', ml: 1 }}>
               Arancel: {fmtSigned(arancel)}
+              {Number.isFinite(breakdown?.rates?.arancelPercent) && breakdown.rates.arancelPercent > 0 && (
+                <span style={{ opacity: 0.7 }}> ({breakdown.rates.arancelPercent.toFixed(2)}% anual)</span>
+              )}
             </Typography>
             <Typography variant="body2" sx={{ display: 'block', color: 'grey.400', ml: 1 }}>
               Derechos de mercado: {fmtSigned(derechos)}
+              {Number.isFinite(breakdown?.rates?.derechosDailyPercent) && breakdown.rates.derechosDailyPercent > 0 && (
+                <span style={{ opacity: 0.7 }}> ({breakdown.rates.derechosDailyPercent.toFixed(4)}% diario)</span>
+              )}
             </Typography>
             {Number.isFinite(gastosGarantia) && (
               <Typography variant="body2" sx={{ display: 'block', color: 'grey.400', ml: 1 }}>
                 Gastos de garantía: {fmtSigned(gastosGarantia)}
+                {Number.isFinite(breakdown?.rates?.gastosDailyPercent) && breakdown.rates.gastosDailyPercent > 0 && (
+                  <span style={{ opacity: 0.7 }}> ({breakdown.rates.gastosDailyPercent.toFixed(4)}% diario)</span>
+                )}
               </Typography>
             )}
             <Typography variant="body2" sx={{ display: 'block', color: 'grey.400', ml: 1 }}>
               IVA sobre gastos: {fmtSigned(iva)}
+              {Number.isFinite(breakdown?.rates?.ivaRate) && breakdown.rates.ivaRate > 0 && (
+                <span style={{ opacity: 0.7 }}> ({(breakdown.rates.ivaRate * 100).toFixed(2)}%)</span>
+              )}
             </Typography>
             <Typography variant="body2" sx={{ display: 'block', mt: 1, fontWeight: 600, borderTop: '1px solid', borderColor: 'grey.700', pt: 0.5, color: 'grey.100' }}>
               Gastos totales: {fmtSigned(totalExpenses)}

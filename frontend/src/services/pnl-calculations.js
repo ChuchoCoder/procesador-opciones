@@ -113,16 +113,27 @@ async function calculatePatronVentaCICompra24h(grupo) {
   const avgRawPriceVentasCI = calculateWeightedAverageRawPrice(ventasCI);
   const avgRawPriceCompras24h = calculateWeightedAverageRawPrice(compras24h);
   
+  const ventasFees = calculateSeparatedFees(ventasCI, proportionVentas);
+  const comprasFees = calculateSeparatedFees(compras24h, proportionCompras);
+  
   resultado.ventaCI_breakdown = {
     totalValue: Math.round(avgPrecioVentasCI * matchedQty * 100) / 100,
     avgPrice: Math.round(avgRawPriceVentasCI * 100) / 100, // Display original price from CSV
     totalFees: Math.round(totalComisionesVentas * 100) / 100,
+    commissionAmount: Math.round(ventasFees.commissionAmount * 100) / 100,
+    rightsAmount: Math.round(ventasFees.rightsAmount * 100) / 100,
+    commissionPct: ventasFees.commissionPct,
+    rightsPct: ventasFees.rightsPct,
     quantity: totalVentasCI,
   };
   resultado.compra24h_breakdown = {
     totalValue: Math.round(avgPrecioCompras24h * matchedQty * 100) / 100,
     avgPrice: Math.round(avgRawPriceCompras24h * 100) / 100, // Display original price from CSV
     totalFees: Math.round(totalComisionesCompras * 100) / 100,
+    commissionAmount: Math.round(comprasFees.commissionAmount * 100) / 100,
+    rightsAmount: Math.round(comprasFees.rightsAmount * 100) / 100,
+    commissionPct: comprasFees.commissionPct,
+    rightsPct: comprasFees.rightsPct,
     quantity: totalCompras24h,
   };
 
@@ -177,6 +188,7 @@ async function calculatePatronVentaCICompra24h(grupo) {
             iva: raw.ivaAmount ?? raw.iva ?? 0,
             totalExpenses: raw.totalExpenses ?? 0,
             netSettlement: raw.netSettlement ?? raw.baseAmount ?? baseAmount,
+            rates: raw.rates ?? null,
             warnings: raw.warnings ?? [],
             status: raw.status ?? null,
           };
@@ -276,16 +288,27 @@ async function calculatePatronCompraCIVenta24h(grupo) {
   const avgRawPriceComprasCI = calculateWeightedAverageRawPrice(comprasCI);
   const avgRawPriceVentas24h = calculateWeightedAverageRawPrice(ventas24h);
   
+  const comprasFees = calculateSeparatedFees(comprasCI, proportionCompras);
+  const ventasFees = calculateSeparatedFees(ventas24h, proportionVentas);
+  
   resultado.compraCI_breakdown = {
     totalValue: Math.round(avgPrecioComprasCI * matchedQty * 100) / 100,
     avgPrice: Math.round(avgRawPriceComprasCI * 100) / 100, // Display original price from CSV
     totalFees: Math.round(totalComisionesCompras * 100) / 100,
+    commissionAmount: Math.round(comprasFees.commissionAmount * 100) / 100,
+    rightsAmount: Math.round(comprasFees.rightsAmount * 100) / 100,
+    commissionPct: comprasFees.commissionPct,
+    rightsPct: comprasFees.rightsPct,
     quantity: totalComprasCI,
   };
   resultado.venta24h_breakdown = {
     totalValue: Math.round(avgPrecioVentas24h * matchedQty * 100) / 100,
     avgPrice: Math.round(avgRawPriceVentas24h * 100) / 100, // Display original price from CSV
     totalFees: Math.round(totalComisionesVentas * 100) / 100,
+    commissionAmount: Math.round(ventasFees.commissionAmount * 100) / 100,
+    rightsAmount: Math.round(ventasFees.rightsAmount * 100) / 100,
+    commissionPct: ventasFees.commissionPct,
+    rightsPct: ventasFees.rightsPct,
     quantity: totalVentas24h,
   };
 
@@ -340,6 +363,7 @@ async function calculatePatronCompraCIVenta24h(grupo) {
             iva: raw.ivaAmount ?? raw.iva ?? 0,
             totalExpenses: raw.totalExpenses ?? 0,
             netSettlement: raw.netSettlement ?? raw.baseAmount ?? baseAmount,
+            rates: raw.rates ?? null,
             warnings: raw.warnings ?? [],
             status: raw.status ?? null,
           };
@@ -387,6 +411,48 @@ function sumQuantity(operations) {
  */
 function sumCommissions(operations) {
   return operations.reduce((sum, op) => sum + op.comisiones, 0);
+}
+
+/**
+ * Calculate separated fees (commissions and rights) with percentages
+ * @param {import('./arbitrage-types.js').Operacion[]} operations
+ * @param {number} proportion - Proportion of matched quantity
+ * @returns {{ commissionAmount: number, rightsAmount: number, commissionPct: number, rightsPct: number }}
+ */
+function calculateSeparatedFees(operations, proportion) {
+  if (!operations || operations.length === 0) {
+    return { commissionAmount: 0, rightsAmount: 0, commissionPct: 0, rightsPct: 0 };
+  }
+
+  let totalCommission = 0;
+  let totalRights = 0;
+  let totalGrossNotional = 0;
+  let countWithBreakdown = 0;
+
+  operations.forEach((op) => {
+    if (op.feeBreakdown && op.feeBreakdown.commissionAmount !== undefined) {
+      totalCommission += op.feeBreakdown.commissionAmount || 0;
+      totalRights += op.feeBreakdown.rightsAmount || 0;
+      const opGrossNotional = Math.abs(op.precio * op.cantidad);
+      totalGrossNotional += opGrossNotional;
+      countWithBreakdown++;
+    }
+  });
+
+  // Apply proportion
+  const commissionAmount = totalCommission * proportion;
+  const rightsAmount = totalRights * proportion;
+
+  // Calculate average percentages
+  const commissionPct = totalGrossNotional > 0 ? (totalCommission / totalGrossNotional) : 0;
+  const rightsPct = totalGrossNotional > 0 ? (totalRights / totalGrossNotional) : 0;
+
+  return {
+    commissionAmount,
+    rightsAmount,
+    commissionPct,
+    rightsPct,
+  };
 }
 
 /**

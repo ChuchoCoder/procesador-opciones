@@ -167,6 +167,12 @@ const buildBreakdownSkeleton = (repoOperation) => ({
   ivaAmount: 0,
   totalExpenses: 0,
   netSettlement: ensureNumber(repoOperation?.baseAmount),
+  rates: {
+    arancelPercent: 0,
+    derechosDailyPercent: 0,
+    gastosDailyPercent: 0,
+    ivaRate: 0,
+  },
   warnings: [],
   status: 'pending',
   blocked: false,
@@ -287,6 +293,14 @@ export function calculateRepoExpenseBreakdown(repoOperation = {}, repoFeeConfig 
     breakdown.currency,
     breakdown.role,
   );
+
+  // Store rates in breakdown for tooltip display
+  breakdown.rates = {
+    arancelPercent,
+    derechosDailyPercent,
+    gastosDailyPercent,
+    ivaRate,
+  };
 
   const missingRates = detectMissingRates({ arancelPercent, derechosDailyPercent, gastosDailyPercent, ivaRate }, breakdown.role);
   if (missingRates.length > 0) {

@@ -107,17 +107,29 @@ const buildSuccessTooltip = (breakdown, strings) => {
       <Box sx={{ borderTop: '1px solid', borderColor: 'divider', my: 0.5 }} />
       <Typography variant="caption" sx={{ display: 'block' }}>
         {labels.arancel || 'Arancel'}: {formatAmount(breakdown?.arancelAmount, formatter)}
+        {Number.isFinite(breakdown?.rates?.arancelPercent) && breakdown.rates.arancelPercent > 0 && (
+          <span style={{ opacity: 0.7 }}> ({breakdown.rates.arancelPercent.toFixed(2)}% anual)</span>
+        )}
       </Typography>
       <Typography variant="caption" sx={{ display: 'block' }}>
         {labels.derechos || 'Derechos de mercado'}: {formatAmount(breakdown?.derechosMercadoAmount, formatter)}
+        {Number.isFinite(breakdown?.rates?.derechosDailyPercent) && breakdown.rates.derechosDailyPercent > 0 && (
+          <span style={{ opacity: 0.7 }}> ({breakdown.rates.derechosDailyPercent.toFixed(4)}% diario)</span>
+        )}
       </Typography>
       {showGastosGarantia && (
         <Typography variant="caption" sx={{ display: 'block' }}>
           {labels.gastosGarantia || 'Gastos de garantía'}: {formatAmount(breakdown?.gastosGarantiaAmount, formatter)}
+          {Number.isFinite(breakdown?.rates?.gastosDailyPercent) && breakdown.rates.gastosDailyPercent > 0 && (
+            <span style={{ opacity: 0.7 }}> ({breakdown.rates.gastosDailyPercent.toFixed(4)}% diario)</span>
+          )}
         </Typography>
       )}
       <Typography variant="caption" sx={{ display: 'block' }}>
         {labels.iva || 'IVA sobre gastos'}: {formatSigned(breakdown?.ivaAmount, formatter)}
+        {Number.isFinite(breakdown?.rates?.ivaRate) && breakdown.rates.ivaRate > 0 && (
+          <span style={{ opacity: 0.7 }}> ({(breakdown.rates.ivaRate * 100).toFixed(2)}%)</span>
+        )}
       </Typography>
       <Box sx={{ borderTop: '1px solid', borderColor: 'divider', my: 0.5 }} />
       <Typography variant="caption" sx={{ fontWeight: 600, display: 'block' }}>
