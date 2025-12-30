@@ -134,29 +134,44 @@ export function aggregateByInstrumentoPlazo(operations, cauciones, jornada, avgT
     }
   });
   
-  // Calculate plazo for each instrument based on actual operation dates
-  const instrumentPlazos = new Map();
-  
-  instrumentMap.forEach((dates, instrumento) => {
-    let plazo = 0;
+  /**
+   * Calculate global plazo from cauciones or business days fallback
+   * Rule (confirmed by user):
+   * 1. Search all PESOS cauciones in operations
+   * 2. Use MINIMUM tenorDias found (e.g., if 3D and 5D exist, use 3D)
+   * 3. If NO cauciones: use 1D (Mon-Thu) or 3D (Fri - weekend)
+   */
+  const calculateGlobalPlazoFromCauciones = (cauciones, jornada) => {
+    // Filter PESOS cauciones with valid tenorDias
+    const pesosCauciones = cauciones.filter(
+      c => c.instrumento === 'PESOS' && c.tenorDias > 0
+    );
     
-    if (dates.ciDates.length > 0 && dates.h24Dates.length > 0) {
-      // Use earliest timestamp from both CI and 24hs operations
-      const allTimestamps = [...dates.ciDates, ...dates.h24Dates];
-      const earliestTimestamp = Math.min(...allTimestamps);
-      const earliestDate = new Date(earliestTimestamp);
-      plazo = calculateCIto24hsPlazo(earliestDate);
-    } else if (dates.ciDates.length > 0) {
-      // Only CI operations
-      const earliestDate = new Date(Math.min(...dates.ciDates));
-      plazo = calculateCIto24hsPlazo(earliestDate);
-    } else if (dates.h24Dates.length > 0) {
-      // Only 24hs operations
-      const earliestDate = new Date(Math.min(...dates.h24Dates));
-      plazo = calculateCIto24hsPlazo(earliestDate);
+    if (pesosCauciones.length > 0) {
+      // Use minimum plazo from available cauciones
+      const minPlazo = Math.min(...pesosCauciones.map(c => c.tenorDias));
+      console.log(`[Plazo] Using minimum from PESOS cauciones: ${minPlazo}D (${pesosCauciones.length} cauciones found)`);
+      return minPlazo;
     }
     
-    instrumentPlazos.set(instrumento, plazo);
+    // No cauciones: check if Friday
+    const dayOfWeek = jornada.getDay();
+    if (dayOfWeek === 5) { // Friday
+      console.log('[Plazo] No cauciones found, Friday detected: using 3D (weekend)');
+      return 3;
+    }
+    
+    console.log('[Plazo] No cauciones found, using default: 1D (business days)');
+    return 1;
+  };
+
+  // Calculate global plazo ONCE for the entire day
+  const globalPlazo = calculateGlobalPlazoFromCauciones(cauciones, jornada);
+  
+  // Apply the same plazo to ALL instruments
+  const instrumentPlazos = new Map();
+  instrumentMap.forEach((dates, instrumento) => {
+    instrumentPlazos.set(instrumento, globalPlazo);
   });
 
   // Group operations by instrument and calculated plazo
