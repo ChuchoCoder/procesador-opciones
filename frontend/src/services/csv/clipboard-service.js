@@ -1,3 +1,5 @@
+import { getDotDecimalLocale } from '../locale.js';
+
 const TAB = '\t';
 
 export const CLIPBOARD_SCOPES = {
@@ -16,7 +18,7 @@ export const CLIPBOARD_ERROR_MESSAGES = {
 const HEADERS = ['Fecha', 'Cantidad', 'Strike', 'Precio'];
 
 const DATE_FORMATTER = typeof Intl !== 'undefined'
-  ? new Intl.DateTimeFormat(undefined, {
+  ? new Intl.DateTimeFormat(getDotDecimalLocale(), {
       year: 'numeric',
       month: '2-digit',
       day: '2-digit',
@@ -29,9 +31,9 @@ let priceFormatter = null;
 
 const getStrikeFormatter = () => {
   if (!strikeFormatter && typeof Intl !== 'undefined') {
-    // Use system default locale (no argument) to respect Windows Regional Format
-    strikeFormatter = new Intl.NumberFormat(undefined, {
-      useGrouping: false,
+    // Use user configured locale for UI consistency
+    strikeFormatter = new Intl.NumberFormat(getDotDecimalLocale(), {
+      useGrouping: true,
       minimumFractionDigits: 0,
       maximumFractionDigits: 4,
     });
@@ -42,9 +44,9 @@ const getStrikeFormatter = () => {
 
 const getPriceFormatter = () => {
   if (!priceFormatter && typeof Intl !== 'undefined') {
-    // Use system default locale (no argument) to respect Windows Regional Format
-    priceFormatter = new Intl.NumberFormat(undefined, {
-      useGrouping: false,
+    // Use user configured locale for UI consistency
+    priceFormatter = new Intl.NumberFormat(getDotDecimalLocale(), {
+      useGrouping: true,
       minimumFractionDigits: 0,
       maximumFractionDigits: 4,
     });

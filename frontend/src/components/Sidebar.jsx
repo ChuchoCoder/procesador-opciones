@@ -91,6 +91,11 @@ const Sidebar = ({ strings, routes, brokerStatus, onBrokerLogout }) => {
               strings.settings?.brokerFees?.title ||
               'Comisiones',
           },
+          {
+            key: 'settings-preferences',
+            path: routes.settingsPreferences,
+            label: strings.navigation.settingsPreferences || 'Preferencias',
+          },
         ],
       },
     ],

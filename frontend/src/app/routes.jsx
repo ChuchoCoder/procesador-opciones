@@ -1,6 +1,7 @@
 export const ROUTES = {
   processor: '/procesador',
   settings: '/configuracion',
+  settingsPreferences: '/configuracion/preferencias',
   settingsFees: '/configuracion/comisiones',
   settingsPrefixes: '/configuracion/prefijos',
   settingsExpirations: '/configuracion/vencimientos',

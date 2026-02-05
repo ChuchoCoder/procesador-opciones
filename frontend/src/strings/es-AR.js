@@ -8,7 +8,8 @@ const strings = {
     processor: 'Operaciones',
     settings: 'Configuración',
     broker: 'Broker',
-    settingsGeneral: 'Instrumentos',
+    settingsGeneral: 'Símbolos',
+    settingsPreferences: 'Preferencias',
     settingsFees: 'Comisiones',
   },
   processor: {
