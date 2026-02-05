@@ -21,7 +21,7 @@ import IconButton from '@mui/material/IconButton';
 
 const formatQuantity = (value) => {
   if (!Number.isFinite(value)) return '';
-  return new Intl.NumberFormat('es-AR', {
+  return new Intl.NumberFormat(undefined, {
     useGrouping: true,
     maximumFractionDigits: 0,
   }).format(value);
@@ -29,7 +29,7 @@ const formatQuantity = (value) => {
 
 const formatPrice = (value) => {
   if (!Number.isFinite(value)) return '';
-  return new Intl.NumberFormat('es-AR', {
+  return new Intl.NumberFormat(undefined, {
     useGrouping: true,
     minimumFractionDigits: 2,
     maximumFractionDigits: 4,
@@ -38,7 +38,7 @@ const formatPrice = (value) => {
 
 const formatCurrency = (value) => {
   if (!Number.isFinite(value)) return '';
-  return new Intl.NumberFormat('es-AR', {
+  return new Intl.NumberFormat(undefined, {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(value);

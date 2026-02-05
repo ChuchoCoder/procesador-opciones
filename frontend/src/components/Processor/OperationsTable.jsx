@@ -24,14 +24,14 @@ import FeeTooltip from './FeeTooltip.jsx';
 import AddStrikeExceptionButton from './AddStrikeExceptionButton.jsx';
 
 const quantityFormatter = typeof Intl !== 'undefined'
-  ? new Intl.NumberFormat('es-AR', {
+  ? new Intl.NumberFormat(undefined, {
       useGrouping: true,
       maximumFractionDigits: 0,
     })
   : null;
 
 const decimalFormatter = typeof Intl !== 'undefined'
-  ? new Intl.NumberFormat('es-AR', {
+  ? new Intl.NumberFormat(undefined, {
       useGrouping: true,
       minimumFractionDigits: 0,
       maximumFractionDigits: 4,
@@ -59,7 +59,7 @@ const formatDecimal = (value) => {
 };
 
 const feeFormatter = typeof Intl !== 'undefined'
-  ? new Intl.NumberFormat('es-AR', {
+  ? new Intl.NumberFormat(undefined, {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     })

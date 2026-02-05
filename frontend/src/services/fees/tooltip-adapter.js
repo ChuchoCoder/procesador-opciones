@@ -8,7 +8,7 @@
  */
 function formatARS(value) {
   if (!Number.isFinite(value)) return '—';
-  return new Intl.NumberFormat('es-AR', {
+  return new Intl.NumberFormat(undefined, {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(value);

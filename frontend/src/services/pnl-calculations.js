@@ -578,7 +578,7 @@ function calculateCaucionPnL(cauciones, matchedQty, plazo) {
  * @returns {string}
  */
 export function formatCurrency(value, currency = 'ARS') {
-  const locale = 'es-AR';
+  const locale = undefined;
   const formatter = new Intl.NumberFormat(locale, {
     style: 'currency',
     currency,
@@ -594,7 +594,7 @@ export function formatCurrency(value, currency = 'ARS') {
  * @returns {string}
  */
 export function formatPercentage(value) {
-  const locale = 'es-AR';
+  const locale = undefined;
   const formatter = new Intl.NumberFormat(locale, {
     style: 'percent',
     minimumFractionDigits: 2,
