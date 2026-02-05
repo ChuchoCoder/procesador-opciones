@@ -18,10 +18,11 @@ import Chip from '@mui/material/Chip';
 import Tooltip from '@mui/material/Tooltip';
 import InfoIcon from '@mui/icons-material/Info';
 import IconButton from '@mui/material/IconButton';
+import { getDotDecimalLocale } from '../../services/locale.js';
 
 const formatQuantity = (value) => {
   if (!Number.isFinite(value)) return '';
-  return new Intl.NumberFormat(undefined, {
+  return new Intl.NumberFormat(getDotDecimalLocale(), {
     useGrouping: true,
     maximumFractionDigits: 0,
   }).format(value);
@@ -29,7 +30,7 @@ const formatQuantity = (value) => {
 
 const formatPrice = (value) => {
   if (!Number.isFinite(value)) return '';
-  return new Intl.NumberFormat(undefined, {
+  return new Intl.NumberFormat(getDotDecimalLocale(), {
     useGrouping: true,
     minimumFractionDigits: 2,
     maximumFractionDigits: 4,
@@ -38,7 +39,7 @@ const formatPrice = (value) => {
 
 const formatCurrency = (value) => {
   if (!Number.isFinite(value)) return '';
-  return new Intl.NumberFormat(undefined, {
+  return new Intl.NumberFormat(getDotDecimalLocale(), {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(value);

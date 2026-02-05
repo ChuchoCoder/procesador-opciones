@@ -22,16 +22,17 @@ import ArrowCircleDownIcon from '@mui/icons-material/ArrowCircleDown';
 
 import FeeTooltip from './FeeTooltip.jsx';
 import AddStrikeExceptionButton from './AddStrikeExceptionButton.jsx';
+import { getDotDecimalLocale } from '../../services/locale.js';
 
 const quantityFormatter = typeof Intl !== 'undefined'
-  ? new Intl.NumberFormat(undefined, {
+  ? new Intl.NumberFormat(getDotDecimalLocale(), {
       useGrouping: true,
       maximumFractionDigits: 0,
     })
   : null;
 
 const decimalFormatter = typeof Intl !== 'undefined'
-  ? new Intl.NumberFormat(undefined, {
+  ? new Intl.NumberFormat(getDotDecimalLocale(), {
       useGrouping: true,
       minimumFractionDigits: 0,
       maximumFractionDigits: 4,
@@ -59,7 +60,7 @@ const formatDecimal = (value) => {
 };
 
 const feeFormatter = typeof Intl !== 'undefined'
-  ? new Intl.NumberFormat(undefined, {
+  ? new Intl.NumberFormat(getDotDecimalLocale(), {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     })

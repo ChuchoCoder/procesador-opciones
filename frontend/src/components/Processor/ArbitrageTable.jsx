@@ -18,6 +18,7 @@ import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import Typography from '@mui/material/Typography';
 import TableSortLabel from '@mui/material/TableSortLabel';
+import { getDotDecimalLocale } from '../../services/locale.js';
 import Chip from '@mui/material/Chip';
 import Tooltip from '@mui/material/Tooltip';
 import InfoIcon from '@mui/icons-material/Info';
@@ -64,7 +65,7 @@ function getPnLColor(value) {
  */
 function formatPrice(value) {
   if (!Number.isFinite(value)) return '—';
-  return new Intl.NumberFormat(undefined, {
+  return new Intl.NumberFormat(getDotDecimalLocale(), {
     minimumFractionDigits: 2,
     maximumFractionDigits: 4,
   }).format(value);
@@ -192,7 +193,7 @@ function getPnLCaucionBreakdown(row) {
     // prefer rendering that instead of re-estimating amounts in the UI.
     const breakdown = row.caucionFeesBreakdown || row.feeBreakdown || null;
     if (breakdown) {
-      const formatter = new Intl.NumberFormat(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      const formatter = new Intl.NumberFormat(getDotDecimalLocale(), { minimumFractionDigits: 2, maximumFractionDigits: 2 });
       const fmt = (v) => (Number.isFinite(v) ? formatter.format(v) : '—');
       const fmtSigned = (v) => {
         if (!Number.isFinite(v)) return '—';
@@ -272,7 +273,7 @@ function getPnLCaucionBreakdown(row) {
     }
 
     // No service breakdown available — be strict: do not estimate repo fees locally.
-    const formatter = new Intl.NumberFormat(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const formatter = new Intl.NumberFormat(getDotDecimalLocale(), { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     const fmt = (v) => (Number.isFinite(v) ? formatter.format(v) : '—');
 
     return (
@@ -306,7 +307,7 @@ function getPnLCaucionBreakdown(row) {
       </Box>
     );
   }
-  const formatter = new Intl.NumberFormat(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const formatter = new Intl.NumberFormat(getDotDecimalLocale(), { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const fmt = (v) => (Number.isFinite(v) ? formatter.format(v) : '—');
   const fmtSigned = (v) => {
     if (!Number.isFinite(v)) return '—';
@@ -522,7 +523,7 @@ const ArbitrageRow = memo(function ArbitrageRow({ row, strings, expandedRows, on
         <TableCell>
           {renderPatternPills(row.patron)}
         </TableCell>
-        <TableCell align="right">{row.cantidad.toLocaleString()}</TableCell>
+        <TableCell align="right">{row.cantidad.toLocaleString('en-US')}</TableCell>
         <TableCell align="right">{formatPrice(getCIPrecio(row))}</TableCell>
         <TableCell align="right">{formatPrice(get24hPrecio(row))}</TableCell>
         <TableCell align="right">

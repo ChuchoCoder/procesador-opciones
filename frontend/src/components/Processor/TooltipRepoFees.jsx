@@ -52,7 +52,7 @@ const resolveDisplayDecimals = (breakdown) => {
   return 2;
 };
 
-const createCurrencyFormatter = (decimals) => new Intl.NumberFormat('es-AR', {
+const createCurrencyFormatter = (decimals) => new Intl.NumberFormat('en-US', {
   minimumFractionDigits: decimals,
   maximumFractionDigits: decimals,
 });

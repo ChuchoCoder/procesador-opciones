@@ -21,16 +21,17 @@ import { getBuySellOperations } from '../../services/csv/buy-sell-matcher.js';
 import { resolveExpirationLabel } from '../../services/csv/expiration-labels.js';
 import FeeTooltip from './FeeTooltip.jsx';
 import TooltipRepoFees from './TooltipRepoFees.jsx';
+import { getDotDecimalLocale } from '../../services/locale.js';
 
 const quantityFormatter = typeof Intl !== 'undefined'
-  ? new Intl.NumberFormat(undefined, {
+  ? new Intl.NumberFormat(getDotDecimalLocale(), {
       useGrouping: true,
       maximumFractionDigits: 0,
     })
   : null;
 
 const decimalFormatter = typeof Intl !== 'undefined'
-  ? new Intl.NumberFormat(undefined, {
+  ? new Intl.NumberFormat(getDotDecimalLocale(), {
       useGrouping: true,
       minimumFractionDigits: 0,
       maximumFractionDigits: 4,
@@ -63,7 +64,7 @@ const formatFee = (value) => {
   if (!Number.isFinite(value)) {
     return '';
   }
-  return new Intl.NumberFormat('es-AR', {
+  return new Intl.NumberFormat(getDotDecimalLocale(), {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(value);

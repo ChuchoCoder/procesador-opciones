@@ -1,6 +1,8 @@
 // tooltip-adapter.js - Adapts fee breakdown data for tooltip display
 // Formats numeric values to 2-decimal ARS and provides display-ready object.
 
+import { getDotDecimalLocale } from '../locale.js';
+
 /**
  * Formats a number to 2-decimal ARS currency string.
  * @param {number} value
@@ -8,7 +10,7 @@
  */
 function formatARS(value) {
   if (!Number.isFinite(value)) return '—';
-  return new Intl.NumberFormat(undefined, {
+  return new Intl.NumberFormat(getDotDecimalLocale(), {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(value);
