@@ -182,12 +182,31 @@ export function dedupeOperations(existingList, incomingList) {
 /**
  * Merge broker batch into existing operations.
  * Returns merged list + metadata about new orders.
+ *
+ * In REFRESH mode, incoming ops may be new exec reports for orders already present in
+ * existingOps (same order_id, different execId / operation_id). Because broker quantities
+ * are cumulative (cumQty grows with each partial fill), keeping both the old and the new
+ * exec report for the same order would double-count the filled quantity. To prevent this,
+ * any existing broker op whose order_id matches an incoming op is replaced by the incoming
+ * op so that only the latest cumulative quantity is counted.
+ *
  * @param {Array} existingOps - Current operations
- * @param {Array} incomingOps - New normalized operations (already deduped)
+ * @param {Array} incomingOps - New normalized operations (already deduped by execId)
  * @returns {{mergedOps: Array, newOrdersCount: number, newOpsCount: number}}
  */
 export function mergeBrokerBatch(existingOps, incomingOps) {
-  const mergedOps = [...existingOps, ...incomingOps];
+  // Build a set of order_ids from incoming broker ops so we can evict stale entries.
+  const incomingOrderIds = new Set(
+    incomingOps.filter(op => op.order_id && op.source === 'broker').map(op => op.order_id)
+  );
+
+  // Remove any existing broker op whose order_id is superseded by an incoming op.
+  // Non-broker ops (csv) are never evicted.
+  const retained = incomingOrderIds.size > 0
+    ? existingOps.filter(op => !(op.source === 'broker' && op.order_id && incomingOrderIds.has(op.order_id)))
+    : existingOps;
+
+  const mergedOps = [...retained, ...incomingOps];
   
   // Count distinct new orders (by order_id if present)
   const newOrderIds = new Set(

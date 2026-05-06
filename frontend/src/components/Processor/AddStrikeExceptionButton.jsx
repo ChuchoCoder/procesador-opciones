@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import IconButton from '@mui/material/IconButton';
 import Tooltip from '@mui/material/Tooltip';
 import Dialog from '@mui/material/Dialog';
@@ -6,11 +6,14 @@ import DialogTitle from '@mui/material/DialogTitle';
 import DialogContent from '@mui/material/DialogContent';
 import DialogActions from '@mui/material/DialogActions';
 import Button from '@mui/material/Button';
+import Chip from '@mui/material/Chip';
 import TextField from '@mui/material/TextField';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import Checkbox from '@mui/material/Checkbox';
 import Alert from '@mui/material/Alert';
+import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
+import Typography from '@mui/material/Typography';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 
 import { loadSymbolConfig, saveSymbolConfig } from '../../services/storage-settings.js';
@@ -231,6 +234,23 @@ export default function AddStrikeExceptionButton({ operation, strings }) {
     }
   };
 
+  // Precompute decimal quick-set options based on the current rawToken
+  const decimalPresets = useMemo(() => {
+    const raw = rawToken.trim();
+    if (!raw || !/^\d+$/.test(raw)) return [];
+    const num = Number(raw);
+    return [1, 2, 3].map((decimals) => {
+      const value = num / Math.pow(10, decimals);
+      // Format without trailing zeros but keep the decimal places
+      const label = value.toLocaleString('en-US', {
+        minimumFractionDigits: decimals,
+        maximumFractionDigits: decimals,
+        useGrouping: false,
+      });
+      return { decimals, label };
+    });
+  }, [rawToken]);
+
   // Check if we have essential data (from operation or legs)
   const firstLeg = operation?.legs?.[0];
   const hasSymbol = operation?.symbol || operation?.matchedSymbol || firstLeg?.symbol;
@@ -296,6 +316,27 @@ export default function AddStrikeExceptionButton({ operation, strings }) {
               size="small"
               helperText={s.formattedHelper || 'Valor que se mostrará en las operaciones'}
             />
+
+            {decimalPresets.length > 0 && (
+              <Box>
+                <Typography variant="caption" color="text.secondary" sx={{ mb: 0.5, display: 'block' }}>
+                  {s.decimalPresetsLabel || 'Insertar decimal rápido:'}
+                </Typography>
+                <Stack direction="row" spacing={1} flexWrap="wrap">
+                  {decimalPresets.map(({ decimals, label }) => (
+                    <Chip
+                      key={decimals}
+                      label={`${decimals}D → ${label}`}
+                      size="small"
+                      variant={formatted === label ? 'filled' : 'outlined'}
+                      color={formatted === label ? 'primary' : 'default'}
+                      onClick={() => setFormatted(label)}
+                      sx={{ cursor: 'pointer', fontFamily: 'monospace', fontSize: '0.75rem' }}
+                    />
+                  ))}
+                </Stack>
+              </Box>
+            )}
 
             <FormControlLabel
               control={
