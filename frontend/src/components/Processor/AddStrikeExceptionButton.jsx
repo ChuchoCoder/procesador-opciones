@@ -27,7 +27,7 @@ import { showToast } from '../../services/toastService.js';
  * @param {Object} props.operation - Operation object with symbol, expiration, strike, and metadata
  * @param {Object} props.strings - Localization strings
  */
-export default function AddStrikeExceptionButton({ operation, strings }) {
+export default function AddStrikeExceptionButton({ operation, strings, onSaved }) {
   const [open, setOpen] = useState(false);
   const [rawToken, setRawToken] = useState('');
   const [formatted, setFormatted] = useState('');
@@ -191,29 +191,27 @@ export default function AddStrikeExceptionButton({ operation, strings }) {
         };
       }
 
-      // Check for duplicate
-      const existingOverride = config.expirations[expirationKey].overrides?.find(
-        o => o.raw === rawToken.trim()
-      );
-
-      if (existingOverride) {
-        setError(s.errorDuplicate || 'Ya existe un ajuste para este valor');
-        setSaving(false);
-        return;
+      if (!Array.isArray(config.expirations[expirationKey].overrides)) {
+        config.expirations[expirationKey].overrides = [];
       }
 
-      // Add the new override
       const newOverride = {
         raw: rawToken.trim(),
         formatted: formatted.trim(),
         ...(skipFormatting && { skipDecimalFormatting: true }),
       };
 
-      if (!Array.isArray(config.expirations[expirationKey].overrides)) {
-        config.expirations[expirationKey].overrides = [];
+      // Update existing override if found, otherwise add new one
+      const existingIndex = config.expirations[expirationKey].overrides.findIndex(
+        o => o.raw === rawToken.trim()
+      );
+
+      if (existingIndex >= 0) {
+        config.expirations[expirationKey].overrides[existingIndex] = newOverride;
+      } else {
+        config.expirations[expirationKey].overrides.push(newOverride);
       }
 
-      config.expirations[expirationKey].overrides.push(newOverride);
       config.updatedAt = Date.now();
 
       // Save configuration
@@ -226,6 +224,9 @@ export default function AddStrikeExceptionButton({ operation, strings }) {
 
       setHasException(true);
       handleClose();
+      if (onSaved) {
+        onSaved();
+      }
     } catch (err) {
       console.error('Error saving strike exception:', err);
       setError(s.errorSaving || 'Error al guardar la excepción');

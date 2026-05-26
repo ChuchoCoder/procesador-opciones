@@ -18,7 +18,6 @@ import TrendingDownIcon from '@mui/icons-material/TrendingDown';
 
 import GroupFilter from './GroupFilter.jsx';
 import { getBuySellOperations } from '../../services/csv/buy-sell-matcher.js';
-import { resolveExpirationLabel } from '../../services/csv/expiration-labels.js';
 import FeeTooltip from './FeeTooltip.jsx';
 import TooltipRepoFees from './TooltipRepoFees.jsx';
 import { getDotDecimalLocale } from '../../services/locale.js';
@@ -394,17 +393,11 @@ const normalizeSettlement = (value = '') => {
   return settlement.toUpperCase();
 };
 
-const resolveSettlementLabel = (operation = {}, { expirationLabels } = {}) => {
+const resolveSettlementLabel = (operation = {}, { expirationLabels: _expirationLabels } = {}) => {
   const fallbackValue = operation?.settlement ?? operation?.expiration;
 
   if (OPTION_OPERATION_TYPES.has(operation?.optionType)) {
-    const optionLabel = resolveExpirationLabel(operation?.expiration ?? fallbackValue ?? '', {
-      expirationLabels,
-    });
-    if (optionLabel) {
-      return optionLabel;
-    }
-    return normalizeSettlement(operation?.expiration ?? fallbackValue ?? '');
+    return DEFAULT_SETTLEMENT;
   }
 
   return normalizeSettlement(fallbackValue ?? '');

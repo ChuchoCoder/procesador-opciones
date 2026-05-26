@@ -121,6 +121,7 @@ const OperationsTable = ({
   onDownload,
   averagingEnabled,
   onToggleAveraging,
+  onStrikeExceptionSaved,
 }) => {
   const hasData = operations.length > 0;
   const theme = useTheme();
@@ -332,7 +333,7 @@ const OperationsTable = ({
                   >
                     <Stack direction="row" alignItems="center" justifyContent="flex-end">
                       <span>{formatDecimal(operation.strike)}</span>
-                      <AddStrikeExceptionButton operation={operation} strings={strings} />
+                      <AddStrikeExceptionButton operation={operation} strings={strings} onSaved={onStrikeExceptionSaved} />
                     </Stack>
                   </TableCell>
                   <TableCell align="right">{formatDecimal(operation.averagePrice)}</TableCell>

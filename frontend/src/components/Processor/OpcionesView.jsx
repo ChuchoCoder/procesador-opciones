@@ -17,6 +17,7 @@ const OpcionesView = ({
   onDownload,
   averagingEnabled,
   onToggleAveraging,
+  onStrikeExceptionSaved,
 }) => {
   const filterStrings = strings?.filters ?? {};
 
@@ -54,6 +55,7 @@ const OpcionesView = ({
           onDownload={() => onDownload(EXPORT_SCOPES.CALLS)}
           averagingEnabled={averagingEnabled}
           onToggleAveraging={onToggleAveraging}
+          onStrikeExceptionSaved={onStrikeExceptionSaved}
         />
 
         {/* PUTS table */}
@@ -66,6 +68,7 @@ const OpcionesView = ({
           onDownload={() => onDownload(EXPORT_SCOPES.PUTS)}
           averagingEnabled={averagingEnabled}
           onToggleAveraging={onToggleAveraging}
+          onStrikeExceptionSaved={onStrikeExceptionSaved}
         />
       </Box>
     </Stack>

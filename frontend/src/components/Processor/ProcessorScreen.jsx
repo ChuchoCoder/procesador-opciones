@@ -1626,6 +1626,7 @@ const ProcessorScreen = () => {
             onDownload={handleDownload}
             averagingEnabled={useAveraging}
             onToggleAveraging={handleToggleAveraging}
+            onStrikeExceptionSaved={() => { if (selectedDataSource) runProcessing(selectedDataSource); }}
           />
         );
 

@@ -10,6 +10,7 @@ const TableWithActions = ({
   onDownload,
   averagingEnabled,
   onToggleAveraging,
+  onStrikeExceptionSaved,
 }) => {
   return (
     <Box sx={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
@@ -22,6 +23,7 @@ const TableWithActions = ({
         onDownload={onDownload}
         averagingEnabled={averagingEnabled}
         onToggleAveraging={onToggleAveraging}
+        onStrikeExceptionSaved={onStrikeExceptionSaved}
       />
     </Box>
   );
