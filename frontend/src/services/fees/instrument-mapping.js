@@ -165,15 +165,27 @@ export function getInstrumentDetails(symbol) {
   if (exactMatch) {
     return exactMatch;
   }
+
+  const normalizedSymbol = typeof symbol === 'string' ? symbol.trim().toUpperCase() : '';
+  if (normalizedSymbol) {
+    for (const [fullSymbol, details] of _instrumentDetailsMap.entries()) {
+      if (typeof fullSymbol === 'string' && fullSymbol.trim().toUpperCase() === normalizedSymbol) {
+        return details;
+      }
+    }
+  }
   
   // Try partial match for tokenized symbols (e.g., GFGC50131O matches MERV - XMEV - GFGC50131O - 24hs)
   // This handles cases where CSV has simplified symbol but JSON has full qualified symbol
-  if (symbol && symbol.length > 0) {
+  if (normalizedSymbol) {
     for (const [fullSymbol, details] of _instrumentDetailsMap.entries()) {
       // Check if the full symbol contains the input symbol as a component
       // Split by spaces and dashes to get components
-      const components = fullSymbol.split(/[\s-]+/).map(c => c.trim()).filter(c => c.length > 0);
-      if (components.includes(symbol)) {
+      const components = fullSymbol
+        .split(/[\s-]+/)
+        .map(c => c.trim().toUpperCase())
+        .filter(c => c.length > 0);
+      if (components.includes(normalizedSymbol)) {
         return details;
       }
     }

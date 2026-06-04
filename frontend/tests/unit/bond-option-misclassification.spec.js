@@ -88,6 +88,7 @@ describe('Bond misclassification prevention', () => {
       const row = {
         order_id: 'TEST-001',
         symbol: 'MERV - XMEV - AL30C - 24hs',
+        security_id: 'bm_MERV_AL30C_24hs',
         side: 'BUY',
         quantity: 1000,
         price: 58.35,
@@ -97,8 +98,10 @@ describe('Bond misclassification prevention', () => {
 
       // Should NOT be classified as CALL even though symbol contains 'C'
       expect(result.type).toBe('UNKNOWN');
-      // Should preserve the symbol properly
-      expect(result.symbol).toContain('AL30');
+      // Should preserve the explicit bond symbol and settlement from CSV
+      expect(result.symbol).toBe('AL30C');
+      expect(result.expiration).toBe('24HS');
+      expect(result.strike).toBeNull();
     });
 
     it('should NOT detect option type from AL30D symbol pattern', async () => {

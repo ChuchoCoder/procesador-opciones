@@ -538,6 +538,16 @@ export const enrichOperationRow = async (row = {}, configuration = {}) => {
     if (cfiResult === false) {
       // CFI confirms this is NOT an option (e.g., bond, future, equity)
       type = '';
+      if (explicitSymbol) {
+        symbol = deriveSymbolFallback({ symbol: explicitSymbol }, null);
+        expiration = deriveExpirationFallback(
+          { symbol: explicitSymbol, expiration: explicitExpiration },
+          null,
+        );
+      }
+      if (explicitStrike === null || explicitStrike === undefined) {
+        strike = null;
+      }
     } else if (cfiResult === true) {
       // CFI confirms this IS an option
       type = tokenType;
