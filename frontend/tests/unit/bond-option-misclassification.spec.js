@@ -98,8 +98,8 @@ describe('Bond misclassification prevention', () => {
 
       // Should NOT be classified as CALL even though symbol contains 'C'
       expect(result.type).toBe('UNKNOWN');
-      // Should preserve the explicit bond symbol and settlement from CSV
-      expect(result.symbol).toBe('AL30C');
+      // Should preserve the explicit bond symbol with venue info from CSV
+      expect(result.symbol).toBe('MERV - XMEV - AL30C - 24HS');
       expect(result.expiration).toBe('24HS');
       expect(result.strike).toBeNull();
     });

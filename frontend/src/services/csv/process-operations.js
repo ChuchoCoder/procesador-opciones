@@ -3,6 +3,10 @@ import { validateAndFilterRows } from './validators.js';
 import { buildConsolidatedViews } from './consolidator.js';
 import { createDevLogger } from '../logging/dev-logger.js';
 import { normalizeOperationRows } from './legacy-normalizer.js';
+import {
+  detectOperationsReportFormat,
+  normalizeHistoricalOperationRows,
+} from './report-format.js';
 import { getAllSymbols, loadSymbolConfig } from '../storage-settings.js';
 import { normalizeOperation } from '../broker/dedupe-utils.js';
 import { enrichOperationsWithFees } from '../fees/fee-enrichment.js';
@@ -537,13 +541,14 @@ export const enrichOperationRow = async (row = {}, configuration = {}) => {
     
     if (cfiResult === false) {
       // CFI confirms this is NOT an option (e.g., bond, future, equity)
+      // Use the explicit symbol to preserve original venue/settlement info
+      // Re-derive expiration since the token match parsed it incorrectly
       type = '';
       if (explicitSymbol) {
-        symbol = deriveSymbolFallback({ symbol: explicitSymbol }, null);
-        expiration = deriveExpirationFallback(
-          { symbol: explicitSymbol, expiration: explicitExpiration },
-          null,
-        );
+        symbol = explicitSymbol;
+        if (!explicitExpiration) {
+          expiration = deriveExpirationFallback({ symbol: explicitSymbol }, null);
+        }
       }
       if (explicitStrike === null || explicitStrike === undefined) {
         strike = null;
@@ -1020,14 +1025,27 @@ export const processOperations = async ({
     dataSource,
   });
 
+  const reportFormat = detectOperationsReportFormat(parsedRows);
+  const processingRows = reportFormat === 'historical'
+    ? normalizeHistoricalOperationRows(parsedRows)
+    : parsedRows;
+
   logger.log(`Inicio de procesamiento - ${formatLogFileInfo(resolvedFileName, parseMeta.rowCount)}`);
+
+  if (reportFormat === 'historical') {
+    logger.log(`Formato detectado: histórico | filas procesables: ${processingRows.length}`);
+  }
 
   // Check for empty file early to provide a clear error message
   if (!parsedRows || parsedRows.length === 0) {
     throw new Error('El archivo CSV no contiene operaciones. Verificá que el archivo tenga datos además del encabezado.');
   }
 
-  const { rows: normalizedRows, missingColumns } = normalizeOperationRows(parsedRows, activeConfiguration);
+  if (!processingRows || processingRows.length === 0) {
+    throw new Error('El archivo CSV no contiene operaciones procesables. Verificá que el reporte tenga filas válidas.');
+  }
+
+  const { rows: normalizedRows, missingColumns } = normalizeOperationRows(processingRows, activeConfiguration);
 
   if (missingColumns.length > 0) {
     const unresolvedColumns = missingColumns.filter((column) =>
@@ -1201,6 +1219,7 @@ export const processOperations = async ({
     normalizedOperations,
     meta: {
       parse: parseMeta,
+      reportFormat,
     },
   };
 };

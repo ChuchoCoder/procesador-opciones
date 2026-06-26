@@ -8,6 +8,7 @@ import { dirname as _dirname } from 'path';
 const __dirname = _dirname(fileURLToPath(import.meta.url));
 import { processOperations } from '../../src/services/csv/process-operations.js';
 import { CsvDataSource, JsonDataSource, MockDataSource } from '../../src/services/data-sources/index.js';
+import historicalOrdersCsv from './data/ReporteOrdenes_17825.csv?raw';
 
 const TEST_TIMEOUT = 15000;
 
@@ -140,6 +141,30 @@ describe('Processing Pipeline - Data Source Decoupling', () => {
         // Verify groups are created
         expect(result.groups).toBeDefined();
         expect(result.groups.length).toBeGreaterThan(0);
+      },
+      TEST_TIMEOUT,
+    );
+
+    it(
+      'detects and processes the historical broker report format',
+      async () => {
+        const csvFile = new File([historicalOrdersCsv], 'ReporteOrdenes_17825.csv', { type: 'text/csv' });
+        const dataSource = new CsvDataSource();
+        const configuration = createTestConfiguration();
+
+        const result = await processOperations({
+          dataSource,
+          file: csvFile,
+          fileName: 'ReporteOrdenes_17825.csv',
+          configuration,
+        });
+
+        expect(result).toBeDefined();
+        expect(result.meta?.reportFormat).toBe('historical');
+        expect(result.meta?.parse?.rowCount).toBeGreaterThan(result.normalizedOperations.length);
+        expect(result.normalizedOperations.length).toBeGreaterThan(0);
+        expect(result.operations.length).toBeGreaterThan(0);
+        expect(result.operations.every((operation) => operation.meta?.status !== 'new')).toBe(true);
       },
       TEST_TIMEOUT,
     );

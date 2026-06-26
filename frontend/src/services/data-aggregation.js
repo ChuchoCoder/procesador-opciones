@@ -187,12 +187,16 @@ export function aggregateByInstrumentoPlazo(operations, cauciones, jornada, avgT
 
     // Classify by venue and side
     if (op.venue === VENUES.CI && op.lado === LADOS.VENTA) {
+      if (op.instrumento === 'V') console.log('[DEBUG classify] V CI VENTA', { cantidad: op.cantidad, precio: op.precio, order_id: op.order_id });
       grupo.ventasCI.push(op);
     } else if (op.venue === VENUES.H24 && op.lado === LADOS.COMPRA) {
+      if (op.instrumento === 'V') console.log('[DEBUG classify] V 24h COMPRA', { cantidad: op.cantidad, precio: op.precio, order_id: op.order_id });
       grupo.compras24h.push(op);
     } else if (op.venue === VENUES.CI && op.lado === LADOS.COMPRA) {
+      if (op.instrumento === 'V') console.log('[DEBUG classify] V CI COMPRA', { cantidad: op.cantidad, precio: op.precio, order_id: op.order_id });
       grupo.comprasCI.push(op);
     } else if (op.venue === VENUES.H24 && op.lado === LADOS.VENTA) {
+      if (op.instrumento === 'V') console.log('[DEBUG classify] V 24h VENTA', { cantidad: op.cantidad, precio: op.precio, order_id: op.order_id });
       grupo.ventas24h.push(op);
     }
   });
@@ -207,6 +211,10 @@ export function aggregateByInstrumentoPlazo(operations, cauciones, jornada, avgT
 
   // Determine avgTNAByCurrency: prefer precomputed mapping, otherwise compute from cauciones
   const avgTNAMap = avgTNAByCurrency || calculateAvgTNAByCurrency(cauciones);
+
+  // DEBUG: log all instrument names for troubleshooting
+  console.log('[DEBUG aggregateByInstrumentoPlazo] Grupo keys:', [...grupos.keys()].join(', '));
+  console.log('[DEBUG aggregateByInstrumentoPlazo] Group details:', [...grupos.entries()].map(([k, g]) => `${k}: ventasCI=${g.ventasCI.reduce((s,o) => s+o.cantidad, 0)} (${g.ventasCI.length} ops) compras24h=${g.compras24h.reduce((s,o) => s+o.cantidad, 0)} (${g.compras24h.length} ops)`).join(' | '));
 
   // Add avgTNA to all grupos that have operations (do NOT attach explicit cauciones)
   // Determine instrument currency via instrument mapping when available.
@@ -353,6 +361,11 @@ export function parseOperations(rawOperations) {
         const symbolStr = raw.symbol || raw.instrumento || '';
         const { instrument, venue, isCaucion } = parseSymbol(symbolStr);
         symbolParseTime += performance.now() - symbolStart;
+
+        // DEBUG: track V operations
+        if (instrument === 'V' || symbolStr.includes(' - V ')) {
+          console.log('[DEBUG parseOps] V op:', { symbolStr, instrument, venue, isCaucion, lado: raw.lado || raw.side, cantidad: raw.cantidad || raw.quantity || raw.last_qty, precio: raw.precio || raw.price || raw.last_price });
+        }
         
         // Skip cauciones - they'll be parsed separately
         if (isCaucion) {
