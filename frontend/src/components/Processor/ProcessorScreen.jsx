@@ -12,7 +12,7 @@ import { buildConsolidatedViews } from '../../services/csv/consolidator.js';
 import { CsvDataSource, JsonDataSource } from '../../services/data-sources/index.js';
 import { login as brokerLogin, setBaseUrl } from '../../services/broker/jsrofex-client.js';
 import { startDailySync, refreshNewOperations } from '../../services/broker/sync-service.js';
-import { dedupeOperations, mergeBrokerBatch } from '../../services/broker/dedupe-utils.js';
+import { mergeBrokerBatch } from '../../services/broker/dedupe-utils.js';
 import {
   CLIPBOARD_SCOPES,
   copyReportToClipboard,
@@ -40,6 +40,7 @@ import { OPERATION_TYPES } from './operation-types.js';
 import OpcionesView from './OpcionesView.jsx';
 import CompraVentaView from './CompraVentaView.jsx';
 import ArbitrajesView from './ArbitrajesView.jsx';
+import ReconciliationView from './ReconciliationView.jsx';
 import { parseCauciones, calculateAvgTNAByCurrency } from '../../services/data-aggregation.js';
 import EmptyState from './EmptyState.jsx';
 import BrokerLogin from './BrokerLogin.jsx';
@@ -54,6 +55,7 @@ const createInitialGroupSelections = () => ({
   [OPERATION_TYPES.OPCIONES]: [],
   [OPERATION_TYPES.COMPRA_VENTA]: [],
   [OPERATION_TYPES.ARBITRAJES]: [],
+  [OPERATION_TYPES.RECONCILIACION]: [],
 });
 
 const OPTION_INSTRUMENT_KEY_PREFIX = 'optionInstrument::';
@@ -695,18 +697,12 @@ const ProcessorScreen = () => {
         ) {
           // Remove all previous CSV operations, keep only broker operations
           const brokerOnlyOps = existingOperations.filter(op => op?.source === 'broker');
-          
-          // Dedupe new CSV operations against broker ops only
-          const incomingCsv = dedupeOperations(brokerOnlyOps, result.normalizedOperations);
-          
-          if (incomingCsv.length > 0) {
-            // Merge: broker ops + new CSV ops (previous CSV ops are now removed)
-            const { mergedOps } = mergeBrokerBatch(brokerOnlyOps, incomingCsv);
-            setOperations(mergedOps);
-          } else {
-            // If all CSV operations were duplicates, just keep broker ops
-            setOperations(brokerOnlyOps);
-          }
+
+          // No cross-source dedupe: a CSV row and a broker row are never "the same
+          // record" to merge away (incompatible order_id namespaces - see isDuplicate).
+          // Merge: broker ops + new CSV ops (previous CSV ops are now removed)
+          const { mergedOps } = mergeBrokerBatch(brokerOnlyOps, result.normalizedOperations);
+          setOperations(mergedOps);
         }
         
         const initialViewKey = configurationPayload.useAveraging ? 'averaged' : 'raw';
@@ -1349,11 +1345,39 @@ const ProcessorScreen = () => {
     expirationLabelMap,
   ]);
 
+  // Reconciliación filters by raw instrument symbol across BOTH sources (csv + broker),
+  // independent of the options strike/expiration grouping used above (that grouping is
+  // derived from the single active report, while reconciliation compares both sources at once).
+  const reconciliationGroupOptions = useMemo(() => {
+    if (!existingOperations.length) {
+      return [];
+    }
+    const symbols = new Set();
+    existingOperations.forEach((operation) => {
+      if (operation?.symbol) {
+        symbols.add(operation.symbol);
+      }
+    });
+    if (symbols.size === 0) {
+      return [];
+    }
+    const allEntry = {
+      id: ALL_GROUP_ID,
+      label: filterStrings.all ?? 'All',
+      testId: 'all',
+    };
+    const entries = Array.from(symbols)
+      .sort((a, b) => a.localeCompare(b))
+      .map((symbol) => ({ id: symbol, label: symbol, testId: sanitizeForTestId(symbol) }));
+    return [allEntry, ...entries];
+  }, [existingOperations, filterStrings.all]);
+
   useEffect(() => {
     const allowedByType = {
       [OPERATION_TYPES.OPCIONES]: new Set(optionGroupOptions.map((option) => option.id)),
       [OPERATION_TYPES.COMPRA_VENTA]: new Set(compraVentaGroupOptions.map((option) => option.id)),
       [OPERATION_TYPES.ARBITRAJES]: new Set(allGroupOptions.map((option) => option.id)),
+      [OPERATION_TYPES.RECONCILIACION]: new Set(reconciliationGroupOptions.map((option) => option.id)),
     };
 
     setSelectedGroupIds((prev) => {
@@ -1384,7 +1408,7 @@ const ProcessorScreen = () => {
       });
       return next;
     });
-  }, [optionGroupOptions, compraVentaGroupOptions, allGroupOptions]);
+  }, [optionGroupOptions, compraVentaGroupOptions, allGroupOptions, reconciliationGroupOptions]);
 
   const scopedData = useMemo(
     () => computeScopedData({
@@ -1650,6 +1674,23 @@ const ProcessorScreen = () => {
             groupOptions={allGroupOptions}
             operations={allOperations}
             avgTNAByCurrency={avgTNAByCurrency}
+          />
+        );
+      }
+
+      case OPERATION_TYPES.RECONCILIACION: {
+        const selectedSymbols = Array.isArray(selectedGroupId) ? selectedGroupId : [];
+        const matchesSelectedSymbol = (operation) => (
+          selectedSymbols.length === 0 || selectedSymbols.includes(operation?.symbol)
+        );
+        return (
+          <ReconciliationView
+            strings={processorStrings}
+            groupOptions={reconciliationGroupOptions}
+            selectedGroupId={selectedGroupId}
+            onGroupChange={handleGroupChange}
+            csvOperations={existingOperations.filter((op) => op?.source === 'csv' && matchesSelectedSymbol(op))}
+            brokerOperations={existingOperations.filter((op) => op?.source === 'broker' && matchesSelectedSymbol(op))}
           />
         );
       }

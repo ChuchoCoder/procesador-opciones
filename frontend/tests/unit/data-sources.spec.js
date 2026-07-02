@@ -584,6 +584,42 @@ describe('Data Source Adapters', () => {
         expect(result.meta.excluded.rejected).toBe(1);
         expect(result.meta.excluded.cancelled).toBe(1);
       });
+
+      it('does NOT exclude a FILLED order just because a pending cancel request references its clOrdId as origClOrdId', async () => {
+        // Real production case: a cancel request can race a fill (order gets fully
+        // executed right as a cancel is submitted for it). The cancel request shows
+        // up as its own entry with no orderId of its own, status PENDING_CANCEL, and
+        // origClOrdId pointing at the already-filled order's clOrdId. That is NOT a
+        // genuine order replace/successor, so it must not exclude the filled order.
+        const orders = [
+          { orderId: 'O1', clOrdId: 'C1', status: 'FILLED', cumQty: 1000 },
+          { orderId: null, clOrdId: 'C2', origClOrdId: 'C1', status: 'PENDING_CANCEL', text: 'Pendiente de Cancelacion' },
+        ];
+
+        const source = new JsonDataSource();
+        const result = await source.parse(orders);
+
+        expect(result.meta.excluded.replacedByOrigClOrdId).toBe(0);
+        expect(result.rows.length).toBe(1);
+        expect(result.rows[0].order_id).toBe('O1');
+        expect(result.rows[0].quantity).toBe(1000);
+      });
+
+      it('still excludes an order genuinely superseded by a real successor order (order replace)', async () => {
+        // O1 has cumQty > 0 so it would otherwise survive shouldIncludeOrder on its
+        // own merits -- it must only be excluded via the origClOrdId replace chain.
+        const orders = [
+          { orderId: 'O1', clOrdId: 'C1', status: 'CANCELLED', cumQty: 5, text: 'Cancelled by replace' },
+          { orderId: 'O2', clOrdId: 'C2', origClOrdId: 'C1', status: 'FILLED', cumQty: 500 },
+        ];
+
+        const source = new JsonDataSource();
+        const result = await source.parse(orders);
+
+        expect(result.meta.excluded.replacedByOrigClOrdId).toBe(1);
+        expect(result.rows.length).toBe(1);
+        expect(result.rows[0].order_id).toBe('O2');
+      });
     });
 
     describe('normalizeOrder with enhanced fields', () => {

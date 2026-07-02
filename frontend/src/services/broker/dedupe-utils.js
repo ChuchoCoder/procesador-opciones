@@ -57,14 +57,15 @@ export function normalizeOperation(raw, source) {
       importTimestamp: now,
       revisionIndex: null,
       status: raw.status || null,
+      rawSource: raw,
     };
   }
-  
+
   // For CSV operations, perform full normalization
   return {
     id: generateUUID(),
     order_id: raw.order_id || raw.clOrdId || null,
-    operation_id: raw.operation_id || raw.execId || raw.execID || raw.transactTime || null,
+    operation_id: raw.operation_id || raw.execId || raw.execID || raw.transact_time || raw.transactTime || null,
     symbol: symbolValue.toUpperCase().trim(),
     underlying: raw.underlying ? raw.underlying.toUpperCase().trim() : null,
     optionType: raw.optionType || raw.option_type || 'stock',
@@ -79,6 +80,7 @@ export function normalizeOperation(raw, source) {
     importTimestamp: now,
     revisionIndex: raw.revisionIndex !== undefined ? Number(raw.revisionIndex) : null,
     status: raw.status || null,
+    rawSource: raw,
   };
 }
 
@@ -122,6 +124,13 @@ function parseBrokerTimestamp(timestamp) {
  * @returns {boolean} True if duplicate
  */
 export function isDuplicate(existing, candidate) {
+  // Never treat operations from different sources as duplicates: CSV and broker
+  // use incompatible order_id namespaces, and the composite fallback below collides
+  // constantly across sources (e.g. repeated iceberg fills at the same price/qty).
+  if (existing.source && candidate.source && existing.source !== candidate.source) {
+    return false;
+  }
+
   // Extract clOrdId and execId for broker operations (raw format)
   const existingOrderId = existing.order_id || existing.clOrdId || null;
   const existingExecId = existing.operation_id || existing.execId || null;
@@ -174,8 +183,20 @@ export function isDuplicate(existing, candidate) {
  * @returns {Array} Filtered incoming operations (only unique ones)
  */
 export function dedupeOperations(existingList, incomingList) {
+  // Bipartite consuming match: each existing entry can absorb at most one incoming
+  // candidate. A naive .some() would let several distinct incoming candidates all
+  // match the same existing entry (e.g. two distinct orders filled in the same
+  // second at the same price/qty), silently dropping legitimate operations.
+  const consumed = new Array(existingList.length).fill(false);
   return incomingList.filter((incoming) => {
-    return !existingList.some((existing) => isDuplicate(existing, incoming));
+    const matchIndex = existingList.findIndex(
+      (existing, idx) => !consumed[idx] && isDuplicate(existing, incoming),
+    );
+    if (matchIndex === -1) {
+      return true;
+    }
+    consumed[matchIndex] = true;
+    return false;
   });
 }
 

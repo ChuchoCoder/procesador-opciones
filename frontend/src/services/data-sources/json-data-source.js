@@ -55,12 +55,19 @@ export class JsonDataSource extends DataSourceAdapter {
       cancelled: 0,
     };
 
-    // Build a set of clOrdIds that have been successfully replaced
-    // Only include origClOrdId from orders that were NOT rejected
-    // (rejected cancel/replace attempts mean the original order was executed)
+    // Build a set of clOrdIds that have been successfully replaced by a genuine
+    // successor order. Only an actual order Cancel/Replace produces a new order
+    // (its own orderId) that truly supersedes the original. A plain Cancel Request
+    // also carries origClOrdId (same FIX field) but does NOT produce a new tradeable
+    // order -- it's a cancellation attempt in flight (status PENDING_CANCEL, no
+    // orderId of its own), and can race a fill: the original order may already be
+    // FILLED by the time the cancel is processed. Treating that as "replaced" wrongly
+    // excludes a fully-executed order. So only count origClOrdId references from
+    // orders that have their own orderId and are not REJECTED/PENDING_CANCEL.
     const replacedClOrdIds = new Set();
     orders.forEach(order => {
-      if (order.origClOrdId && order.status?.toUpperCase() !== 'REJECTED') {
+      const status = order.status?.toUpperCase();
+      if (order.origClOrdId && order.orderId && status !== 'REJECTED' && status !== 'PENDING_CANCEL') {
         replacedClOrdIds.add(order.origClOrdId);
       }
     });

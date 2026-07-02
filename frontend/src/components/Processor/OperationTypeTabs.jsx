@@ -8,6 +8,7 @@ import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile';
 import ShowChartIcon from '@mui/icons-material/ShowChart';
 import SwapHorizIcon from '@mui/icons-material/SwapHoriz';
 import TimelineIcon from '@mui/icons-material/Timeline';
+import FactCheckIcon from '@mui/icons-material/FactCheck';
 import { OPERATION_TYPES } from './operation-types.js';
 
 const OperationTypeTabs = ({ 
@@ -22,6 +23,7 @@ const OperationTypeTabs = ({
   const opcionesLabel = strings?.operationTypeTabs?.opciones ?? 'Opciones';
   const compraVentaLabel = strings?.operationTypeTabs?.compraVenta ?? 'Compra y Venta';
   const arbitrajesLabel = strings?.operationTypeTabs?.arbitrajes ?? 'Arbitrajes de Plazo';
+  const reconciliacionLabel = strings?.operationTypeTabs?.reconciliacion ?? 'Reconciliación';
   const ariaLabel = strings?.operationTypeTabs?.ariaLabel ?? 'Seleccionar tipo de operación';
 
   const handleChange = (event, newValue) => {
@@ -62,12 +64,19 @@ const OperationTypeTabs = ({
           iconPosition="start"
           data-testid="tab-compra-venta"
         />
-        <Tab 
-          label={arbitrajesLabel} 
+        <Tab
+          label={arbitrajesLabel}
           value={OPERATION_TYPES.ARBITRAJES}
           icon={<TimelineIcon />}
           iconPosition="start"
           data-testid="tab-arbitrajes"
+        />
+        <Tab
+          label={reconciliacionLabel}
+          value={OPERATION_TYPES.RECONCILIACION}
+          icon={<FactCheckIcon />}
+          iconPosition="start"
+          data-testid="tab-reconciliacion"
         />
       </Tabs>
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, ml: 2 }}>

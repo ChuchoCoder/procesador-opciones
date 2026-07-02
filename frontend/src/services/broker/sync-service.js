@@ -133,7 +133,9 @@ export async function startDailySync({
     });
   }
   
-  const dedupePool = [...baselineOperations];
+  // Only broker ops can ever be legitimate duplicates of incoming broker candidates
+  // (CSV entries never share a reliable key with broker ops - see isDuplicate's source guard).
+  const dedupePool = baselineOperations.filter((op) => op.source === 'broker');
   const candidateOperations = [];
   
   // DEBUG: Log baseline for deduplication

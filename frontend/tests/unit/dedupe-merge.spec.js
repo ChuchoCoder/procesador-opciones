@@ -121,6 +121,40 @@ describe('Dedupe & Merge Logic (T011, T063, T064)', () => {
       expect(result.symbol).toBe('GGAL');
       expect(result.underlying).toBe('YPFD');
     });
+
+    it('should populate operation_id for CSV rows carrying transact_time', () => {
+      const raw = {
+        order_id: '01KWHQHZ6X9PHMV3WKZ78Z2QEZ',
+        symbol: 'MERV - XMEV - AL30D - CI',
+        side: 'SELL',
+        cum_qty: 1000,
+        avg_price: 64.34,
+        transact_time: '2026-07-02 15:35:59.453000Z',
+      };
+
+      const result = normalizeOperation(raw, 'csv');
+
+      expect(result.operation_id).toBe('2026-07-02 15:35:59.453000Z');
+    });
+
+    it('should preserve the original raw object as rawSource for broker and csv', () => {
+      const rawBroker = {
+        orderId: 'O0Oxp8aEo13T-09809544',
+        execId: 'MERVE0Oxp3kCyL0V',
+        symbol: 'MERV - XMEV - GGAL - 24hs',
+        side: 'BUY',
+        cumQty: 21,
+      };
+      const rawCsv = {
+        order_id: '01KWHQHZ6X9PHMV3WKZ78Z2QEZ',
+        symbol: 'MERV - XMEV - AL30D - CI',
+        side: 'SELL',
+        cum_qty: 1000,
+      };
+
+      expect(normalizeOperation(rawBroker, 'broker').rawSource).toBe(rawBroker);
+      expect(normalizeOperation(rawCsv, 'csv').rawSource).toBe(rawCsv);
+    });
   });
 
   describe('isDuplicate (T009)', () => {
@@ -270,6 +304,59 @@ describe('Dedupe & Merge Logic (T011, T063, T064)', () => {
       expect(isDuplicate(base, candidateStrike)).toBe(false);
       expect(isDuplicate(base, candidateExpiration)).toBe(false);
     });
+
+    it('should never treat operations from different sources as duplicates, even with identical composite fields', () => {
+      const timestamp = 1697000500000;
+      const csvOp = {
+        source: 'csv',
+        order_id: '01KWHQHZ6X9PHMV3WKZ78Z2QEZ',
+        operation_id: null,
+        symbol: 'MERV - XMEV - AL30D - CI',
+        optionType: 'stock',
+        action: 'sell',
+        quantity: 1000,
+        price: 64.34,
+        tradeTimestamp: timestamp,
+        strike: null,
+        expirationDate: null,
+      };
+
+      const brokerOp = {
+        source: 'broker',
+        order_id: 'O0Rtpwk70EIS-09398715',
+        operation_id: 'MERVE0Rtpru53zP7',
+        symbol: 'MERV - XMEV - AL30D - CI',
+        optionType: 'stock',
+        action: 'sell',
+        quantity: 1000,
+        price: 64.34,
+        tradeTimestamp: timestamp + 100, // same 1s bucket
+        strike: null,
+        expirationDate: null,
+      };
+
+      expect(isDuplicate(csvOp, brokerOp)).toBe(false);
+    });
+
+    it('should still detect same-source composite duplicates (source guard does not break existing behavior)', () => {
+      const timestamp = 1697000500000;
+      const existing = {
+        source: 'csv',
+        order_id: null,
+        operation_id: null,
+        symbol: 'GGAL',
+        optionType: 'call',
+        action: 'buy',
+        quantity: 10,
+        price: 100.50,
+        tradeTimestamp: timestamp,
+        strike: 4500,
+        expirationDate: '2025-12-15',
+      };
+      const candidate = { ...existing, tradeTimestamp: timestamp + 200 };
+
+      expect(isDuplicate(existing, candidate)).toBe(true);
+    });
   });
 
   describe('dedupeOperations (T009)', () => {
@@ -317,6 +404,75 @@ describe('Dedupe & Merge Logic (T011, T063, T064)', () => {
       const result = dedupeOperations(existing, incoming);
 
       expect(result.length).toBe(0);
+    });
+
+    it('should only consume each existing entry once (bipartite match)', () => {
+      // A single existing entry that composite-matches TWO distinct incoming
+      // candidates (same second/price/qty) must only absorb one of them.
+      const existing = [
+        {
+          order_id: null, operation_id: null, symbol: 'GGAL', optionType: 'stock',
+          action: 'sell', quantity: 1000, price: 64.29, tradeTimestamp: 1697000000000,
+          strike: null, expirationDate: null,
+        },
+      ];
+
+      const incoming = [
+        {
+          order_id: 'ORD-A', operation_id: 'OP-A', symbol: 'GGAL', optionType: 'stock',
+          action: 'sell', quantity: 1000, price: 64.29, tradeTimestamp: 1697000000100,
+          strike: null, expirationDate: null,
+        },
+        {
+          order_id: 'ORD-B', operation_id: 'OP-B', symbol: 'GGAL', optionType: 'stock',
+          action: 'sell', quantity: 1000, price: 64.29, tradeTimestamp: 1697000000200,
+          strike: null, expirationDate: null,
+        },
+      ];
+
+      const result = dedupeOperations(existing, incoming);
+
+      expect(result.length).toBe(1);
+    });
+
+    it('should not drop broker candidates when baseline is CSV data sharing symbol/price/qty/second (AL30D regression)', () => {
+      // Mirrors the real production bug: CSV baseline and broker candidates
+      // represent the same underlying trades but via incompatible order_id
+      // namespaces. Before the source guard, the composite fallback caused
+      // ~100% of broker fills to be wrongly dropped as CSV duplicates.
+      const csvBaseline = [
+        {
+          source: 'csv', order_id: '01KWHQHZ6X9PHMV3WKZ78Z2QEZ', operation_id: null,
+          symbol: 'MERV - XMEV - AL30D - CI', optionType: 'stock', action: 'sell',
+          quantity: 1000, price: 64.34, tradeTimestamp: 1697000000000,
+          strike: null, expirationDate: null,
+        },
+        {
+          source: 'csv', order_id: '01KWHQKPGCNYC8DTD8036ZA6X1', operation_id: null,
+          symbol: 'MERV - XMEV - AL30D - CI', optionType: 'stock', action: 'sell',
+          quantity: 1000, price: 64.34, tradeTimestamp: 1697000005000,
+          strike: null, expirationDate: null,
+        },
+      ];
+
+      const brokerCandidates = [
+        {
+          source: 'broker', order_id: 'O0Rtpwk70EIS-09398715', operation_id: 'MERVE0Rtpru53zP7',
+          symbol: 'MERV - XMEV - AL30D - CI', optionType: 'stock', action: 'sell',
+          quantity: 1000, price: 64.34, tradeTimestamp: 1697000000050,
+          strike: null, expirationDate: null,
+        },
+        {
+          source: 'broker', order_id: 'O0Rtpwk70FoY-09444777', operation_id: 'MERVE0Rtpru54Cx6',
+          symbol: 'MERV - XMEV - AL30D - CI', optionType: 'stock', action: 'sell',
+          quantity: 1000, price: 64.34, tradeTimestamp: 1697000005050,
+          strike: null, expirationDate: null,
+        },
+      ];
+
+      const result = dedupeOperations(csvBaseline, brokerCandidates);
+
+      expect(result.length).toBe(2);
     });
   });
 
