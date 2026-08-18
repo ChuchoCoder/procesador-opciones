@@ -1,0 +1,602 @@
+[
+  {
+    "Segment": {
+      "MarketSegmentId": "DDF",
+      "MarketId": "ROFX"
+    },
+    "InstrumentId": {
+      "marketId": "ROFX",
+      "symbol": "DLR/DIC25"
+    },
+    "LowLimitPrice": 0.0,
+    "HighLimitPrice": 1000000.0,
+    "MinPriceIncrement": 0.5,
+    "MinTradevol": 1.0,
+    "MaxTradeVol": 10000.0,
+    "TickSize": 1.0,
+    "MaturityDate": "20251230",
+    "ContractMultiplier": 1000.0,
+    "RoundLot": 1.0,
+    "PriceConvertionFactor": 1.0,
+    "Currency": "ARS",
+    "InstrumentPricePrecision": 1,
+    "InstrumentSizePrecision": 0,
+    "CfiCode": "FXXXSX"
+  },
+  {
+    "Segment": {
+      "MarketSegmentId": "DDF",
+      "MarketId": "ROFX"
+    },
+    "InstrumentId": {
+      "marketId": "ROFX",
+      "symbol": "DLR/DIC25 1340 C"
+    },
+    "LowLimitPrice": 0.0,
+    "HighLimitPrice": 1000000.0,
+    "MinPriceIncrement": 0.01,
+    "MinTradevol": 1.0,
+    "MaxTradeVol": 10000.0,
+    "TickSize": 1.0,
+    "MaturityDate": "20251230",
+    "ContractMultiplier": 1000.0,
+    "RoundLot": 1.0,
+    "PriceConvertionFactor": 1.0,
+    "Currency": "ARS",
+    "InstrumentPricePrecision": 2,
+    "InstrumentSizePrecision": 0,
+    "CfiCode": "OCEFXS"
+  },
+  {
+    "Segment": {
+      "MarketSegmentId": "DDF",
+      "MarketId": "ROFX"
+    },
+    "InstrumentId": {
+      "marketId": "ROFX",
+      "symbol": "DLR/DIC25 1340 P"
+    },
+    "LowLimitPrice": 0.0,
+    "HighLimitPrice": 1000000.0,
+    "MinPriceIncrement": 0.01,
+    "MinTradevol": 1.0,
+    "MaxTradeVol": 10000.0,
+    "TickSize": 1.0,
+    "MaturityDate": "20251230",
+    "ContractMultiplier": 1000.0,
+    "RoundLot": 1.0,
+    "PriceConvertionFactor": 1.0,
+    "Currency": "ARS",
+    "InstrumentPricePrecision": 2,
+    "InstrumentSizePrecision": 0,
+    "CfiCode": "OPEFXS"
+  },
+  {
+    "Segment": {
+      "MarketSegmentId": "DDF",
+      "MarketId": "ROFX"
+    },
+    "InstrumentId": {
+      "marketId": "ROFX",
+      "symbol": "DLR/ENE26"
+    },
+    "LowLimitPrice": 0.0,
+    "HighLimitPrice": 1000000.0,
+    "MinPriceIncrement": 0.5,
+    "MinTradevol": 1.0,
+    "MaxTradeVol": 10000.0,
+    "TickSize": 1.0,
+    "MaturityDate": "20260130",
+    "ContractMultiplier": 1000.0,
+    "RoundLot": 1.0,
+    "PriceConvertionFactor": 1.0,
+    "Currency": "ARS",
+    "InstrumentPricePrecision": 1,
+    "InstrumentSizePrecision": 0,
+    "CfiCode": "FXXXSX"
+  },
+  {
+    "Segment": {
+      "MarketSegmentId": "DDF",
+      "MarketId": "ROFX"
+    },
+    "InstrumentId": {
+      "marketId": "ROFX",
+      "symbol": "DLR/NOV25"
+    },
+    "LowLimitPrice": 0.0,
+    "HighLimitPrice": 1000000.0,
+    "MinPriceIncrement": 0.5,
+    "MinTradevol": 1.0,
+    "MaxTradeVol": 10000.0,
+    "TickSize": 1.0,
+    "MaturityDate": "20251128",
+    "ContractMultiplier": 1000.0,
+    "RoundLot": 1.0,
+    "PriceConvertionFactor": 1.0,
+    "Currency": "ARS",
+    "InstrumentPricePrecision": 1,
+    "InstrumentSizePrecision": 0,
+    "CfiCode": "FXXXSX"
+  },
+  {
+    "Segment": {
+      "MarketSegmentId": "MERV",
+      "MarketId": "ROFX"
+    },
+    "InstrumentId": {
+      "marketId": "ROFX",
+      "symbol": "MERV - XMEV - D16E6 - 24hs"
+    },
+    "LowLimitPrice": 0.0,
+    "HighLimitPrice": 1000000.0,
+    "MinPriceIncrement": 10.0,
+    "MinTradevol": 1.0,
+    "MaxTradeVol": 1000000000.0,
+    "TickSize": 1.0,
+    "MaturityDate": "20260116",
+    "ContractMultiplier": 1.0,
+    "RoundLot": 1.0,
+    "PriceConvertionFactor": 0.01,
+    "Currency": "ARS",
+    "InstrumentPricePrecision": 3,
+    "InstrumentSizePrecision": 0,
+    "CfiCode": "DBXXXX"
+  },
+  {
+    "Segment": {
+      "MarketSegmentId": "MERV",
+      "MarketId": "ROFX"
+    },
+    "InstrumentId": {
+      "marketId": "ROFX",
+      "symbol": "MERV - XMEV - D16E6 - CI"
+    },
+    "LowLimitPrice": 0.0,
+    "HighLimitPrice": 1000000.0,
+    "MinPriceIncrement": 10.0,
+    "MinTradevol": 1.0,
+    "MaxTradeVol": 1000000000.0,
+    "TickSize": 1.0,
+    "MaturityDate": "20260116",
+    "ContractMultiplier": 1.0,
+    "RoundLot": 1.0,
+    "PriceConvertionFactor": 0.01,
+    "Currency": "ARS",
+    "InstrumentPricePrecision": 3,
+    "InstrumentSizePrecision": 0,
+    "CfiCode": "DBXXXX"
+  },
+  {
+    "Segment": {
+      "MarketSegmentId": "MERV",
+      "MarketId": "ROFX"
+    },
+    "InstrumentId": {
+      "marketId": "ROFX",
+      "symbol": "MERV - XMEV - D30E6 - 24hs"
+    },
+    "LowLimitPrice": 0.0,
+    "HighLimitPrice": 1000000.0,
+    "MinPriceIncrement": 0.001,
+    "MinTradevol": 1.0,
+    "MaxTradeVol": 1000000000.0,
+    "TickSize": 1.0,
+    "MaturityDate": "20260130",
+    "ContractMultiplier": 1.0,
+    "RoundLot": 1.0,
+    "PriceConvertionFactor": 0.01,
+    "Currency": "ARS",
+    "InstrumentPricePrecision": 3,
+    "InstrumentSizePrecision": 0,
+    "CfiCode": "DYXTXR"
+  },
+  {
+    "Segment": {
+      "MarketSegmentId": "MERV",
+      "MarketId": "ROFX"
+    },
+    "InstrumentId": {
+      "marketId": "ROFX",
+      "symbol": "MERV - XMEV - D30E6 - CI"
+    },
+    "LowLimitPrice": 0.0,
+    "HighLimitPrice": 1000000.0,
+    "MinPriceIncrement": 0.001,
+    "MinTradevol": 1.0,
+    "MaxTradeVol": 1000000000.0,
+    "TickSize": 1.0,
+    "MaturityDate": "20260130",
+    "ContractMultiplier": 1.0,
+    "RoundLot": 1.0,
+    "PriceConvertionFactor": 0.01,
+    "Currency": "ARS",
+    "InstrumentPricePrecision": 3,
+    "InstrumentSizePrecision": 0,
+    "CfiCode": "DYXTXR"
+  },
+  {
+    "Segment": {
+      "MarketSegmentId": "MERV",
+      "MarketId": "ROFX"
+    },
+    "InstrumentId": {
+      "marketId": "ROFX",
+      "symbol": "MERV - XMEV - GFGC10177D - 24hs"
+    },
+    "LowLimitPrice": 0.0,
+    "HighLimitPrice": 1000000.0,
+    "MinPriceIncrement": 0.001,
+    "MinTradevol": 1.0,
+    "MaxTradeVol": 50000000.0,
+    "TickSize": 1.0,
+    "MaturityDate": "20251219",
+    "ContractMultiplier": 1.0,
+    "RoundLot": 100.0,
+    "PriceConvertionFactor": 1.0,
+    "Currency": "ARS",
+    "InstrumentPricePrecision": 3,
+    "InstrumentSizePrecision": 0,
+    "CfiCode": "OCASPS"
+  },
+  {
+    "Segment": {
+      "MarketSegmentId": "MERV",
+      "MarketId": "ROFX"
+    },
+    "InstrumentId": {
+      "marketId": "ROFX",
+      "symbol": "MERV - XMEV - GFGC10577D - 24hs"
+    },
+    "LowLimitPrice": 0.0,
+    "HighLimitPrice": 1000000.0,
+    "MinPriceIncrement": 0.001,
+    "MinTradevol": 1.0,
+    "MaxTradeVol": 50000000.0,
+    "TickSize": 1.0,
+    "MaturityDate": "20251219",
+    "ContractMultiplier": 1.0,
+    "RoundLot": 100.0,
+    "PriceConvertionFactor": 1.0,
+    "Currency": "ARS",
+    "InstrumentPricePrecision": 3,
+    "InstrumentSizePrecision": 0,
+    "CfiCode": "OCASPS"
+  },
+  {
+    "Segment": {
+      "MarketSegmentId": "MERV",
+      "MarketId": "ROFX"
+    },
+    "InstrumentId": {
+      "marketId": "ROFX",
+      "symbol": "MERV - XMEV - GFGC5633DI - 24hs"
+    },
+    "LowLimitPrice": 0.0,
+    "HighLimitPrice": 1000000.0,
+    "MinPriceIncrement": 0.001,
+    "MinTradevol": 1.0,
+    "MaxTradeVol": 50000000.0,
+    "TickSize": 1.0,
+    "MaturityDate": "20251219",
+    "ContractMultiplier": 1.0,
+    "RoundLot": 100.0,
+    "PriceConvertionFactor": 1.0,
+    "Currency": "ARS",
+    "InstrumentPricePrecision": 3,
+    "InstrumentSizePrecision": 0,
+    "CfiCode": "OCASPS"
+  },
+  {
+    "Segment": {
+      "MarketSegmentId": "MERV",
+      "MarketId": "ROFX"
+    },
+    "InstrumentId": {
+      "marketId": "ROFX",
+      "symbol": "MERV - XMEV - GFGC65115D - 24hs"
+    },
+    "LowLimitPrice": 0.0,
+    "HighLimitPrice": 1000000.0,
+    "MinPriceIncrement": 0.001,
+    "MinTradevol": 1.0,
+    "MaxTradeVol": 50000000.0,
+    "TickSize": 1.0,
+    "MaturityDate": "20251219",
+    "ContractMultiplier": 1.0,
+    "RoundLot": 100.0,
+    "PriceConvertionFactor": 1.0,
+    "Currency": "ARS",
+    "InstrumentPricePrecision": 3,
+    "InstrumentSizePrecision": 0,
+    "CfiCode": "OCASPS"
+  },
+  {
+    "Segment": {
+      "MarketSegmentId": "MERV",
+      "MarketId": "ROFX"
+    },
+    "InstrumentId": {
+      "marketId": "ROFX",
+      "symbol": "MERV - XMEV - GFGC82772D - 24hs"
+    },
+    "LowLimitPrice": 0.0,
+    "HighLimitPrice": 1000000.0,
+    "MinPriceIncrement": 0.001,
+    "MinTradevol": 1.0,
+    "MaxTradeVol": 50000000.0,
+    "TickSize": 1.0,
+    "MaturityDate": "20251219",
+    "ContractMultiplier": 1.0,
+    "RoundLot": 100.0,
+    "PriceConvertionFactor": 1.0,
+    "Currency": "ARS",
+    "InstrumentPricePrecision": 3,
+    "InstrumentSizePrecision": 0,
+    "CfiCode": "OCASPS"
+  },
+  {
+    "Segment": {
+      "MarketSegmentId": "MERV",
+      "MarketId": "ROFX"
+    },
+    "InstrumentId": {
+      "marketId": "ROFX",
+      "symbol": "MERV - XMEV - GFGC84903D - 24hs"
+    },
+    "LowLimitPrice": 0.0,
+    "HighLimitPrice": 1000000.0,
+    "MinPriceIncrement": 0.001,
+    "MinTradevol": 1.0,
+    "MaxTradeVol": 50000000.0,
+    "TickSize": 1.0,
+    "MaturityDate": "20251219",
+    "ContractMultiplier": 1.0,
+    "RoundLot": 100.0,
+    "PriceConvertionFactor": 1.0,
+    "Currency": "ARS",
+    "InstrumentPricePrecision": 3,
+    "InstrumentSizePrecision": 0,
+    "CfiCode": "OCASPS"
+  },
+  {
+    "Segment": {
+      "MarketSegmentId": "MERV",
+      "MarketId": "ROFX"
+    },
+    "InstrumentId": {
+      "marketId": "ROFX",
+      "symbol": "MERV - XMEV - GFGC87903D - 24hs"
+    },
+    "LowLimitPrice": 0.0,
+    "HighLimitPrice": 1000000.0,
+    "MinPriceIncrement": 0.001,
+    "MinTradevol": 1.0,
+    "MaxTradeVol": 50000000.0,
+    "TickSize": 1.0,
+    "MaturityDate": "20251219",
+    "ContractMultiplier": 1.0,
+    "RoundLot": 100.0,
+    "PriceConvertionFactor": 1.0,
+    "Currency": "ARS",
+    "InstrumentPricePrecision": 3,
+    "InstrumentSizePrecision": 0,
+    "CfiCode": "OCASPS"
+  },
+  {
+    "Segment": {
+      "MarketSegmentId": "MERV",
+      "MarketId": "ROFX"
+    },
+    "InstrumentId": {
+      "marketId": "ROFX",
+      "symbol": "MERV - XMEV - GFGC91115D - 24hs"
+    },
+    "LowLimitPrice": 0.0,
+    "HighLimitPrice": 1000000.0,
+    "MinPriceIncrement": 0.001,
+    "MinTradevol": 1.0,
+    "MaxTradeVol": 50000000.0,
+    "TickSize": 1.0,
+    "MaturityDate": "20251219",
+    "ContractMultiplier": 1.0,
+    "RoundLot": 100.0,
+    "PriceConvertionFactor": 1.0,
+    "Currency": "ARS",
+    "InstrumentPricePrecision": 3,
+    "InstrumentSizePrecision": 0,
+    "CfiCode": "OCASPS"
+  },
+  {
+    "Segment": {
+      "MarketSegmentId": "MERV",
+      "MarketId": "ROFX"
+    },
+    "InstrumentId": {
+      "marketId": "ROFX",
+      "symbol": "MERV - XMEV - GFGV31549D - 24hs"
+    },
+    "LowLimitPrice": 0.0,
+    "HighLimitPrice": 1000000.0,
+    "MinPriceIncrement": 0.001,
+    "MinTradevol": 1.0,
+    "MaxTradeVol": 50000000.0,
+    "TickSize": 1.0,
+    "MaturityDate": "20251219",
+    "ContractMultiplier": 1.0,
+    "RoundLot": 100.0,
+    "PriceConvertionFactor": 1.0,
+    "Currency": "ARS",
+    "InstrumentPricePrecision": 3,
+    "InstrumentSizePrecision": 0,
+    "CfiCode": "OPASPS"
+  },
+  {
+    "Segment": {
+      "MarketSegmentId": "MERV",
+      "MarketId": "ROFX"
+    },
+    "InstrumentId": {
+      "marketId": "ROFX",
+      "symbol": "MERV - XMEV - GFGV65115D - 24hs"
+    },
+    "LowLimitPrice": 0.0,
+    "HighLimitPrice": 1000000.0,
+    "MinPriceIncrement": 0.001,
+    "MinTradevol": 1.0,
+    "MaxTradeVol": 50000000.0,
+    "TickSize": 1.0,
+    "MaturityDate": "20251219",
+    "ContractMultiplier": 1.0,
+    "RoundLot": 100.0,
+    "PriceConvertionFactor": 1.0,
+    "Currency": "ARS",
+    "InstrumentPricePrecision": 3,
+    "InstrumentSizePrecision": 0,
+    "CfiCode": "OPASPS"
+  },
+  {
+    "Segment": {
+      "MarketSegmentId": "MERV",
+      "MarketId": "ROFX"
+    },
+    "InstrumentId": {
+      "marketId": "ROFX",
+      "symbol": "MERV - XMEV - GFGV69115D - 24hs"
+    },
+    "LowLimitPrice": 0.0,
+    "HighLimitPrice": 1000000.0,
+    "MinPriceIncrement": 0.001,
+    "MinTradevol": 1.0,
+    "MaxTradeVol": 50000000.0,
+    "TickSize": 1.0,
+    "MaturityDate": "20251219",
+    "ContractMultiplier": 1.0,
+    "RoundLot": 100.0,
+    "PriceConvertionFactor": 1.0,
+    "Currency": "ARS",
+    "InstrumentPricePrecision": 3,
+    "InstrumentSizePrecision": 0,
+    "CfiCode": "OPASPS"
+  },
+  {
+    "Segment": {
+      "MarketSegmentId": "MERV",
+      "MarketId": "ROFX"
+    },
+    "InstrumentId": {
+      "marketId": "ROFX",
+      "symbol": "MERV - XMEV - GFGV73772D - 24hs"
+    },
+    "LowLimitPrice": 0.0,
+    "HighLimitPrice": 1000000.0,
+    "MinPriceIncrement": 0.001,
+    "MinTradevol": 1.0,
+    "MaxTradeVol": 50000000.0,
+    "TickSize": 1.0,
+    "MaturityDate": "20251219",
+    "ContractMultiplier": 1.0,
+    "RoundLot": 100.0,
+    "PriceConvertionFactor": 1.0,
+    "Currency": "ARS",
+    "InstrumentPricePrecision": 3,
+    "InstrumentSizePrecision": 0,
+    "CfiCode": "OPASPS"
+  },
+  {
+    "Segment": {
+      "MarketSegmentId": "MERV",
+      "MarketId": "ROFX"
+    },
+    "InstrumentId": {
+      "marketId": "ROFX",
+      "symbol": "MERV - XMEV - S29Y6 - 24hs"
+    },
+    "LowLimitPrice": 0.0,
+    "HighLimitPrice": 1000000.0,
+    "MinPriceIncrement": 0.001,
+    "MinTradevol": 1.0,
+    "MaxTradeVol": 1000000000.0,
+    "TickSize": 1.0,
+    "MaturityDate": "20260529",
+    "ContractMultiplier": 1.0,
+    "RoundLot": 1.0,
+    "PriceConvertionFactor": 0.01,
+    "Currency": "ARS",
+    "InstrumentPricePrecision": 3,
+    "InstrumentSizePrecision": 0,
+    "CfiCode": "DYXTXR"
+  },
+  {
+    "Segment": {
+      "MarketSegmentId": "MERV",
+      "MarketId": "ROFX"
+    },
+    "InstrumentId": {
+      "marketId": "ROFX",
+      "symbol": "MERV - XMEV - S29Y6 - CI"
+    },
+    "LowLimitPrice": 0.0,
+    "HighLimitPrice": 1000000.0,
+    "MinPriceIncrement": 0.001,
+    "MinTradevol": 1.0,
+    "MaxTradeVol": 1000000000.0,
+    "TickSize": 1.0,
+    "MaturityDate": "20260529",
+    "ContractMultiplier": 1.0,
+    "RoundLot": 1.0,
+    "PriceConvertionFactor": 0.01,
+    "Currency": "ARS",
+    "InstrumentPricePrecision": 3,
+    "InstrumentSizePrecision": 0,
+    "CfiCode": "DYXTXR"
+  },
+  {
+    "Segment": {
+      "MarketSegmentId": "MERV",
+      "MarketId": "ROFX"
+    },
+    "InstrumentId": {
+      "marketId": "ROFX",
+      "symbol": "MERV - XMEV - TTM26 - 24hs"
+    },
+    "LowLimitPrice": 0.0,
+    "HighLimitPrice": 1000000.0,
+    "MinPriceIncrement": 0.05,
+    "MinTradevol": 1.0,
+    "MaxTradeVol": 1000000000.0,
+    "TickSize": 1.0,
+    "MaturityDate": "20260316",
+    "ContractMultiplier": 1.0,
+    "RoundLot": 1.0,
+    "PriceConvertionFactor": 0.01,
+    "Currency": "ARS",
+    "InstrumentPricePrecision": 2,
+    "InstrumentSizePrecision": 0,
+    "CfiCode": "DBXXXX"
+  },
+  {
+    "Segment": {
+      "MarketSegmentId": "MERV",
+      "MarketId": "ROFX"
+    },
+    "InstrumentId": {
+      "marketId": "ROFX",
+      "symbol": "MERV - XMEV - TTM26 - CI"
+    },
+    "LowLimitPrice": 0.0,
+    "HighLimitPrice": 1000000.0,
+    "MinPriceIncrement": 0.05,
+    "MinTradevol": 1.0,
+    "MaxTradeVol": 1000000000.0,
+    "TickSize": 1.0,
+    "MaturityDate": "20260316",
+    "ContractMultiplier": 1.0,
+    "RoundLot": 1.0,
+    "PriceConvertionFactor": 0.01,
+    "Currency": "ARS",
+    "InstrumentPricePrecision": 2,
+    "InstrumentSizePrecision": 0,
+    "CfiCode": "DBXXXX"
+  }
+]

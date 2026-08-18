@@ -121,6 +121,20 @@ export function loadInstrumentMapping(instrumentsData) {
 }
 
 /**
+ * Forces a reload of the instrument mapping, replacing any previously loaded data.
+ * Unlike loadInstrumentMapping (load-once), this always rebuilds the singleton.
+ * Intended for tests that must resolve instruments absent from the bundled
+ * InstrumentsWithDetails.json snapshot (e.g. expired contracts in historical reports).
+ * @param {Array} instrumentsData - parsed instrument list
+ */
+export function reloadInstrumentMapping(instrumentsData) {
+  const result = buildCfiCodeMap(instrumentsData);
+  _cfiCodeMap = result.cfiMap;
+  _instrumentDetailsMap = result.detailsMap;
+  _unknownCfiCodes = new Set();
+}
+
+/**
  * Resolves a CfiCode to its fee category.
  * Falls back to 'bonds' and logs once per unknown code.
  * @param {string} cfiCode

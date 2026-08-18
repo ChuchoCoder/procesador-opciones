@@ -1,11 +1,13 @@
 // instrument-roundlot.spec.js - Test RoundLot usage for options
 /* eslint-env node, jest */
 import { describe, it, expect, beforeEach } from 'vitest';
-import { loadInstrumentMapping, getInstrumentDetails } from '../../src/services/fees/instrument-mapping.js';
+import { reloadInstrumentMapping, getInstrumentDetails } from '../../src/services/fees/instrument-mapping.js';
 
 describe('instrument mapping with RoundLot', () => {
   beforeEach(() => {
-    // Reset module state
+    // reloadInstrumentMapping (not loadInstrumentMapping) so this fixture replaces
+    // the bundled snapshot the test setup bootstraps; otherwise these assertions
+    // silently run against real instrument data.
     const instrumentsData = [
       {
         InstrumentId: { marketId: 'ROFX', symbol: 'MERV - XMEV - GFGC50131O - 24hs' },
@@ -30,11 +32,11 @@ describe('instrument mapping with RoundLot', () => {
       },
     ];
     
-    loadInstrumentMapping(instrumentsData);
+    reloadInstrumentMapping(instrumentsData);
   });
 
   it('should use RoundLot as contractMultiplier when ContractMultiplier is 1', () => {
-    const details = getInstrumentDetails('MERV - XMEV - GFGC11000D - 24hs');
+    const details = getInstrumentDetails('MERV - XMEV - GFGC50131O - 24hs');
     
     expect(details).not.toBeNull();
     expect(details.contractMultiplier).toBe(100.0); // Should use RoundLot (100) not ContractMultiplier (1)
@@ -42,7 +44,7 @@ describe('instrument mapping with RoundLot', () => {
   });
 
   it('should use ContractMultiplier when it is not 1', () => {
-    const details = getInstrumentDetails('GGAL/DIC25');
+    const details = getInstrumentDetails('GGAL/OCT25');
     
     expect(details).not.toBeNull();
     expect(details.contractMultiplier).toBe(100.0); // Should use ContractMultiplier (100)
@@ -50,8 +52,8 @@ describe('instrument mapping with RoundLot', () => {
   });
 
   it('should find instrument by partial symbol match (tokenized symbol)', () => {
-    // CSV might have "GFGC11000D" but JSON has "MERV - XMEV - GFGC50131O - 24hs"
-    const details = getInstrumentDetails('GFGC11000D');
+    // CSV might have "GFGC50131O" but JSON has "MERV - XMEV - GFGC50131O - 24hs"
+    const details = getInstrumentDetails('GFGC50131O');
     
     expect(details).not.toBeNull();
     expect(details.contractMultiplier).toBe(100.0);
@@ -63,7 +65,7 @@ describe('instrument mapping with RoundLot', () => {
     
     expect(details).not.toBeNull();
     expect(details.contractMultiplier).toBe(1.0);
-    expect(details.cfiCode).toBe('ESXXXX');
+    expect(details.cfiCode).toBe('ESVUFR');
   });
 
   it('should return null when no match found', () => {

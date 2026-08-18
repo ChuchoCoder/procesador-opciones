@@ -4,7 +4,8 @@ import Papa from 'papaparse';
 import { readFileSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
-import { loadInstrumentMapping, resolveCfiCategory, getInstrumentDetails } from '../../src/services/fees/instrument-mapping.js';
+import { reloadInstrumentMapping, resolveCfiCategory, getInstrumentDetails } from '../../src/services/fees/instrument-mapping.js';
+import legacyInstruments from '../fixtures/legacy-instruments.json';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -14,10 +15,12 @@ describe('DLR Futures Misclassification Issue', () => {
   let csvData;
 
   beforeEach(() => {
-    // Load instruments data
+    // Load instruments data. The bundled snapshot only carries live instruments,
+    // so expired contracts referenced by this historical report (DLR/NOV25,
+    // DLR/DIC25, ...) come from the legacy fixture.
     const instrumentsPath = join(__dirname, '../../InstrumentsWithDetails.json');
     instrumentsData = JSON.parse(readFileSync(instrumentsPath, 'utf-8'));
-    loadInstrumentMapping(instrumentsData);
+    reloadInstrumentMapping([...legacyInstruments, ...instrumentsData]);
 
     // Load CSV with DLR futures operations
     const csvPath = join(__dirname, 'data/ReporteOperaciones_17825-2025-11-25.csv');

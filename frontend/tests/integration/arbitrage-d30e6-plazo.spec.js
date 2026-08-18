@@ -30,6 +30,9 @@ import { dirname, join } from 'path';
 import { enrichArbitrageOperations, enrichCauciones } from '../../src/services/arbitrage-fee-enrichment.js';
 import { parseOperations, parseCauciones, aggregateByInstrumentoPlazo, filterGruposByInstrument, calculateAvgTNAByCurrency } from '../../src/services/data-aggregation.js';
 import { calculatePnL } from '../../src/services/pnl-calculations.js';
+import { reloadInstrumentMapping } from '../../src/services/fees/instrument-mapping.js';
+import instrumentsData from '../../InstrumentsWithDetails.json';
+import legacyInstruments from '../fixtures/legacy-instruments.json';
 
 /**
  * Transform ResultadoPatron to table row format (same as ArbitrajesView.jsx)
@@ -63,6 +66,10 @@ describe('D30E6 Arbitrage Plazo Calculation Bug', () => {
 
   beforeAll(async () => {
     console.log('\n=== D30E6 Arbitrage Plazo Test Setup ===\n');
+
+    // Step 0: D30E6 matured and is no longer in the bundled instrument snapshot.
+    // Layer the legacy fixture on top so priceConversionFactor still resolves to 0.01.
+    reloadInstrumentMapping([...legacyInstruments, ...instrumentsData]);
 
     // Step 1: Load CSV
     const filePath = join(
