@@ -231,6 +231,23 @@ export const getRepoFeeConfig = async (options = {}) => {
   return resolveStoredRepoConfig(forceReload);
 };
 
+/**
+ * Removes the persisted repo fee overrides and restores the bundled defaults.
+ * @returns {Promise<object>} the default repo fee config now in effect
+ */
+export const clearRepoFeeConfig = async () => {
+  const defaults = await resolveDefaults(false);
+
+  try {
+    await removeItem(storageKeys.repoFeeConfig);
+  } catch (error) {
+    console.warn('PO: Failed to clear repo fee config from storage.', error);
+  }
+
+  repoFeeConfigCache = defaults;
+  return defaults;
+};
+
 export const setRepoFeeConfig = async (candidate = {}, options = {}) => {
   const { metadata } = options ?? {};
   const defaults = await resolveDefaults(false);

@@ -6,6 +6,7 @@ import TextField from '@mui/material/TextField';
 import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
 import Alert from '@mui/material/Alert';
+import Divider from '@mui/material/Divider';
 import CircularProgress from '@mui/material/CircularProgress';
 
 import strings from '../../../strings/es-AR.js';
@@ -13,6 +14,9 @@ import {
   loadBrokerFees,
   saveBrokerFees,
   clearBrokerFees,
+  getRepoFeeConfig,
+  setRepoFeeConfig,
+  clearRepoFeeConfig,
 } from '../../../services/fees/broker-fees-storage.js';
 import { refreshFeeServices } from '../../../services/bootstrap-defaults.js';
 import { showToast } from '../../../services/toastService.js';
@@ -40,28 +44,47 @@ const formatPercentage = (value) => {
   return String(value);
 };
 
-const mapToFormState = (fees) => ({
-  commission: formatPercentage(fees.commission),
-  arancelCaucionColocadora: formatPercentage(fees.arancelCaucionColocadora),
-  arancelCaucionTomadora: formatPercentage(fees.arancelCaucionTomadora),
+const EMPTY_FORM = Object.freeze({
+  commission: '',
+  arancelColocadoraArs: '',
+  arancelColocadoraUsd: '',
+  arancelTomadoraArs: '',
+  arancelTomadoraUsd: '',
+});
+
+const mapToFormState = (brokerFees, repoFeeConfig) => ({
+  commission: formatPercentage(brokerFees?.commission),
+  arancelColocadoraArs: formatPercentage(repoFeeConfig?.arancelCaucionColocadora?.ARS),
+  arancelColocadoraUsd: formatPercentage(repoFeeConfig?.arancelCaucionColocadora?.USD),
+  arancelTomadoraArs: formatPercentage(repoFeeConfig?.arancelCaucionTomadora?.ARS),
+  arancelTomadoraUsd: formatPercentage(repoFeeConfig?.arancelCaucionTomadora?.USD),
 });
 
 const parseFormValues = (formValues) => ({
   commission: normalizeInputNumber(formValues.commission),
-  arancelCaucionColocadora: normalizeInputNumber(formValues.arancelCaucionColocadora),
-  arancelCaucionTomadora: normalizeInputNumber(formValues.arancelCaucionTomadora),
+  arancelColocadoraArs: normalizeInputNumber(formValues.arancelColocadoraArs),
+  arancelColocadoraUsd: normalizeInputNumber(formValues.arancelColocadoraUsd),
+  arancelTomadoraArs: normalizeInputNumber(formValues.arancelTomadoraArs),
+  arancelTomadoraUsd: normalizeInputNumber(formValues.arancelTomadoraUsd),
 });
 
 const isValidPayload = (parsed) => (
   Object.values(parsed).every((value) => Number.isFinite(value) && value >= 0)
 );
 
+const toRepoFeeOverrides = (parsed) => ({
+  arancelCaucionColocadora: {
+    ARS: parsed.arancelColocadoraArs,
+    USD: parsed.arancelColocadoraUsd,
+  },
+  arancelCaucionTomadora: {
+    ARS: parsed.arancelTomadoraArs,
+    USD: parsed.arancelTomadoraUsd,
+  },
+});
+
 export default function BrokerFeesScreen() {
-  const [formValues, setFormValues] = useState({
-    commission: '',
-    arancelCaucionColocadora: '',
-    arancelCaucionTomadora: '',
-  });
+  const [formValues, setFormValues] = useState(EMPTY_FORM);
   const [initialValues, setInitialValues] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -72,12 +95,16 @@ export default function BrokerFeesScreen() {
 
     const loadData = async () => {
       try {
-        const fees = await loadBrokerFees();
+        const [brokerFees, repoFeeConfig] = await Promise.all([
+          loadBrokerFees(),
+          getRepoFeeConfig(),
+        ]);
         if (!mounted) return;
-        setFormValues(mapToFormState(fees));
-        setInitialValues(fees);
+        const mapped = mapToFormState(brokerFees, repoFeeConfig);
+        setFormValues(mapped);
+        setInitialValues(parseFormValues(mapped));
       } catch (error) {
-         
+
         console.error('PO: loadBrokerFees failed', error);
         if (mounted) {
           setErrorMessage(brokerStrings.errorMessage);
@@ -104,10 +131,8 @@ export default function BrokerFeesScreen() {
       return true;
     }
 
-    return (
-      parsedValues.commission === initialValues.commission
-      && parsedValues.arancelCaucionColocadora === initialValues.arancelCaucionColocadora
-      && parsedValues.arancelCaucionTomadora === initialValues.arancelCaucionTomadora
+    return Object.keys(initialValues).every(
+      (key) => parsedValues[key] === initialValues[key],
     );
   }, [initialValues, parsedValues]);
 
@@ -116,6 +141,12 @@ export default function BrokerFeesScreen() {
       ...current,
       [field]: event.target.value,
     }));
+  };
+
+  const applyLoadedState = (brokerFees, repoFeeConfig) => {
+    const mapped = mapToFormState(brokerFees, repoFeeConfig);
+    setFormValues(mapped);
+    setInitialValues(parseFormValues(mapped));
   };
 
   // no local snackbar: using global toast service
@@ -130,13 +161,15 @@ export default function BrokerFeesScreen() {
     setErrorMessage('');
 
     try {
-      const sanitized = await saveBrokerFees(parsedValues);
+      const [sanitizedBroker, sanitizedRepo] = await Promise.all([
+        saveBrokerFees({ commission: parsedValues.commission }),
+        setRepoFeeConfig(toRepoFeeOverrides(parsedValues)),
+      ]);
       await refreshFeeServices();
-      setInitialValues(sanitized);
-      setFormValues(mapToFormState(sanitized));
-  showToast({ message: brokerStrings.successMessage, severity: 'success' });
+      applyLoadedState(sanitizedBroker, sanitizedRepo);
+      showToast({ message: brokerStrings.successMessage, severity: 'success' });
     } catch (error) {
-       
+
       console.error('PO: saveBrokerFees failed', error);
       setErrorMessage(brokerStrings.errorMessage);
     } finally {
@@ -149,19 +182,23 @@ export default function BrokerFeesScreen() {
     setErrorMessage('');
 
     try {
-      const defaults = await clearBrokerFees();
+      const [brokerDefaults, repoDefaults] = await Promise.all([
+        clearBrokerFees(),
+        clearRepoFeeConfig(),
+      ]);
       await refreshFeeServices();
-      setInitialValues(defaults);
-      setFormValues(mapToFormState(defaults));
-  showToast({ message: brokerStrings.resetMessage, severity: 'info' });
+      applyLoadedState(brokerDefaults, repoDefaults);
+      showToast({ message: brokerStrings.resetMessage, severity: 'info' });
     } catch (error) {
-       
+
       console.error('PO: clearBrokerFees failed', error);
-  setErrorMessage(brokerStrings.errorMessage);
+      setErrorMessage(brokerStrings.errorMessage);
     } finally {
       setSaving(false);
     }
   };
+
+  const fieldError = (field) => hasValidationError && !Number.isFinite(parsedValues[field]);
 
   return (
     <Container maxWidth={false} sx={{ py: 3, px: 4 }}>
@@ -196,27 +233,59 @@ export default function BrokerFeesScreen() {
             inputProps={{ min: 0, step: '0.01' }}
             helperText={brokerStrings.commissionHelper}
             disabled={saving}
-            error={hasValidationError && !Number.isFinite(parsedValues.commission)}
+            error={fieldError('commission')}
           />
+
+          <Divider />
+
+          <Box>
+            <Typography variant="h6" component="h2">
+              {brokerStrings.repoSectionTitle}
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              {brokerStrings.repoSectionDescription}
+            </Typography>
+          </Box>
+
           <TextField
-            label={brokerStrings.arancelColocadoraLabel}
-            value={formValues.arancelCaucionColocadora}
-            onChange={handleChange('arancelCaucionColocadora')}
+            label={brokerStrings.arancelColocadoraArsLabel}
+            value={formValues.arancelColocadoraArs}
+            onChange={handleChange('arancelColocadoraArs')}
             type="number"
             inputProps={{ min: 0, step: '0.01' }}
-            helperText={brokerStrings.arancelCaucionColocadoraHelper}
+            helperText={brokerStrings.arancelColocadoraHelper}
             disabled={saving}
-            error={hasValidationError && !Number.isFinite(parsedValues.arancelCaucionColocadora)}
+            error={fieldError('arancelColocadoraArs')}
           />
           <TextField
-            label={brokerStrings.arancelTomadoraLabel}
-            value={formValues.arancelCaucionTomadora}
-            onChange={handleChange('arancelCaucionTomadora')}
+            label={brokerStrings.arancelColocadoraUsdLabel}
+            value={formValues.arancelColocadoraUsd}
+            onChange={handleChange('arancelColocadoraUsd')}
+            type="number"
+            inputProps={{ min: 0, step: '0.01' }}
+            helperText={brokerStrings.arancelColocadoraHelper}
+            disabled={saving}
+            error={fieldError('arancelColocadoraUsd')}
+          />
+          <TextField
+            label={brokerStrings.arancelTomadoraArsLabel}
+            value={formValues.arancelTomadoraArs}
+            onChange={handleChange('arancelTomadoraArs')}
             type="number"
             inputProps={{ min: 0, step: '0.01' }}
             helperText={brokerStrings.arancelTomadoraHelper}
             disabled={saving}
-            error={hasValidationError && !Number.isFinite(parsedValues.arancelCaucionTomadora)}
+            error={fieldError('arancelTomadoraArs')}
+          />
+          <TextField
+            label={brokerStrings.arancelTomadoraUsdLabel}
+            value={formValues.arancelTomadoraUsd}
+            onChange={handleChange('arancelTomadoraUsd')}
+            type="number"
+            inputProps={{ min: 0, step: '0.01' }}
+            helperText={brokerStrings.arancelTomadoraHelper}
+            disabled={saving}
+            error={fieldError('arancelTomadoraUsd')}
           />
 
           <Stack direction="row" spacing={2}>
