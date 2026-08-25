@@ -1,0 +1,96 @@
+openapi: 3.0.0
+info:
+  title: Daily Instruments Sync - Extension Contracts
+  version: '1.0'
+  description: |
+    Contracts describing external Broker API and internal extension messages for the daily instruments sync feature.
+paths:
+  /rest/instruments/details:
+    get:
+      summary: Broker API - list detailed instruments
+      description: External endpoint provided by Broker API. The extension will call this endpoint when the user is authenticated.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  instruments:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/InstrumentDetails'
+
+  /extension/instruments/sync:
+    post:
+      summary: Internal extension trigger to start sync now
+      description: Called by the popup (manual refresh) or by background alarm. No auth required beyond extension session state.
+      responses:
+        '202':
+          description: Accepted - sync started
+
+  /extension/instruments:
+    get:
+      summary: Read current instruments record
+      description: Returns the `LocalStorageRecord` read from storage.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LocalStorageRecord'
+
+components:
+  schemas:
+    InstrumentDetails:
+      type: object
+      properties:
+        instrumentId:
+          type: object
+          properties:
+            marketId:
+              type: string
+            symbol:
+              type: string
+        securityDescription:
+          type: string
+        cficode:
+          type: string
+        maturityDate:
+          type: string
+        currency:
+          type: string
+        orderTypes:
+          type: array
+          items:
+            type: string
+        timesInForce:
+          type: array
+          items:
+            type: string
+        incomplete:
+          type: boolean
+        issues:
+          type: array
+          items:
+            type: string
+
+    LocalStorageRecord:
+      type: object
+      properties:
+        fetchedAt:
+          type: string
+          format: date-time
+        source:
+          type: string
+          enum: [broker-api, fallback-file]
+        versionHash:
+          type: string
+        instruments:
+          type: array
+          items:
+            $ref: '#/components/schemas/InstrumentDetails'

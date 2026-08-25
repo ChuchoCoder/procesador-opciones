@@ -7,6 +7,11 @@
 
 ## User Scenarios & Testing *(mandatory)*
 
+Per Constitution Principle 3 (Test On Request): the spec MUST include an explicit flag indicating whether
+automated tests are requested for this feature (e.g., `tests_requested: true|false`). If `true`, include
+acceptance tests and at least one edge case per priority user story. If `false`, document the manual
+validation steps that will be performed and where they are recorded.
+
 <!--
   IMPORTANT: User stories should be PRIORITIZED as user journeys ordered by importance.
   Each user story/journey must be INDEPENDENTLY TESTABLE - meaning if you implement just ONE of them,

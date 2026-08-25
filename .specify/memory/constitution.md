@@ -1,10 +1,13 @@
 <!--
 Sync Impact Report
-Version change: 1.1.0 -> 2.0.0
-Modified principles: 3. Test On Request (clarified), 4. Simplicity Over Framework Accretion (renumbered), 5. Spanish (Argentina) User Interface Localization (renumbered)
+Version change: 2.0.0 -> 2.0.1
+Modified principles: None (language/clarifications only)
 Added sections: None
-Removed sections: 4. Performance & Responsiveness Budget
-Templates requiring updates: None
+Removed sections: None
+Templates requiring updates:
+  - .specify/templates/plan-template.md ✅ updated
+  - .specify/templates/spec-template.md ✅ updated
+  - .specify/templates/tasks-template.md ✅ updated
 Deferred TODOs: None
 -->
 
@@ -114,4 +117,4 @@ Sunset / Retirement:
 - If project scope evolves (e.g., adds React or build tooling), a Minor or Major bump introduces new
   constraints accompanied by migration notes appended as an addendum.
 
-**Version**: 2.0.0 | **Ratified**: 2025-10-08 | **Last Amended**: 2025-10-12
+**Version**: 2.0.1 | **Ratified**: 2025-10-08 | **Last Amended**: 2025-10-25
