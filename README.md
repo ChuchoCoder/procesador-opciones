@@ -1,10 +1,12 @@
 # Procesador de Opciones
 
-Extensión / SPA para procesar operaciones de opciones desde archivos CSV con vistas separadas CALLS / PUTS y modo de promedios por strike.
+Web App (SPA) para procesar operaciones de opciones desde archivos CSV con vistas separadas CALLS / PUTS y modo de promedios por strike.
 
 ## ⚠️ Estado del Proyecto
 
-Migración en curso desde un popup HTML (Vanilla JS) a una Single Page Application React + Vite + Material UI. El código legacy (archivos `popup.html`, `popup.js`, `operations-processor.js`) convive temporalmente mientras se completa la transición. La funcionalidad principal nueva vive bajo `frontend/`.
+Single Page Application React + Vite + Material UI. La aplicación vive por completo bajo `frontend/` y se despliega como sitio estático (ver [Despliegue](#-despliegue)).
+
+El proyecto nació como extensión de Chrome (popup MV3 en Vanilla JS). Ese soporte fue removido: el popup legacy, el `manifest.json` y el empaquetado `extension-dist/` ya no existen, y la persistencia usa exclusivamente `localStorage`.
 
 ## ✨ Características Clave
 
@@ -24,24 +26,22 @@ Migración en curso desde un popup HTML (Vanilla JS) a una Single Page Applicati
 
 ```text
 procesador-opciones/
-├── manifest.json                 # Manifest MV3 base (versión legacy 1.0.x)
-├── popup.html / popup.js         # UI legacy (en proceso de migración)
-├── operations-processor.js       # Lógica legacy de procesamiento
-├── frontend/                     # Nueva SPA React
+├── package.json                  # Wrapper de scripts hacia frontend/
+├── frontend/                     # SPA React (toda la aplicación)
+│   ├── index.html               # Entrada HTML
 │   ├── src/
 │   │   ├── main.jsx             # Entrada React
 │   │   ├── state/               # Contexto y hooks de configuración
 │   │   ├── components/          # Componentes UI
-│   │   ├── services/            # Servicios (parsing, export, clipboard)
+│   │   ├── services/            # Servicios (parsing, export, clipboard, storage)
 │   │   ├── processors/          # Lógica de consolidación / promedios
 │   │   └── strings/es-AR.js     # Textos
 │   ├── tests/                   # Unit + integration tests
 │   ├── vite.config.js
 │   └── vitest.config.js
+├── specs/                        # Especificaciones por feature (histórico)
 └── README.md
 ```
-
-> Nota: Algunas carpetas pueden no existir aún si la migración está en progreso; ajustar según evolucione el repositorio.
 
 ## 🚀 Instalación (Modo Desarrollo SPA)
 
@@ -65,34 +65,17 @@ npm run build
 
 Los artefactos quedarán en `frontend/dist/`.
 
-### Empaquetar la extensión MV3 con la SPA
+## 📤 Despliegue
 
-Se provee un script que genera `extension-dist/` lista para cargar en `chrome://extensions`.
+El despliegue es automático vía GitHub Actions ([deploy-to-github-pages.yml](.github/workflows/deploy-to-github-pages.yml)):
 
-Paso a paso:
+1. Un push a `main` que toque `frontend/**` dispara el workflow.
+2. Se ejecuta `npm ci` + `npm run build` dentro de `frontend/`.
+3. El contenido de `frontend/dist/` se copia y commitea al repositorio `ChuchoCoder/chuchocoder.github.io`, que es el que GitHub Pages sirve.
 
-```bash
-npm run build:ext
-```
+No hay otro canal de distribución: la aplicación se usa desde el navegador, no requiere instalación.
 
-Esto realiza:
-
-1. `npm run build` dentro de `frontend/`.
-2. Copia `manifest.json` e íconos a `extension-dist/`.
-3. Copia el contenido de `frontend/dist/`.
-4. Renombra `index.html` a `popup.html` y asegura que `manifest.json` apunte a ese archivo.
-
-Luego:
-
-1. Abrí `chrome://extensions`.
-2. Activá Modo desarrollador.
-3. Clic en "Cargar descomprimida" y seleccioná `extension-dist/`.
-
-📖 **Para más información sobre la extensión Chrome y el sistema de almacenamiento dual, consultá [CHROME-EXTENSION.md](./CHROME-EXTENSION.md)**
-
-> Si necesitás mantener el popup legacy por transición, podés conservarlo separado; este flujo lo reemplaza por la SPA.
-
-**Nota sobre almacenamiento:** La aplicación ahora usa un sistema dual que detecta automáticamente si está ejecutándose como extensión (`chrome.storage.local`) o como web app (`localStorage`). Todas las operaciones de almacenamiento son ahora asíncronas.
+**Nota sobre almacenamiento:** la configuración persiste en el `localStorage` del navegador, bajo los prefijos `po.` (estado de la aplicación) y `po:settings:` (configuración por símbolo). Todas las operaciones de almacenamiento son asíncronas (devuelven `Promise`).
 
 ## 🧪 Pruebas
 
@@ -248,7 +231,7 @@ Desactivar el modo muestra las operaciones originales (raw) sin consolidar.
 4. Elegí el grupo relevante desde los chips del encabezado (ej.: `GFG O`), verificá los totales en el panel de resumen.
 5. Utilizá “Descargar PUTs” / “Descargar CALLs” / “Descargar todo” para obtener el CSV ya filtrado.
 
-> Con esta secuencia el flujo se redujo de ~8 interacciones manuales (popup legacy) a 5 pasos guiados, con confirmación visual inmediata antes de exportar.
+> Con esta secuencia el flujo se resuelve en 5 pasos guiados, con confirmación visual inmediata antes de exportar.
 
 ## 📁 Exportación
 
@@ -276,20 +259,8 @@ Los CSV generados incluyen encabezados estándar y formateo consistente.
 | No persiste config | Almacenamiento bloqueado | Revisar modo incógnito / permisos browser |
 | Copiar falla | Permisos del portapapeles | Reintentar foco en ventana activa |
 
-## 🔄 Diferencias con Versión Legacy
-
-| Aspecto | Legacy Popup | Nueva SPA |
-|---------|--------------|----------|
-| UI | HTML + JS plano | React + MUI |
-| Persistencia | chrome.storage | localStorage (por ahora) |
-| Promedios | Básico / limitado | Agrupación por strike con precio ponderado |
-| Testing | Manual | Unit + Integración automatizada |
-| Linter | No | Sí (ESLint + Prettier) |
-
 ## 📦 Roadmap Breve
 
-- [ ] Integrar build SPA al paquete de extensión final
-- [ ] Documentar estrategia de empaquetado MV3 + React
 - [ ] Mejorar manejo de errores de parseo con listado detallado
 - [ ] Agregar métricas de performance (tiempos de parse y consolidación)
 
@@ -307,4 +278,4 @@ Uso abierto orientado a análisis de operaciones de opciones. Evaluar requisitos
 
 ---
 
-_Documento generado y actualizado durante la migración a la arquitectura React (locale es-AR)._
+_Documento mantenido para la Web App React (locale es-AR)._

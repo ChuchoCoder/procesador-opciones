@@ -5,7 +5,7 @@
   text-align: center;
 }
 
-/* Adjust for Chrome Extension popup */
+/* Reduce padding on narrow viewports */
 @media all and (max-width: 850px) {
   #root {
     max-width: 100%;

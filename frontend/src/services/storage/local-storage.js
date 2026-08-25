@@ -1,6 +1,5 @@
 /**
- * Application data storage using the storage adapter
- * Works with both localStorage (web) and chrome.storage.local (extension)
+ * Application data storage using the storage adapter (localStorage).
  */
 
 import { storageAdapter } from './storage-adapter.js';
