@@ -17,9 +17,10 @@ Auto-generated from all feature plans. Last updated: 2025-10-10
 
 ## Project Structure
 ```
-backend/
 frontend/
-tests/
+frontend/src/
+frontend/tests/
+specs/
 ```
 
 ## Documentation

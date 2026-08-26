@@ -14,11 +14,10 @@ class StorageAdapter {
    */
   async getItem(key) {
     try {
-      const value = window.localStorage.getItem(key);
-      return Promise.resolve(value);
+      return window.localStorage.getItem(key);
     } catch (error) {
       console.error('[StorageAdapter] localStorage.getItem failed:', error);
-      return Promise.resolve(null);
+      return null;
     }
   }
 
@@ -31,10 +30,10 @@ class StorageAdapter {
   async setItem(key, value) {
     try {
       window.localStorage.setItem(key, value);
-      return Promise.resolve(true);
+      return true;
     } catch (error) {
       console.error('[StorageAdapter] localStorage.setItem failed:', error);
-      return Promise.resolve(false);
+      return false;
     }
   }
 
@@ -46,10 +45,10 @@ class StorageAdapter {
   async removeItem(key) {
     try {
       window.localStorage.removeItem(key);
-      return Promise.resolve(true);
+      return true;
     } catch (error) {
       console.error('[StorageAdapter] localStorage.removeItem failed:', error);
-      return Promise.resolve(false);
+      return false;
     }
   }
 
@@ -67,10 +66,10 @@ class StorageAdapter {
           keys.push(key);
         }
       }
-      return Promise.resolve(keys);
+      return keys;
     } catch (error) {
       console.error('[StorageAdapter] localStorage.getAllKeys failed:', error);
-      return Promise.resolve([]);
+      return [];
     }
   }
 
@@ -87,10 +86,10 @@ class StorageAdapter {
       } else {
         window.localStorage.clear();
       }
-      return Promise.resolve(true);
+      return true;
     } catch (error) {
       console.error('[StorageAdapter] localStorage.clear failed:', error);
-      return Promise.resolve(false);
+      return false;
     }
   }
 
