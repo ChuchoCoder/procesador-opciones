@@ -13,14 +13,6 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Chrome Extension popup dimensions - only when in extension context */
-@media all and (max-width: 850px) {
-  html {
-    width: 800px;
-    min-height: 600px;
-  }
-}
-
 html, body {
   overflow-x: hidden;
 }

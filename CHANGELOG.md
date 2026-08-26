@@ -23,10 +23,12 @@ Todas las modificaciones notables de este proyecto se documentarán en este arch
 
 - Incorporado ESLint (reglas: recommended, react-hooks, react-refresh) y Prettier.
 
-### Pendiente
+### Removido
 
-- Integrar build de la SPA al empaquetado final MV3.
-- Documentar empaquetado final y distribución.
+- **Soporte de Chrome Extension (Manifest V3)**: se eliminaron `manifest.json`, los íconos de la extensión, el empaquetador `scripts/build-extension.mjs` y la guía `CHROME-EXTENSION.md`. El proyecto queda exclusivamente como Web App desplegada en GitHub Pages.
+- **UI legacy del popup**: `popup.html`, `popup.js` y `operations-processor.js` (Vanilla JS), reemplazados por la SPA React desde la migración inicial.
+- **Capa de almacenamiento dual**: `storage-adapter.js` ya no detecta el entorno ni usa `chrome.storage.local`; persiste sólo en `localStorage`. La API sigue siendo asíncrona, sin cambios para los consumidores.
+- Regla CSS que forzaba `html { width: 800px }` en viewports menores a 850px (dimensiones del popup). Estaba rompiendo el layout en móviles, donde expandía el viewport al doble del ancho de pantalla.
 
 ## [1.0.2] - 2025-10-08
 

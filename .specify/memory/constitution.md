@@ -1,9 +1,13 @@
 <!--
 Sync Impact Report
-Version change: 1.1.0 -> 2.0.0
-Modified principles: 3. Test On Request (clarified), 4. Simplicity Over Framework Accretion (renumbered), 5. Spanish (Argentina) User Interface Localization (renumbered)
+Version change: 2.0.0 -> 3.0.0
+Modified principles: 1. Minimal Surface, Clear Purpose (runtime wording), 4. Simplicity Over Framework Accretion (stack updated to React + Vite)
 Added sections: None
-Removed sections: 4. Performance & Responsiveness Budget
+Removed sections: None
+Rationale for MAJOR: Chrome Extension (Manifest V3) support was removed from the repository. Technical
+Constraints 1 and 2 are redefined (static web app runtime, `localStorage` only) and the popup smoke test
+gate is invalidated. Per the amendment rules, redefining a constraint that invalidates prior guarantees is
+a MAJOR bump.
 Templates requiring updates: None
 Deferred TODOs: None
 -->
@@ -14,10 +18,10 @@ Deferred TODOs: None
 
 ### 1. Minimal Surface, Clear Purpose
 
-All new code MUST directly support an end-user capability of the browser extension. Dead, speculative or
+All new code MUST directly support an end-user capability of the web application. Dead, speculative or
 "future maybe" code is forbidden. Any utility used by only one feature stays colocated with that feature
 until reused twice (then it may be promoted). Each file MUST have a single dominant responsibility.
-Rationale: Keeps cognitive load low and prevents premature abstraction in a small extension codebase.
+Rationale: Keeps cognitive load low and prevents premature abstraction in a small codebase.
 
 ### 2. Deterministic Processing & Idempotence
 
@@ -34,7 +38,8 @@ Rationale: Aligns testing effort with stakeholder demand while keeping intent ve
 
 ### 4. Simplicity Over Framework Accretion
 
-No additional frameworks or build steps beyond what is strictly necessary (current stack: raw JS + manifest).
+No additional frameworks or build steps beyond what is strictly necessary (current stack: React 18 + Vite +
+Material UI).
 Before adding a dependency, a justification documenting: benefit, size, simpler alternative rejection. Remove
 unused code and dependencies promptly. Rationale: Small artifact, low attack surface, easy audits.
 
@@ -48,9 +53,10 @@ issue. Rationale: Target user base is Argentina; consistent localized language i
 
 ## Technical Constraints
 
-1. Runtime: Chrome/Chromium extension environment (Manifest V3). No server or backend services.
-2. Storage: Use `chrome.storage` or `localStorage` only when the value must persist across sessions; otherwise
-  keep ephemeral state in memory.
+1. Runtime: Static single-page application served from the browser (GitHub Pages). No server or backend
+  services of our own; the only remote calls are to the broker API.
+2. Storage: Use `localStorage` (via `services/storage/storage-adapter.js`) only when the value must persist
+  across sessions; otherwise keep ephemeral state in memory.
 3. Security: Never eval dynamic strings; sanitize any user-pasted content only if executing (currently not).
 4. Internationalization: All user-visible strings centralized in a single constants module for future i18n.
 5. Error Handling: User-facing failures MUST show a concise, actionable message; internal details only in console.
@@ -67,7 +73,7 @@ Workflow Steps:
   manual test notes describing validation.
 3. Implement: Keep functions <60 lines; extract early if complexity grows.
 4. Review: PR description MUST list which principle(s) are touched and how validated.
-5. Validate: Run tests + manual open popup smoke test before merge.
+5. Validate: Run tests + manual smoke test of the app in the browser before merge.
 
 Quality Gates:
 
@@ -75,7 +81,7 @@ Quality Gates:
 - All changed logic covered by at least one test when tests are explicitly requested; otherwise ensure manual
   validation steps are documented.
 - Bundle / script size increase >10KB requires justification.
-- No new global variables introduced (except explicitly in manifest scope).
+- No new global variables introduced.
 Violation Handling:
 
 - Minor (documentation omission): fix in same PR or follow-up within 24h.
@@ -111,7 +117,7 @@ Derogations:
 
 Sunset / Retirement:
 
-- If project scope evolves (e.g., adds React or build tooling), a Minor or Major bump introduces new
-  constraints accompanied by migration notes appended as an addendum.
+- If project scope evolves (e.g., adds a backend or a new distribution target), a Minor or Major bump
+  introduces new constraints accompanied by migration notes appended as an addendum.
 
-**Version**: 2.0.0 | **Ratified**: 2025-10-08 | **Last Amended**: 2025-10-12
+**Version**: 3.0.0 | **Ratified**: 2025-10-08 | **Last Amended**: 2026-08-25

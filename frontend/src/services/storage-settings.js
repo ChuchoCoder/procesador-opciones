@@ -1,6 +1,5 @@
 /**
- * Storage abstraction for settings persistence
- * Works with both localStorage (web) and chrome.storage.local (extension)
+ * Storage abstraction for settings persistence (localStorage)
  * Namespace: po:settings:<symbol>
  * Per spec: write-on-blur strategy, last-write-wins concurrency
  */
@@ -22,25 +21,13 @@ const REPO_FEE_CONFIG_STORAGE_KEY = storageKeys.repoFeeConfig;
  * @returns {Promise<string[]>} Array of symbol identifiers
  */
 export function getAllSymbols() {
-  try {
-    // Prefer synchronous localStorage when available (tests mock localStorage)
-    if (typeof window !== 'undefined' && window.localStorage) {
-      const symbols = [];
-      for (let i = 0; i < window.localStorage.length; i++) {
-        const key = window.localStorage.key(i);
-        if (key && key.startsWith(STORAGE_PREFIX)) {
-          symbols.push(key.substring(STORAGE_PREFIX.length));
-        }
-      }
-      return Promise.resolve(symbols.sort());
-    }
-
-    // Fallback to adapter (async) - return a Promise in that case
-    return storageAdapter.getAllKeys(STORAGE_PREFIX).then((keys) => keys.map(k => k.substring(STORAGE_PREFIX.length)).sort());
-  } catch (error) {
-    console.error('PO: Failed to get all symbols:', error);
-    return Promise.resolve([]);
-  }
+  return storageAdapter
+    .getAllKeys(STORAGE_PREFIX)
+    .then((keys) => keys.map((k) => k.substring(STORAGE_PREFIX.length)).sort())
+    .catch((error) => {
+      console.error('PO: Failed to get all symbols:', error);
+      return [];
+    });
 }
 
 /**

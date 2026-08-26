@@ -11,17 +11,14 @@ export default defineConfig({
     minify: 'terser',
     terserOptions: {
       compress: {
-        drop_console: false, // Keep console for debugging extension
+        drop_console: false, // Keep console for debugging in production
         drop_debugger: true,
       },
     },
     // Generate sourcemaps for debugging
     sourcemap: true,
-    // Optimize chunk splitting for extension
     rollupOptions: {
       output: {
-        // Single bundle for extension
-        manualChunks: undefined,
         // Clean asset names
         entryFileNames: 'assets/[name]-[hash].js',
         chunkFileNames: 'assets/[name]-[hash].js',
