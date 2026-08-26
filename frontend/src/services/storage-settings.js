@@ -37,15 +37,9 @@ export function getAllSymbols() {
  */
 export function loadSymbolConfig(symbol) {
   const key = STORAGE_PREFIX + symbol.toUpperCase();
-  try {
-    if (typeof window !== 'undefined' && window.localStorage) {
-      const json = window.localStorage.getItem(key);
-      if (!json) return Promise.resolve(null);
-      return Promise.resolve(JSON.parse(json));
-    }
-
-    // Fallback to adapter (async)
-    return storageAdapter.getItem(key).then((json) => {
+  return storageAdapter
+    .getItem(key)
+    .then((json) => {
       if (!json) return null;
       try {
         return JSON.parse(json);
@@ -53,14 +47,11 @@ export function loadSymbolConfig(symbol) {
         console.error(`PO: Failed to parse config for ${symbol}:`, e);
         return null;
       }
-    }).catch((error) => {
+    })
+    .catch((error) => {
       console.error(`PO: Failed to load symbol config for ${symbol}:`, error);
       return null;
     });
-  } catch (error) {
-    console.error(`PO: Failed to load symbol config for ${symbol}:`, error);
-    return Promise.resolve(null);
-  }
 }
 
 /**
@@ -79,12 +70,6 @@ export function saveSymbolConfig(config) {
     // Update timestamp for last-write-wins
     config.updatedAt = Date.now();
 
-    if (typeof window !== 'undefined' && window.localStorage) {
-      window.localStorage.setItem(key, JSON.stringify(config));
-      return Promise.resolve(true);
-    }
-
-    // Fallback to adapter (async) - return a Promise
     return storageAdapter.setItem(key, JSON.stringify(config)).catch((error) => {
       console.error(`PO: Failed to save symbol config for ${config.symbol}:`, error);
       return false;
@@ -102,20 +87,10 @@ export function saveSymbolConfig(config) {
  */
 export function deleteSymbolConfig(symbol) {
   const key = STORAGE_PREFIX + symbol.toUpperCase();
-  try {
-    if (typeof window !== 'undefined' && window.localStorage) {
-      window.localStorage.removeItem(key);
-      return Promise.resolve(true);
-    }
-
-    return storageAdapter.removeItem(key).catch((error) => {
-      console.error(`PO: Failed to delete symbol config for ${symbol}:`, error);
-      return false;
-    });
-  } catch (error) {
+  return storageAdapter.removeItem(key).catch((error) => {
     console.error(`PO: Failed to delete symbol config for ${symbol}:`, error);
-    return Promise.resolve(false);
-  }
+    return false;
+  });
 }
 
 /**
@@ -125,16 +100,13 @@ export function deleteSymbolConfig(symbol) {
  */
 export function symbolExists(symbol) {
   const key = STORAGE_PREFIX + symbol.toUpperCase();
-  try {
-    if (typeof window !== 'undefined' && window.localStorage) {
-      return Promise.resolve(window.localStorage.getItem(key) !== null);
-    }
-
-    return storageAdapter.getItem(key).then((value) => value !== null);
-  } catch (error) {
-    console.error(`PO: Failed to check symbol existence for ${symbol}:`, error);
-    return Promise.resolve(false);
-  }
+  return storageAdapter
+    .getItem(key)
+    .then((value) => value !== null)
+    .catch((error) => {
+      console.error(`PO: Failed to check symbol existence for ${symbol}:`, error);
+      return false;
+    });
 }
 
 /**
@@ -144,22 +116,10 @@ export function symbolExists(symbol) {
 export async function clearAllSymbols() {
   try {
     const symbols = await getAllSymbols();
-    
-    if (typeof window !== 'undefined' && window.localStorage) {
-      // Clear all po:settings:* keys from localStorage
-      for (const symbol of symbols) {
-        const key = STORAGE_PREFIX + symbol.toUpperCase();
-        window.localStorage.removeItem(key);
-      }
-      return true;
-    }
 
-    // Fallback to adapter (async)
-    const promises = symbols.map(symbol => {
-      const key = STORAGE_PREFIX + symbol.toUpperCase();
-      return storageAdapter.removeItem(key);
-    });
-    await Promise.all(promises);
+    await Promise.all(
+      symbols.map((symbol) => storageAdapter.removeItem(STORAGE_PREFIX + symbol.toUpperCase()))
+    );
     return true;
   } catch (error) {
     console.error('PO: Failed to clear all symbols:', error);
