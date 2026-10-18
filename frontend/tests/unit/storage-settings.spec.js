@@ -94,14 +94,17 @@ describe('storage-settings', () => {
     });
 
     it('should handle malformed JSON gracefully', async () => {
-      const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+      // Parsing now happens in the shared storage seam (storage/local-storage
+      // readItem), which reports unparseable values on console.warn. The
+      // observable behaviour is unchanged: null, and no throw.
+      const consoleWarn = vi.spyOn(console, 'warn').mockImplementation(() => {});
       localStorage.setItem('po:settings:BAD', '{invalid json}');
 
       const loaded = await loadSymbolConfig('BAD');
       expect(loaded).toBeNull();
-      expect(consoleError).toHaveBeenCalled();
+      expect(consoleWarn).toHaveBeenCalled();
 
-      consoleError.mockRestore();
+      consoleWarn.mockRestore();
     });
   });
 
