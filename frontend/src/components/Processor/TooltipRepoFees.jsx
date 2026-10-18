@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { formatMonedaConDecimales } from '../../services/formato.js';
 import Box from '@mui/material/Box';
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
@@ -52,21 +53,11 @@ const resolveDisplayDecimals = (breakdown) => {
   return 2;
 };
 
-const createCurrencyFormatter = (decimals) => new Intl.NumberFormat('en-US', {
-  minimumFractionDigits: decimals,
-  maximumFractionDigits: decimals,
-});
+const formatAmount = (value, decimals) => formatMonedaConDecimales(value, decimals);
 
-const formatAmount = (value, formatter) => {
-  if (!Number.isFinite(value)) {
-    return '—';
-  }
-  return formatter.format(value);
-};
-
-const formatSigned = (value, formatter) => {
+const formatSigned = (value, decimals) => {
   if (!Number.isFinite(value)) return '—';
-  const formatted = formatter.format(Math.abs(value));
+  const formatted = formatMonedaConDecimales(Math.abs(value), decimals);
   if (value > 0) return `+${formatted}`;
   if (value < 0) return `-${formatted}`;
   return formatted;
@@ -77,7 +68,6 @@ const buildSuccessTooltip = (breakdown, strings) => {
   const roleLabel = getRoleLabel(breakdown?.role, strings);
   const currencyLabel = getCurrencyLabel(breakdown?.currency, strings);
   const decimals = resolveDisplayDecimals(breakdown);
-  const formatter = createCurrencyFormatter(decimals);
   const showGastosGarantia = Number.isFinite(breakdown?.gastosGarantiaAmount)
     && Math.abs(breakdown.gastosGarantiaAmount) > 0;
 
@@ -99,44 +89,44 @@ const buildSuccessTooltip = (breakdown, strings) => {
         </Typography>
       )}
       <Typography variant="caption" sx={{ display: 'block' }}>
-        {labels.baseAmount || 'Monto base'}: {formatAmount(breakdown?.baseAmount, formatter)}
+        {labels.baseAmount || 'Monto base'}: {formatAmount(breakdown?.baseAmount, decimals)}
       </Typography>
       <Typography variant="caption" sx={{ display: 'block' }}>
-        {labels.accruedInterest || 'Interés devengado'}: {formatSigned(breakdown?.accruedInterest, formatter)}
+        {labels.accruedInterest || 'Interés devengado'}: {formatSigned(breakdown?.accruedInterest, decimals)}
       </Typography>
       <Box sx={{ borderTop: '1px solid', borderColor: 'divider', my: 0.5 }} />
       <Typography variant="caption" sx={{ display: 'block' }}>
-        {labels.arancel || 'Arancel'}: {formatAmount(breakdown?.arancelAmount, formatter)}
+        {labels.arancel || 'Arancel'}: {formatAmount(breakdown?.arancelAmount, decimals)}
         {Number.isFinite(breakdown?.rates?.arancelPercent) && breakdown.rates.arancelPercent > 0 && (
           <span style={{ opacity: 0.7 }}> ({breakdown.rates.arancelPercent.toFixed(2)}% anual)</span>
         )}
       </Typography>
       <Typography variant="caption" sx={{ display: 'block' }}>
-        {labels.derechos || 'Derechos de mercado'}: {formatAmount(breakdown?.derechosMercadoAmount, formatter)}
+        {labels.derechos || 'Derechos de mercado'}: {formatAmount(breakdown?.derechosMercadoAmount, decimals)}
         {Number.isFinite(breakdown?.rates?.derechosDailyPercent) && breakdown.rates.derechosDailyPercent > 0 && (
           <span style={{ opacity: 0.7 }}> ({breakdown.rates.derechosDailyPercent.toFixed(4)}% diario)</span>
         )}
       </Typography>
       {showGastosGarantia && (
         <Typography variant="caption" sx={{ display: 'block' }}>
-          {labels.gastosGarantia || 'Gastos de garantía'}: {formatAmount(breakdown?.gastosGarantiaAmount, formatter)}
+          {labels.gastosGarantia || 'Gastos de garantía'}: {formatAmount(breakdown?.gastosGarantiaAmount, decimals)}
           {Number.isFinite(breakdown?.rates?.gastosDailyPercent) && breakdown.rates.gastosDailyPercent > 0 && (
             <span style={{ opacity: 0.7 }}> ({breakdown.rates.gastosDailyPercent.toFixed(4)}% diario)</span>
           )}
         </Typography>
       )}
       <Typography variant="caption" sx={{ display: 'block' }}>
-        {labels.iva || 'IVA sobre gastos'}: {formatSigned(breakdown?.ivaAmount, formatter)}
+        {labels.iva || 'IVA sobre gastos'}: {formatSigned(breakdown?.ivaAmount, decimals)}
         {Number.isFinite(breakdown?.rates?.ivaRate) && breakdown.rates.ivaRate > 0 && (
           <span style={{ opacity: 0.7 }}> ({(breakdown.rates.ivaRate * 100).toFixed(2)}%)</span>
         )}
       </Typography>
       <Box sx={{ borderTop: '1px solid', borderColor: 'divider', my: 0.5 }} />
       <Typography variant="caption" sx={{ fontWeight: 600, display: 'block' }}>
-        {labels.totalExpenses || 'Gastos totales'}: {formatSigned(breakdown?.totalExpenses, formatter)}
+        {labels.totalExpenses || 'Gastos totales'}: {formatSigned(breakdown?.totalExpenses, decimals)}
       </Typography>
       <Typography variant="caption" sx={{ fontWeight: 600, display: 'block', mt: 0.25 }}>
-        {labels.netSettlement || 'Neto de liquidación'}: {formatAmount(breakdown?.netSettlement, formatter)}
+        {labels.netSettlement || 'Neto de liquidación'}: {formatAmount(breakdown?.netSettlement, decimals)}
       </Typography>
     </Box>
   );

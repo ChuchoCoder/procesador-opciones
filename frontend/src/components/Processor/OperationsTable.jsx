@@ -22,59 +22,8 @@ import ArrowCircleDownIcon from '@mui/icons-material/ArrowCircleDown';
 
 import FeeTooltip from './FeeTooltip.jsx';
 import AddStrikeExceptionButton from './AddStrikeExceptionButton.jsx';
-import { getDotDecimalLocale } from '../../services/locale.js';
+import { formatCantidad, formatDecimal, formatMoneda } from '../../services/formato.js';
 
-const quantityFormatter = typeof Intl !== 'undefined'
-  ? new Intl.NumberFormat(getDotDecimalLocale(), {
-      useGrouping: true,
-      maximumFractionDigits: 0,
-    })
-  : null;
-
-const decimalFormatter = typeof Intl !== 'undefined'
-  ? new Intl.NumberFormat(getDotDecimalLocale(), {
-      useGrouping: true,
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 4,
-    })
-  : null;
-
-const formatQuantity = (value) => {
-  if (!Number.isFinite(value)) {
-    return '';
-  }
-  if (quantityFormatter) {
-    return quantityFormatter.format(value);
-  }
-  return String(value);
-};
-
-const formatDecimal = (value) => {
-  if (!Number.isFinite(value)) {
-    return '';
-  }
-  if (decimalFormatter) {
-    return decimalFormatter.format(value);
-  }
-  return String(value);
-};
-
-const feeFormatter = typeof Intl !== 'undefined'
-  ? new Intl.NumberFormat(getDotDecimalLocale(), {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    })
-  : null;
-
-const formatFee = (value) => {
-  if (!Number.isFinite(value)) {
-    return '—';
-  }
-  if (feeFormatter) {
-    return feeFormatter.format(value);
-  }
-  return value.toFixed(2);
-};
 
 /**
  * Format net total with sign prefix based on operation type.
@@ -85,7 +34,7 @@ const formatNetTotal = (value, totalQuantity) => {
   if (!Number.isFinite(value)) {
     return '—';
   }
-  const formattedValue = formatFee(value);
+  const formattedValue = formatMoneda(value);
   // BUY operations (positive quantity): show negative
   if (totalQuantity > 0) {
     return `-${formattedValue}`;
@@ -320,7 +269,7 @@ const OperationsTable = ({
                   sx={index % 2 === 1 ? { backgroundColor: 'action.hover' } : undefined}
                 >
                   <TableCell sx={quantityValue < 0 ? { color: 'error.main', fontWeight: 600 } : undefined}>
-                    {formatQuantity(quantityValue)}
+                    {formatCantidad(quantityValue)}
                   </TableCell>
                   <TableCell 
                     align="right"

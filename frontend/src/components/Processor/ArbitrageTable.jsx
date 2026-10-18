@@ -18,13 +18,12 @@ import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import Typography from '@mui/material/Typography';
 import TableSortLabel from '@mui/material/TableSortLabel';
-import { getDotDecimalLocale } from '../../services/locale.js';
+import { formatCantidad, formatMoneda, formatMonedaConSigno, formatMonedaConSimbolo, formatPorcentaje, formatFraccionComoPorcentaje } from '../../services/formato.js';
 import Chip from '@mui/material/Chip';
 import Tooltip from '@mui/material/Tooltip';
 import InfoIcon from '@mui/icons-material/Info';
 import CircularProgress from '@mui/material/CircularProgress';
 
-import { formatCurrency } from '../../services/pnl-calculations.js';
 import { PATTERNS, ESTADOS, LADOS } from '../../services/arbitrage-types.js';
 
 // Lazy load the operations detail component
@@ -63,13 +62,6 @@ function getPnLColor(value) {
  * @param {number} value
  * @returns {string}
  */
-function formatPrice(value) {
-  if (!Number.isFinite(value)) return '—';
-  return new Intl.NumberFormat(getDotDecimalLocale(), {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 4,
-  }).format(value);
-}
 
 /**
  * Get weighted average price for CI side
@@ -132,34 +124,34 @@ function getPnLTradeBreakdown(row) {
     return (
       <Box sx={{ mb: 0.5 }}>
         <Typography variant="body2" sx={{ display: 'block', color: 'grey.100' }}>
-          {label}: {formatCurrency(totalValue)}
+          {label}: {formatMonedaConSimbolo(totalValue)}
         </Typography>
         <Box sx={{ ml: 1, mt: 0.25 }}>
           <Typography variant="body2" sx={{ display: 'block', color: 'grey.400', fontSize: '0.75rem' }}>
-            {'\u2022'} Precio promedio: {formatCurrency(avgPrice)}
+            {'\u2022'} Precio promedio: {formatMonedaConSimbolo(avgPrice)}
           </Typography>
           {hasBreakdown ? (
             <>
               <Typography variant="body2" sx={{ display: 'block', color: 'grey.400', fontSize: '0.75rem' }}>
-                {'\u2022'} Comisiones: {formatCurrency(commissionAmount)}
+                {'\u2022'} Comisiones: {formatMonedaConSimbolo(commissionAmount)}
                 {commissionPct > 0 && (
-                  <span style={{ opacity: 0.7 }}> ({(commissionPct * 100).toFixed(4)}%)</span>
+                  <span style={{ opacity: 0.7 }}> ({formatFraccionComoPorcentaje(commissionPct, { decimals: 4 })})</span>
                 )}
               </Typography>
               <Typography variant="body2" sx={{ display: 'block', color: 'grey.400', fontSize: '0.75rem' }}>
-                {'\u2022'} Derechos de mercado: {formatCurrency(rightsAmount)}
+                {'\u2022'} Derechos de mercado: {formatMonedaConSimbolo(rightsAmount)}
                 {rightsPct > 0 && (
-                  <span style={{ opacity: 0.7 }}> ({(rightsPct * 100).toFixed(4)}%)</span>
+                  <span style={{ opacity: 0.7 }}> ({formatFraccionComoPorcentaje(rightsPct, { decimals: 4 })})</span>
                 )}
               </Typography>
             </>
           ) : (
             <Typography variant="body2" sx={{ display: 'block', color: 'grey.400', fontSize: '0.75rem' }}>
-              {'\u2022'} Comisiones: {formatCurrency(totalFees)}
+              {'\u2022'} Comisiones: {formatMonedaConSimbolo(totalFees)}
             </Typography>
           )}
           <Typography variant="body2" sx={{ display: 'block', color: isSell ? 'error.main' : 'success.main', fontSize: '0.75rem' }}>
-            {'\u2022'} Neto: {formatCurrency(net)}
+            {'\u2022'} Neto: {formatMonedaConSimbolo(net)}
           </Typography>
         </Box>
       </Box>
@@ -176,7 +168,7 @@ function getPnLTradeBreakdown(row) {
       {renderSection('Compra CI', row.compraCI_breakdown, false)}
       {renderSection('Venta 24H', row.venta24h_breakdown, true)}
       <Typography variant="body2" sx={{ display: 'block', mt: 1, fontWeight: 600, borderTop: '1px solid', borderColor: 'grey.700', pt: 0.5, color: 'grey.100' }}>
-        Total: {formatCurrency(row.pnl_trade)}
+        Total: {formatMonedaConSimbolo(row.pnl_trade)}
       </Typography>
     </Box>
   );
@@ -193,15 +185,6 @@ function getPnLCaucionBreakdown(row) {
     // prefer rendering that instead of re-estimating amounts in the UI.
     const breakdown = row.caucionFeesBreakdown || row.feeBreakdown || null;
     if (breakdown) {
-      const formatter = new Intl.NumberFormat(getDotDecimalLocale(), { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-      const fmt = (v) => (Number.isFinite(v) ? formatter.format(v) : '—');
-      const fmtSigned = (v) => {
-        if (!Number.isFinite(v)) return '—';
-        const abs = formatter.format(Math.abs(v));
-        if (v > 0) return `+${abs}`;
-        if (v < 0) return `-${abs}`;
-        return abs;
-      };
 
       const principal = Number.isFinite(row.principal) ? row.principal : null;
       const baseAmount = Number.isFinite(breakdown.baseAmount) ? breakdown.baseAmount : principal;
@@ -222,59 +205,57 @@ function getPnLCaucionBreakdown(row) {
           </Typography>
           {(Number.isFinite(breakdown.avgTNA) || Number.isFinite(row.avgTNA)) && (
             <Typography variant="body2" sx={{ display: 'block', mt: 0.5, color: 'primary.light', fontWeight: 500 }}>
-              TNA Promedio: {Number(breakdown.avgTNA ?? row.avgTNA).toFixed(2)}%
+              TNA Promedio: {formatPorcentaje(breakdown.avgTNA ?? row.avgTNA)}
             </Typography>
           )}
           <Typography variant="body2" sx={{ display: 'block', mt: 1, color: 'grey.100' }}>
-            Importe Bruto: {principal !== null ? fmt(principal) : '—'}
+            Importe Bruto: {principal !== null ? formatMoneda(principal) : '—'}
           </Typography>
 
           <Typography variant="body2" sx={{ display: 'block', mt: 1, color: 'grey.100' }}>
-            Interés devengado: {fmtSigned(breakdown.accruedInterest ?? row.accruedInterest ?? row.pnl_caucion)}
+            Interés devengado: {formatMonedaConSigno(breakdown.accruedInterest ?? row.accruedInterest ?? row.pnl_caucion)}
           </Typography>
           <Typography variant="body2" sx={{ display: 'block', mt: 1, color: 'grey.100' }}>
-            Monto base: {baseAmount !== null ? fmt(baseAmount) : '—'}
+            Monto base: {baseAmount !== null ? formatMoneda(baseAmount) : '—'}
           </Typography>
           <Typography variant="body2" sx={{ display: 'block', color: 'grey.400', ml: 1 }}>
-            Arancel: {fmtSigned(arancel)}
+            Arancel: {formatMonedaConSigno(arancel)}
             {Number.isFinite(breakdown?.rates?.arancelPercent) && breakdown.rates.arancelPercent > 0 && (
-              <span style={{ opacity: 0.7 }}> ({breakdown.rates.arancelPercent.toFixed(2)}% anual)</span>
+              <span style={{ opacity: 0.7 }}> ({formatPorcentaje(breakdown.rates.arancelPercent, { decimals: 2 })} anual)</span>
             )}
           </Typography>
           <Typography variant="body2" sx={{ display: 'block', color: 'grey.400', ml: 1 }}>
-            Derechos de mercado: {fmtSigned(derechos)}
+            Derechos de mercado: {formatMonedaConSigno(derechos)}
             {Number.isFinite(breakdown?.rates?.derechosDailyPercent) && breakdown.rates.derechosDailyPercent > 0 && (
-              <span style={{ opacity: 0.7 }}> ({breakdown.rates.derechosDailyPercent.toFixed(4)}% diario)</span>
+              <span style={{ opacity: 0.7 }}> ({formatPorcentaje(breakdown.rates.derechosDailyPercent, { decimals: 4 })} diario)</span>
             )}
           </Typography>
           {Number.isFinite(gastosGarantia) && (
             <Typography variant="body2" sx={{ display: 'block', color: 'grey.400', ml: 1 }}>
-              Gastos de garantía: {fmtSigned(gastosGarantia)}
+              Gastos de garantía: {formatMonedaConSigno(gastosGarantia)}
               {Number.isFinite(breakdown?.rates?.gastosDailyPercent) && breakdown.rates.gastosDailyPercent > 0 && (
-                <span style={{ opacity: 0.7 }}> ({breakdown.rates.gastosDailyPercent.toFixed(4)}% diario)</span>
+                <span style={{ opacity: 0.7 }}> ({formatPorcentaje(breakdown.rates.gastosDailyPercent, { decimals: 4 })} diario)</span>
               )}
             </Typography>
           )}
           <Typography variant="body2" sx={{ display: 'block', color: 'grey.400', ml: 1 }}>
-            IVA sobre gastos: {fmtSigned(iva)}
+            IVA sobre gastos: {formatMonedaConSigno(iva)}
             {Number.isFinite(breakdown?.rates?.ivaRate) && breakdown.rates.ivaRate > 0 && (
-              <span style={{ opacity: 0.7 }}> ({(breakdown.rates.ivaRate * 100).toFixed(2)}%)</span>
+              <span style={{ opacity: 0.7 }}> ({formatFraccionComoPorcentaje(breakdown.rates.ivaRate, { decimals: 2 })})</span>
             )}
           </Typography>
 
           <Typography variant="body2" sx={{ display: 'block', mt: 1, fontWeight: 600, borderTop: '1px solid', borderColor: 'grey.700', pt: 0.5, color: 'grey.100' }}>
-            Gastos totales: {fmtSigned(totalExpenses)}
+            Gastos totales: {formatMonedaConSigno(totalExpenses)}
           </Typography>
           <Typography variant="body2" sx={{ display: 'block', fontWeight: 600, color: 'grey.100' }}>
-            Neto de liquidación: {netSettlement !== null ? fmt(netSettlement) : '—'}
+            Neto de liquidación: {netSettlement !== null ? formatMoneda(netSettlement) : '—'}
           </Typography>
         </Box>
       );
     }
 
     // No service breakdown available — be strict: do not estimate repo fees locally.
-    const formatter = new Intl.NumberFormat(getDotDecimalLocale(), { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    const fmt = (v) => (Number.isFinite(v) ? formatter.format(v) : '—');
 
     return (
       <Box sx={{ p: 1, minWidth: 300 }}>
@@ -286,36 +267,27 @@ function getPnLCaucionBreakdown(row) {
         </Typography>
         {(Number.isFinite(row.avgTNA) && row.avgTNA > 0) && (
           <Typography variant="body2" sx={{ display: 'block', mt: 0.5, color: 'primary.light', fontWeight: 500 }}>
-            TNA Promedio: {Number(row.avgTNA).toFixed(2)}%
+            TNA Promedio: {formatPorcentaje(row.avgTNA)}
           </Typography>
         )}
         <Typography variant="body2" sx={{ color: 'grey.400' }}>
           Datos de caución no disponibles (el servicio no proporcionó breakdown)
         </Typography>
         <Typography variant="body2" sx={{ display: 'block', mt: 1, color: 'grey.100' }}>
-          Monto base: {fmt(null)}
+          Monto base: {formatMoneda(null)}
         </Typography>
         <Typography variant="body2" sx={{ display: 'block', mt: 1, color: 'grey.100' }}>
-          Interés devengado: {fmt(null)}
+          Interés devengado: {formatMoneda(null)}
         </Typography>
         <Typography variant="body2" sx={{ display: 'block', mt: 1, fontWeight: 600, borderTop: '1px solid', borderColor: 'grey.700', pt: 0.5, color: 'grey.100' }}>
-          Gastos totales: {fmt(null)}
+          Gastos totales: {formatMoneda(null)}
         </Typography>
         <Typography variant="body2" sx={{ display: 'block', fontWeight: 600, color: 'grey.100' }}>
-          Neto de liquidación: {fmt(null)}
+          Neto de liquidación: {formatMoneda(null)}
         </Typography>
       </Box>
     );
   }
-  const formatter = new Intl.NumberFormat(getDotDecimalLocale(), { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  const fmt = (v) => (Number.isFinite(v) ? formatter.format(v) : '—');
-  const fmtSigned = (v) => {
-    if (!Number.isFinite(v)) return '—';
-    const abs = formatter.format(Math.abs(v));
-    if (v > 0) return `+${abs}`;
-    if (v < 0) return `-${abs}`;
-    return abs;
-  };
 
   return (
     <Box sx={{ p: 1, minWidth: 300 }}>
@@ -327,7 +299,7 @@ function getPnLCaucionBreakdown(row) {
       </Typography>
       {(row.avgTNA > 0 || Number.isFinite(row.avgTNA)) && (
         <Typography variant="body2" sx={{ display: 'block', mb: 1, color: 'primary.light', fontWeight: 500 }}>
-          TNA Promedio: {Number(row.avgTNA).toFixed(2)}%
+          TNA Promedio: {formatPorcentaje(row.avgTNA)}
         </Typography>
       )}
 
@@ -363,11 +335,11 @@ function getPnLCaucionBreakdown(row) {
               {roleLabel} · {currency}
             </Typography>
             <Typography variant="body2" sx={{ display: 'block', color: 'grey.100' }}>
-              Monto base: {fmt(base)}
+              Monto base: {formatMoneda(base)}
             </Typography>
             {tasa !== null && (
               <Typography variant="body2" sx={{ display: 'block', color: 'grey.400', ml: 1 }}>
-                TNA Promedio: {Number(tasa).toFixed(2)}%
+                TNA Promedio: {formatPorcentaje(tasa)}
               </Typography>
             )}
             {tenor !== null && (
@@ -377,46 +349,46 @@ function getPnLCaucionBreakdown(row) {
             )}
 
             <Typography variant="body2" sx={{ display: 'block', color: 'grey.100', mt: 0.5 }}>
-              Interés devengado: {fmtSigned(interes)}
+              Interés devengado: {formatMonedaConSigno(interes)}
             </Typography>
             <Typography variant="body2" sx={{ display: 'block', color: 'grey.400', ml: 1 }}>
-              Arancel: {fmtSigned(arancel)}
+              Arancel: {formatMonedaConSigno(arancel)}
               {Number.isFinite(caucionRates?.arancelPercent) && caucionRates.arancelPercent > 0 && (
-                <span style={{ opacity: 0.7 }}> ({caucionRates.arancelPercent.toFixed(2)}% anual)</span>
+                <span style={{ opacity: 0.7 }}> ({formatPorcentaje(caucionRates.arancelPercent, { decimals: 2 })} anual)</span>
               )}
             </Typography>
             <Typography variant="body2" sx={{ display: 'block', color: 'grey.400', ml: 1 }}>
-              Derechos de mercado: {fmtSigned(derechos)}
+              Derechos de mercado: {formatMonedaConSigno(derechos)}
               {Number.isFinite(caucionRates?.derechosDailyPercent) && caucionRates.derechosDailyPercent > 0 && (
-                <span style={{ opacity: 0.7 }}> ({caucionRates.derechosDailyPercent.toFixed(4)}% diario)</span>
+                <span style={{ opacity: 0.7 }}> ({formatPorcentaje(caucionRates.derechosDailyPercent, { decimals: 4 })} diario)</span>
               )}
             </Typography>
             {Number.isFinite(gastosGarantia) && (
               <Typography variant="body2" sx={{ display: 'block', color: 'grey.400', ml: 1 }}>
-                Gastos de garantía: {fmtSigned(gastosGarantia)}
+                Gastos de garantía: {formatMonedaConSigno(gastosGarantia)}
                 {Number.isFinite(caucionRates?.gastosDailyPercent) && caucionRates.gastosDailyPercent > 0 && (
-                  <span style={{ opacity: 0.7 }}> ({caucionRates.gastosDailyPercent.toFixed(4)}% diario)</span>
+                  <span style={{ opacity: 0.7 }}> ({formatPorcentaje(caucionRates.gastosDailyPercent, { decimals: 4 })} diario)</span>
                 )}
               </Typography>
             )}
             <Typography variant="body2" sx={{ display: 'block', color: 'grey.400', ml: 1 }}>
-              IVA sobre gastos: {fmtSigned(iva)}
+              IVA sobre gastos: {formatMonedaConSigno(iva)}
               {Number.isFinite(caucionRates?.ivaRate) && caucionRates.ivaRate > 0 && (
-                <span style={{ opacity: 0.7 }}> ({(caucionRates.ivaRate * 100).toFixed(2)}%)</span>
+                <span style={{ opacity: 0.7 }}> ({formatFraccionComoPorcentaje(caucionRates.ivaRate, { decimals: 2 })})</span>
               )}
             </Typography>
             <Typography variant="body2" sx={{ display: 'block', mt: 1, fontWeight: 600, borderTop: '1px solid', borderColor: 'grey.700', pt: 0.5, color: 'grey.100' }}>
-              Gastos totales: {fmtSigned(totalExpenses)}
+              Gastos totales: {formatMonedaConSigno(totalExpenses)}
             </Typography>
             <Typography variant="body2" sx={{ display: 'block', fontWeight: 600, color: 'grey.100' }}>
-              Neto de liquidación: {netSettlement !== null ? fmt(netSettlement) : '—'}
+              Neto de liquidación: {netSettlement !== null ? formatMoneda(netSettlement) : '—'}
             </Typography>
           </Box>
         );
       })}
 
       <Typography variant="body2" sx={{ display: 'block', mt: 1, fontWeight: 600, borderTop: '1px solid', borderColor: 'grey.700', pt: 0.5, color: 'grey.100' }}>
-        Total: {formatCurrency(row.pnl_caucion)}
+        Total: {formatMonedaConSimbolo(row.pnl_caucion)}
       </Typography>
     </Box>
   );
@@ -434,13 +406,13 @@ function getPnLTotalBreakdown(row) {
         Detalle P&L Total
       </Typography>
       <Typography variant="body2" sx={{ display: 'block', color: 'grey.100' }}>
-        P&L Trade: {formatCurrency(row.pnl_trade)}
+        P&L Trade: {formatMonedaConSimbolo(row.pnl_trade)}
       </Typography>
       <Typography variant="body2" sx={{ display: 'block', color: 'grey.100' }}>
-        P&L Caución: {formatCurrency(row.pnl_caucion)}
+        P&L Caución: {formatMonedaConSimbolo(row.pnl_caucion)}
       </Typography>
       <Typography variant="body2" sx={{ display: 'block', mt: 1, fontWeight: 600, borderTop: '1px solid', borderColor: 'grey.700', pt: 0.5, color: 'grey.100' }}>
-        Total: {formatCurrency(row.pnl_total)}
+        Total: {formatMonedaConSimbolo(row.pnl_total)}
       </Typography>
     </Box>
   );
@@ -526,9 +498,9 @@ const ArbitrageRow = memo(function ArbitrageRow({ row, strings, expandedRows, on
         <TableCell>
           {renderPatternPills(row.patron)}
         </TableCell>
-        <TableCell align="right">{row.cantidad.toLocaleString('en-US')}</TableCell>
-        <TableCell align="right">{formatPrice(getCIPrecio(row))}</TableCell>
-        <TableCell align="right">{formatPrice(get24hPrecio(row))}</TableCell>
+        <TableCell align="right">{formatCantidad(row.cantidad)}</TableCell>
+        <TableCell align="right">{formatMoneda(getCIPrecio(row))}</TableCell>
+        <TableCell align="right">{formatMoneda(get24hPrecio(row))}</TableCell>
         <TableCell align="right">
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 0.5 }}>
             <Typography
@@ -536,7 +508,7 @@ const ArbitrageRow = memo(function ArbitrageRow({ row, strings, expandedRows, on
               variant="body2"
               sx={{ color: getPnLColor(row.pnl_trade) }}
             >
-              {formatCurrency(row.pnl_trade)}
+              {formatMonedaConSimbolo(row.pnl_trade)}
             </Typography>
             <Tooltip title={getPnLTradeBreakdown(row)} arrow slotProps={tooltipSlotProps}>
               <InfoIcon sx={{ fontSize: 16, color: 'info.main', cursor: 'help' }} />
@@ -550,7 +522,7 @@ const ArbitrageRow = memo(function ArbitrageRow({ row, strings, expandedRows, on
               variant="body2"
               sx={{ color: getPnLColor(row.pnl_caucion) }}
             >
-              {formatCurrency(row.pnl_caucion)}
+              {formatMonedaConSimbolo(row.pnl_caucion)}
             </Typography>
             <Tooltip title={getPnLCaucionBreakdown(row)} arrow slotProps={tooltipSlotProps}>
               <InfoIcon sx={{ fontSize: 16, color: 'info.main', cursor: 'help' }} />
@@ -564,7 +536,7 @@ const ArbitrageRow = memo(function ArbitrageRow({ row, strings, expandedRows, on
               variant="body2"
               sx={{ color: getPnLColor(row.pnl_total) }}
             >
-              {formatCurrency(row.pnl_total)}
+              {formatMonedaConSimbolo(row.pnl_total)}
             </Typography>
             <Tooltip title={getPnLTotalBreakdown(row)} arrow slotProps={tooltipSlotProps}>
               <InfoIcon sx={{ fontSize: 16, color: 'info.main', cursor: 'help' }} />
@@ -628,10 +600,10 @@ const ArbitrageRow = memo(function ArbitrageRow({ row, strings, expandedRows, on
                             <TableRow key={`${cau.id}-${index}`}>
                               <TableCell>{cau.id}</TableCell>
                               <TableCell>{cau.tipo}</TableCell>
-                              <TableCell align="right">{formatCurrency(cau.monto)}</TableCell>
+                              <TableCell align="right">{formatMonedaConSimbolo(cau.monto)}</TableCell>
                               <TableCell align="right">{cau.tasa}%</TableCell>
                               <TableCell align="right">{cau.tenorDias}</TableCell>
-                              <TableCell align="right">{formatCurrency(cau.interes)}</TableCell>
+                              <TableCell align="right">{formatMonedaConSimbolo(cau.interes)}</TableCell>
                             </TableRow>
                           ))}
                         </TableBody>
@@ -838,7 +810,7 @@ const ArbitrageTable = ({ data = [], strings = {}, onSort }) => {
                   mt: 0.25,
                 }}
               >
-                {formatCurrency(totals.pnlTrade)}
+                {formatMonedaConSimbolo(totals.pnlTrade)}
               </Typography>
             </TableCell>
             <TableCell align="right">
@@ -859,7 +831,7 @@ const ArbitrageTable = ({ data = [], strings = {}, onSort }) => {
                   mt: 0.25,
                 }}
               >
-                {formatCurrency(totals.pnlCaucion)}
+                {formatMonedaConSimbolo(totals.pnlCaucion)}
               </Typography>
             </TableCell>
             <TableCell align="right">
@@ -880,7 +852,7 @@ const ArbitrageTable = ({ data = [], strings = {}, onSort }) => {
                   mt: 0.25,
                 }}
               >
-                {formatCurrency(totals.pnlTotal)}
+                {formatMonedaConSimbolo(totals.pnlTotal)}
               </Typography>
             </TableCell>
             <TableCell>{columnsStrings.estado || 'Estado'}</TableCell>

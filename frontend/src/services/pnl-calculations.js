@@ -10,7 +10,6 @@ import {
   CAUCION_TIPOS,
   createResultadoPatron,
 } from './arbitrage-types.js';
-import { getDotDecimalLocale } from './locale.js';
 import { getRepoFeeConfig } from './fees/broker-fees-storage.js';
 
 /**
@@ -574,34 +573,3 @@ function calculateCaucionPnL(cauciones, matchedQty, plazo) {
   return tipo === CAUCION_TIPOS.COLOCADORA ? normalizedInterest : -normalizedInterest;
 }
 
-/**
- * Format currency for display
- * @param {number} value
- * @param {string} [currency='ARS']
- * @returns {string}
- */
-export function formatCurrency(value, currency = 'ARS') {
-  const locale = getDotDecimalLocale();
-  const formatter = new Intl.NumberFormat(locale, {
-    style: 'currency',
-    currency,
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  });
-  return formatter.format(value);
-}
-
-/**
- * Format percentage for display
- * @param {number} value
- * @returns {string}
- */
-export function formatPercentage(value) {
-  const locale = getDotDecimalLocale();
-  const formatter = new Intl.NumberFormat(locale, {
-    style: 'percent',
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  });
-  return formatter.format(value / 100);
-}
