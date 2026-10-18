@@ -16,6 +16,7 @@ import ArbitrageTable from './ArbitrageTable.jsx';
 import { parseOperations, parseCauciones, aggregateByInstrumentoPlazo, calculateAvgTNAByCurrency } from '../../services/data-aggregation.js';
 import { calculatePnL } from '../../services/pnl-calculations.js';
 import { LADOS } from '../../services/arbitrage-types.js';
+import { ALL_GROUP_ID } from '../../services/clasificacion-instrumentos.js';
 
 /**
  * Transform ResultadoPatron to table row format
@@ -66,8 +67,8 @@ function filterRowsBySelection(allRows, selectedGroupId, groupOptions) {
   
   // Check if "All" is selected or no selection
   const allSelected = selectedIds.length === 0 || 
-                      selectedIds.includes('__ALL__') ||
-                      selectedGroupId === '__ALL__';
+                      selectedIds.includes(ALL_GROUP_ID) ||
+                      selectedGroupId === ALL_GROUP_ID;
   
   if (allSelected) {
     return allRows;
@@ -306,7 +307,7 @@ const ArbitrajesView = ({
     // Filter options to only include those that have arbitrage results
     // Always keep the "All" option
     return groupOptions.filter((opt) => {
-      return opt.id === '__ALL__' || 
+      return opt.id === ALL_GROUP_ID || 
              opt.label === (filterStrings.all || 'All') ||
              availableInstruments.has(opt.label);
     });
