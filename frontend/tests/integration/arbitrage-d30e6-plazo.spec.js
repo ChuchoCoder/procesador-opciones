@@ -22,8 +22,6 @@
 /* eslint-env node, jest */
 import { describe, it, beforeAll, expect } from 'vitest';
 import Papa from 'papaparse';
-import { fileURLToPath } from 'node:url';
-import { dirname, join } from 'path';
 
 // Real imports - NO MOCKS
 import { loadEnrichedOperations } from './helpers/arbitrage-pipeline.js';
