@@ -4,7 +4,7 @@
  */
 
 import { createGrupoInstrumentoPlazo, VENUES, LADOS } from './arbitrage-types.js';
-import { calculateCIto24hsPlazo, calculateCalendarDays } from './business-days.js';
+import { calculateCalendarDays } from './business-days.js';
 import { getInstrumentDetails } from './fees/instrument-mapping.js';
 
 /**

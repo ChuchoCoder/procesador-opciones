@@ -4,6 +4,8 @@
 import { describe, it, beforeAll, expect } from 'vitest';
 import Papa from 'papaparse';
 import { readFile } from 'node:fs/promises';
+import { fileURLToPath } from 'node:url';
+import { dirname, join } from 'path';
 
 import { normalizeOperationRows } from '../../src/services/csv/legacy-normalizer.js';
 import { validateAndFilterRows } from '../../src/services/csv/validators.js';
@@ -14,7 +16,7 @@ describe('V Ticker enrichOperationRow', () => {
   let enriched;
 
   beforeAll(async () => {
-    const csvContent = await readFile('C:\\Users\\feder\\Downloads\\ReporteOperaciones_17825 (34).csv', 'utf-8');
+    const csvContent = await readFile(join(dirname(fileURLToPath(import.meta.url)), 'data', 'arbitrage-V-ticker.csv'), 'utf-8');
     const parsed = Papa.parse(csvContent, { header: true, skipEmptyLines: true, dynamicTyping: true });
     const allRows = parsed.data.filter(row => row.symbol);
 
@@ -23,7 +25,7 @@ describe('V Ticker enrichOperationRow', () => {
     vRows = validated.rows.filter(r => r.symbol.includes(' - V '));
     console.log(`[Test] V validated rows: ${vRows.length}`);
 
-    enriched = await Promise.all(vRows.map((row, i) => enrichOperationRow(row, {})));
+    enriched = await Promise.all(vRows.map((row) => enrichOperationRow(row, {})));
     console.log(`[Test] Enriched V rows: ${enriched.length}`);
     enriched.forEach((e, i) => {
       console.log(`[Test] Enriched ${i}: symbol="${e.symbol}"`);

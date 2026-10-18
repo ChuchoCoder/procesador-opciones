@@ -1,4 +1,3 @@
-/* global global */
 /* eslint-env node, jest */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import {

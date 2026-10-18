@@ -1,9 +1,11 @@
 /**
  * Deep dive: what does enrichOperationRow do to V?
  */
-import { describe, it, beforeAll, expect } from 'vitest';
+import { describe, it, beforeAll } from 'vitest';
 import Papa from 'papaparse';
 import { readFile } from 'node:fs/promises';
+import { fileURLToPath } from 'node:url';
+import { dirname, join } from 'path';
 
 import { normalizeOperationRows } from '../../src/services/csv/legacy-normalizer.js';
 import { validateAndFilterRows } from '../../src/services/csv/validators.js';
@@ -13,7 +15,7 @@ describe('V enrichOperationRow deep dive', () => {
   let enriched;
 
   beforeAll(async () => {
-    const csvContent = await readFile('C:\\Users\\feder\\Downloads\\ReporteOperaciones_17825 (34).csv', 'utf-8');
+    const csvContent = await readFile(join(dirname(fileURLToPath(import.meta.url)), 'data', 'arbitrage-V-ticker.csv'), 'utf-8');
     const parsed = Papa.parse(csvContent, { header: true, skipEmptyLines: true, dynamicTyping: true });
     const allRows = parsed.data.filter(row => row.symbol);
 
@@ -25,7 +27,7 @@ describe('V enrichOperationRow deep dive', () => {
       console.log(`\n[Test] Row ${i} input: side=${r.side}, symbol="${r.symbol}", security_id="${r.security_id}", status="${r.status}"`);
     });
 
-    enriched = await Promise.all(vRows.map((row, i) => enrichOperationRow(row, {})));
+    enriched = await Promise.all(vRows.map((row) => enrichOperationRow(row, {})));
 
     enriched.forEach((e, i) => {
       console.log(`[Test] Row ${i} output: symbol="${e.symbol}", expiration="${e.expiration}", strike=${e.strike}, type="${e.type}"`);
