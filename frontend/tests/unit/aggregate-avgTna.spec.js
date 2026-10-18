@@ -47,7 +47,7 @@ describe('aggregateByInstrumentoPlazo - avgTNA propagation', () => {
     const grupos = aggregateByInstrumentoPlazo(ops, cauciones, jornada, avgMap);
 
     // Expect one grupo for XYZ with plazo determined by earliest CI->24h mapping
-  // Depending on calculateCIto24hsPlazo, plazo may be 0; we primarily assert avgTNA and cauciones
+  // Depending on the caución plazo, plazo may be 0; we primarily assert avgTNA and cauciones
     const grupo = Array.from(grupos.values()).find(g => g.instrumento === 'XYZ');
     expect(grupo).toBeDefined();
     // Instrument mapping default currency is ARS in absence of instrument mapping; avgMap contains ARS

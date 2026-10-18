@@ -4,7 +4,6 @@
  */
 
 import { createGrupoInstrumentoPlazo, VENUES, LADOS } from './arbitrage-types.js';
-import { calculateCalendarDays } from './business-days.js';
 import { getInstrumentDetails } from './fees/instrument-mapping.js';
 
 /**
@@ -261,14 +260,26 @@ export function getUniqueInstruments(grupos) {
   return Array.from(instruments).sort();
 }
 
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
+
 /**
- * Calculate plazo from caución dates
- * @param {Date} inicio - Start date
- * @param {Date} fin - End date
- * @returns {number} Days between dates
+ * Calculate plazo from caución dates, in calendar days (weekends and holidays
+ * included). This module owns plazo, so the arithmetic lives here rather than
+ * behind a separate interface offering several ways to answer the question.
+ *
+ * @param {Date} inicio - Start date (inclusive)
+ * @param {Date} fin - End date (inclusive)
+ * @returns {number} Calendar days between the dates
  */
 function calculatePlazoFromDates(inicio, fin) {
-  return calculateCalendarDays(inicio, fin);
+  const from = new Date(inicio);
+  const to = new Date(fin);
+
+  // Reset time to midnight for accurate day calculation
+  from.setHours(0, 0, 0, 0);
+  to.setHours(0, 0, 0, 0);
+
+  return Math.round((to.getTime() - from.getTime()) / MS_PER_DAY);
 }
 
 /**
