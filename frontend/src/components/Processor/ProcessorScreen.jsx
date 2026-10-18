@@ -8,7 +8,6 @@ import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 
 import { processOperations } from '../../services/csv/process-operations.js';
-import { buildConsolidatedViews } from '../../services/csv/consolidator.js';
 import { CsvDataSource, JsonDataSource } from '../../services/data-sources/index.js';
 import { login as brokerLogin, setBaseUrl } from '../../services/broker/jsrofex-client.js';
 import { startDailySync, refreshNewOperations } from '../../services/broker/sync-service.js';
@@ -30,10 +29,16 @@ import {
 } from '../../services/storage/local-storage.js';
 import { DEFAULT_PREFIX_SYMBOL_MAP } from '../../services/prefix-defaults.js';
 import {
-  resolveExpirationLabel,
-  normalizeExpirationToken,
-  DEFAULT_EXPIRATION_TOKEN,
-} from '../../services/csv/expiration-labels.js';
+  ALL_GROUP_ID,
+  OPTION_INSTRUMENT_KEY_PREFIX,
+  OPTION_OPERATION_TYPES,
+  getOperationGroupId,
+  getOptionInstrumentToken,
+  isOptionGroup,
+  formatGroupLabel,
+} from '../../services/clasificacion-instrumentos.js';
+import { computeScopedData } from '../../services/alcance-reporte.js';
+import { FUENTES, filtrarPorFuente } from '../../services/operacion.js';
 
 import OperationTypeTabs from './OperationTypeTabs.jsx';
 import { OPERATION_TYPES } from './operation-types.js';
@@ -48,8 +53,9 @@ import DataSourceSelector from './DataSourceSelector.jsx';
 import DataSourcesPanel from './DataSourcesPanel.jsx';
 import FileMenu from './FileMenu.jsx';
 
-const ALL_GROUP_ID = '__ALL__';
 const LAST_SESSION_STORAGE_VERSION = 1;
+
+const sanitizeForTestId = (value = '') => value.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase();
 
 const createInitialGroupSelections = () => ({
   [OPERATION_TYPES.OPCIONES]: [],
@@ -57,430 +63,6 @@ const createInitialGroupSelections = () => ({
   [OPERATION_TYPES.ARBITRAJES]: [],
   [OPERATION_TYPES.RECONCILIACION]: [],
 });
-
-const OPTION_INSTRUMENT_KEY_PREFIX = 'optionInstrument::';
-const OPTION_TOKEN_PREFIX_REGEX = /^([A-Z0-9]+?)[CV]\d+/i;
-
-const sanitizeForTestId = (value = '') => value.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase();
-
-const buildGroupKey = (symbol = '', expiration = DEFAULT_EXPIRATION_TOKEN) => `${symbol}::${expiration}`;
-
-const OPTION_OPERATION_TYPES = new Set(['CALL', 'PUT']);
-
-const normalizeGroupSymbol = (value = '') => {
-  if (typeof value !== 'string') {
-    return String(value ?? '').trim().toUpperCase() || 'UNKNOWN';
-  }
-  const trimmed = value.trim();
-  return trimmed ? trimmed.toUpperCase() : 'UNKNOWN';
-};
-
-const normalizeGroupExpiration = (value = '') => normalizeExpirationToken(value);
-
-const SETTLEMENT_TOKENS = new Set([
-  'CI', 'CONTADO', '24HS', '48HS', '72HS', '24H', '48H', '72H', 'T0', 'T1', 'T2', 'T+1', 'T+2',
-  // Note: Plazo tokens like '1D', '2D', '3D', etc. are NOT included here
-  // They are handled separately as caución plazo indicators in data-aggregation.js
-]);
-
-const MARKET_TOKENS = new Set([
-  'MERV', 'XMEV', 'BCBA', 'BYMA', 'ROFEX', 'MATBA', 'MAE', 'NYSE', 'NASDAQ', 'CME', 'ICE',
-]);
-
-const MONTH_TOKENS = new Set([
-  'EN', 'ENE', 'ENERO',
-  'FE', 'FEB', 'FEBRERO',
-  'MR', 'MAR', 'MARZO',
-  'AB', 'ABR', 'ABRIL',
-  'MY', 'MAY', 'MAYO',
-  'JN', 'JUN', 'JUNIO',
-  'JL', 'JUL', 'JULIO', 'JU',
-  'AG', 'AGO', 'AGOSTO',
-  'SE', 'SEP', 'SET', 'SEPT', 'SEPTIEMBRE',
-  'OC', 'OCT', 'OCTUBRE',
-  'NV', 'NOV', 'NOVIEMBRE',
-  'DC', 'DIC', 'DICIEMBRE',
-  'DU', 'DEU',
-]);
-
-const sanitizeInstrumentSegments = (symbol) => {
-  if (!symbol) {
-    return [];
-  }
-
-  const normalized = normalizeGroupSymbol(symbol);
-  if (!normalized || normalized === 'UNKNOWN') {
-    return normalized ? [normalized] : [];
-  }
-
-  const segments = normalized
-    .split('-')
-    .map((segment) => segment.trim())
-    .filter(Boolean);
-
-  if (!segments.length) {
-    return [normalized];
-  }
-
-  const filtered = segments.slice();
-
-  while (filtered.length > 1 && MARKET_TOKENS.has(filtered[0])) {
-    filtered.shift();
-  }
-
-  while (filtered.length > 1 && MARKET_TOKENS.has(filtered[0])) {
-    filtered.shift();
-  }
-
-  while (filtered.length > 1 && SETTLEMENT_TOKENS.has(filtered[filtered.length - 1])) {
-    filtered.pop();
-  }
-
-  return filtered.length ? filtered : segments;
-};
-
-const splitInstrumentSymbol = (symbol = '') => {
-  const segments = sanitizeInstrumentSegments(symbol);
-
-  if (segments.length === 0) {
-    return 'UNKNOWN';
-  }
-
-  if (segments.length === 1) {
-    return segments[0];
-  }
-
-  // Check for caución plazo pattern (e.g., "PESOS", "3D" or "DOLAR", "18D")
-  if (segments.length === 2) {
-    const last = segments[1];
-    // Match plazo pattern: digits followed by 'D' (e.g., "3D", "18D")
-    if (/^\d+D$/i.test(last)) {
-      // For cauciones, return "INSTRUMENT:PLAZO" format (e.g., "PESOS:3")
-      const plazoNumber = last.slice(0, -1); // Remove 'D'
-      return `${segments[0]}:${plazoNumber}`;
-    }
-    
-    if (MONTH_TOKENS.has(last)) {
-      return segments.join(' ');
-    }
-  }
-
-  if (segments.length >= 2) {
-    const last = segments[segments.length - 1];
-    
-    // Check for caución plazo pattern in multi-segment symbols
-    if (/^\d+D$/i.test(last)) {
-      const plazoNumber = last.slice(0, -1);
-      const instrument = segments[segments.length - 2];
-      return `${instrument}:${plazoNumber}`;
-    }
-    
-    if (MONTH_TOKENS.has(last)) {
-      return `${segments[segments.length - 2]} ${last}`;
-    }
-  }
-
-  return segments[segments.length - 1];
-};
-
-const extractOptionPrefixToken = (value = '') => {
-  if (typeof value !== 'string') {
-    return null;
-  }
-  const trimmed = value.trim().toUpperCase();
-  if (!trimmed) {
-    return null;
-  }
-
-  const tokenMatch = trimmed.match(OPTION_TOKEN_PREFIX_REGEX);
-  if (tokenMatch) {
-    return tokenMatch[1];
-  }
-
-  const [firstSegment] = trimmed.split(/\s+/);
-  if (firstSegment && /^[A-Z0-9]{2,6}$/.test(firstSegment)) {
-    return firstSegment;
-  }
-
-  if (/^[A-Z0-9]{2,6}$/.test(trimmed)) {
-    return trimmed;
-  }
-
-  return null;
-};
-
-const getOperationGroupId = (operation = {}) => {
-  const normalizedSymbol = normalizeGroupSymbol(operation.symbol);
-  if (OPTION_OPERATION_TYPES.has(operation.optionType)) {
-    const normalizedExpiration = normalizeGroupExpiration(operation.expiration);
-    const expiration = normalizedExpiration || DEFAULT_EXPIRATION_TOKEN;
-    return buildGroupKey(normalizedSymbol, expiration);
-  }
-
-  const baseSymbol = splitInstrumentSymbol(normalizedSymbol);
-  return buildGroupKey(baseSymbol, DEFAULT_EXPIRATION_TOKEN);
-};
-
-const getOptionInstrumentToken = (operation = {}) => {
-  if (!operation || !OPTION_OPERATION_TYPES.has(operation.optionType)) {
-    return null;
-  }
-
-  const candidates = [
-    operation?.meta?.sourceToken,
-    operation?.originalSymbol,
-    operation?.raw?.symbol,
-    operation?.symbol,
-  ];
-
-  for (let index = 0; index < candidates.length; index += 1) {
-    const candidate = candidates[index];
-    if (typeof candidate === 'string') {
-      const trimmed = candidate.trim();
-      if (trimmed) {
-        return trimmed.toUpperCase();
-      }
-    }
-  }
-
-  return null;
-};
-
-const isOptionGroup = (group) => {
-  if (!group) {
-    return false;
-  }
-
-  if (group.kind === 'option') {
-    return true;
-  }
-
-  const calls = group.counts?.calls ?? 0;
-  const puts = group.counts?.puts ?? 0;
-  return calls + puts > 0;
-};
-
-const extractBaseSymbol = (symbol = '') => {
-  const trimmed = symbol.trim();
-  if (!trimmed) {
-    return '';
-  }
-
-  const parts = trimmed
-    .split(/\s*-\s*/)
-    .map((part) => part.trim())
-    .filter(Boolean);
-
-  if (parts.length > 1) {
-    const candidate = parts
-      .slice(0, -1)
-      .reverse()
-      .find((part) => /[A-Z]/i.test(part) && !/^\d+$/.test(part));
-
-    if (candidate) {
-      const tokenMatch = candidate.match(/^([A-Z0-9]+?)[CV]\d+/i);
-      if (tokenMatch) {
-        return tokenMatch[1];
-      }
-      return candidate;
-    }
-  }
-
-  return parts[0] ?? trimmed;
-};
-
-const formatExpirationLabel = (expiration = '', { expirationLabels } = {}) =>
-  resolveExpirationLabel(expiration, { expirationLabels });
-
-const formatGroupLabel = (group, { prefixLabels, expirationLabels } = {}) => {
-  if (!group) {
-    return '';
-  }
-
-  if (!isOptionGroup(group)) {
-    const [baseIdSymbol] = (group.id ?? '').split('::');
-    if (baseIdSymbol) {
-      return baseIdSymbol;
-    }
-    const baseSymbol = extractBaseSymbol(group.symbol ?? '');
-    return baseSymbol || group.symbol || '';
-  }
-
-  const baseSymbol = extractBaseSymbol(group.symbol ?? '') || group.symbol || '';
-  const symbolCandidates = [group.symbol, baseSymbol, (group.id ?? '').split('::')[0]];
-
-  let displaySymbol = baseSymbol;
-
-  for (let index = 0; index < symbolCandidates.length; index += 1) {
-    const candidate = symbolCandidates[index];
-    const prefix = extractOptionPrefixToken(candidate ?? '');
-    if (!prefix) {
-      continue;
-    }
-    const normalizedPrefix = prefix.toUpperCase();
-    if (prefixLabels?.has(normalizedPrefix)) {
-      displaySymbol = prefixLabels.get(normalizedPrefix);
-      break;
-    }
-    displaySymbol = normalizedPrefix;
-    break;
-  }
-
-  if (!displaySymbol) {
-    displaySymbol = baseSymbol || group.symbol || '';
-  }
-
-  const expirationLabel = formatExpirationLabel(group.expiration ?? '', { expirationLabels });
-
-  if (expirationLabel) {
-    return `${displaySymbol} ${expirationLabel}`.trim();
-  }
-
-  return displaySymbol;
-};
-
-const computeScopedData = ({
-  report,
-  groups,
-  selectedGroupId,
-  useAveraging,
-  groupedOperations,
-  cache,
-}) => {
-  if (!report) {
-    return {
-      scopedReport: null,
-      activeView: null,
-      summary: null,
-      selectedGroup: null,
-      filteredOperations: [],
-      allSelected: true,
-    };
-  }
-
-  const operations = Array.isArray(report.operations) ? report.operations : [];
-  
-  // Support both single selection (string) and multi-selection (array)
-  const selectedIds = Array.isArray(selectedGroupId) 
-    ? selectedGroupId 
-    : selectedGroupId 
-      ? [selectedGroupId] 
-      : [];
-  
-  const allSelected = selectedIds.length === 0 || 
-                      selectedIds.includes(ALL_GROUP_ID) ||
-                      !selectedGroupId || 
-                      selectedGroupId === ALL_GROUP_ID;
-  
-  const selectedGroup = allSelected
-    ? null
-    : groups.find((group) => selectedIds.includes(group.id)) ?? null;
-
-  // Create a unique cache key for multi-selection
-  const groupKey = allSelected 
-    ? ALL_GROUP_ID 
-    : selectedIds.sort().join(',');
-  
-  // For multi-select, combine operations from all selected groups
-  let filteredOperations;
-  if (allSelected) {
-    filteredOperations = operations;
-  } else if (selectedIds.length === 1) {
-    filteredOperations = groupedOperations.get(selectedIds[0]) ?? [];
-  } else {
-    // Merge operations from multiple selected groups
-    const operationSet = new Set();
-    selectedIds.forEach(id => {
-      const groupOps = groupedOperations.get(id) ?? [];
-      groupOps.forEach(op => operationSet.add(op));
-    });
-    filteredOperations = Array.from(operationSet);
-  }
-
-  let cachedEntry = cache.get(groupKey);
-  if (!cachedEntry || cachedEntry.reportToken !== report) {
-    const optionOperations = filteredOperations.filter(
-      (operation) => operation.optionType === 'CALL' || operation.optionType === 'PUT',
-    );
-    cachedEntry = {
-      reportToken: report,
-      optionOperations,
-      consolidatedViews: buildConsolidatedViews(optionOperations),
-    };
-    cache.set(groupKey, cachedEntry);
-  }
-
-  const { consolidatedViews } = cachedEntry;
-
-  const buildView = (key) => {
-    const consolidated = consolidatedViews[key] ?? { calls: [], puts: [], exclusions: {} };
-    const originalView = report.views?.[key] ?? null;
-    const callsOperations = Array.isArray(consolidated.calls) ? consolidated.calls : [];
-    const putsOperations = Array.isArray(consolidated.puts) ? consolidated.puts : [];
-
-    const summarySource = originalView?.summary ?? report.summary ?? {};
-    const summary = {
-      ...summarySource,
-      callsRows: callsOperations.length,
-      putsRows: putsOperations.length,
-      totalRows: callsOperations.length + putsOperations.length,
-      groups,
-    };
-
-    if (selectedGroup && !allSelected) {
-      summary.activeSymbol = extractBaseSymbol(selectedGroup.symbol);
-      summary.activeExpiration = selectedGroup.expiration;
-    }
-
-    return {
-      key,
-      averagingEnabled:
-        consolidated.useAveraging
-        ?? originalView?.averagingEnabled
-        ?? (key === 'averaged'),
-      calls: {
-        operations: callsOperations,
-        stats: originalView?.calls?.stats ?? {},
-      },
-      puts: {
-        operations: putsOperations,
-        stats: originalView?.puts?.stats ?? {},
-      },
-      summary,
-      exclusions: originalView?.exclusions ?? { combined: {}, validation: {}, consolidation: {} },
-    };
-  };
-
-  const scopedViews = {
-    raw: buildView('raw'),
-    averaged: buildView('averaged'),
-  };
-
-  const activeKey = useAveraging ? 'averaged' : 'raw';
-  const activeView = scopedViews[activeKey];
-
-  return {
-    scopedReport: {
-      ...report,
-      operations: filteredOperations,
-      summary: activeView.summary,
-      calls: activeView.calls,
-      puts: activeView.puts,
-      views: {
-        ...(report.views ?? {}),
-        raw: scopedViews.raw,
-        averaged: scopedViews.averaged,
-      },
-      groups,
-    },
-    activeView,
-    summary: activeView.summary,
-    selectedGroup,
-    filteredOperations,
-    allSelected,
-  };
-};
-
 const ProcessorScreen = () => {
   const strings = useStrings();
   const processorStrings = strings.processor;
@@ -610,7 +192,7 @@ const ProcessorScreen = () => {
           // Broker data source: use JsonDataSource with synced operations
           // Always use the latest syncedOperations to ensure fresh data after refresh
           dataSource = new JsonDataSource();
-          const brokerOnlyOperations = syncedOperations.filter(op => op?.source === 'broker');
+          const brokerOnlyOperations = filtrarPorFuente(syncedOperations, FUENTES.BROKER);
           console.log('[ProcessorScreen] Processing broker data:', {
             totalSyncedOps: syncedOperations.length,
             brokerOnlyOps: brokerOnlyOperations.length,
@@ -648,7 +230,7 @@ const ProcessorScreen = () => {
           result.normalizedOperations.length > 0
         ) {
           // Remove all previous CSV operations, keep only broker operations
-          const brokerOnlyOps = existingOperations.filter(op => op?.source === 'broker');
+          const brokerOnlyOps = filtrarPorFuente(existingOperations, FUENTES.BROKER);
 
           // No cross-source dedupe: a CSV row and a broker row are never "the same
           // record" to merge away (incompatible order_id namespaces - see isDuplicate).
@@ -913,7 +495,7 @@ const ProcessorScreen = () => {
     }
     
     // Filter to only broker operations
-    const brokerOnlyOperations = syncedOperations.filter(op => op?.source === 'broker');
+    const brokerOnlyOperations = filtrarPorFuente(syncedOperations, FUENTES.BROKER);
     
     const dataSource = {
       type: 'broker',
@@ -1641,8 +1223,8 @@ const ProcessorScreen = () => {
             groupOptions={reconciliationGroupOptions}
             selectedGroupId={selectedGroupId}
             onGroupChange={handleGroupChange}
-            csvOperations={existingOperations.filter((op) => op?.source === 'csv' && matchesSelectedSymbol(op))}
-            brokerOperations={existingOperations.filter((op) => op?.source === 'broker' && matchesSelectedSymbol(op))}
+            csvOperations={filtrarPorFuente(existingOperations, FUENTES.CSV).filter(matchesSelectedSymbol)}
+            brokerOperations={filtrarPorFuente(existingOperations, FUENTES.BROKER).filter(matchesSelectedSymbol)}
           />
         );
       }
@@ -1690,7 +1272,7 @@ const ProcessorScreen = () => {
                 syncInProgress={syncInProgress}
                 defaultApiUrl={brokerApiUrl}
                 brokerAccountId={brokerAuth?.accountId}
-                brokerOperationCount={syncedOperations?.filter(op => op?.source === 'broker').length || 0}
+                brokerOperationCount={filtrarPorFuente(syncedOperations, FUENTES.BROKER).length}
                 csvError={processingError}
               />
             </>

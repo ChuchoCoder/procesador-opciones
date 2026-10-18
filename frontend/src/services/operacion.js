@@ -141,3 +141,60 @@ export const resolveFactores = (raw = {}, lookupInstrumento = () => null) => {
     contractMultiplier: instrumentDetails?.contractMultiplier ?? 1,
   };
 };
+
+/** Las fuentes posibles de una operación. */
+export const FUENTES = Object.freeze({ BROKER: 'broker', CSV: 'csv' });
+
+/**
+ * Filtra operaciones por fuente.
+ *
+ * Existe como función con nombre —y no como un `filter` inline repetido en seis
+ * lugares de `ProcessorScreen`— para que un test pueda ejercitar el predicado
+ * real. `processor-data-source-filtering.spec.js` no importaba nada de `src/`:
+ * re-escribía el predicado dentro del test y asserteaba sobre su propia copia,
+ * así que el de producción podía cambiar y el test seguía verde.
+ *
+ * @param {Array<object>} operaciones
+ * @param {'broker'|'csv'} fuente
+ * @returns {Array<object>}
+ */
+export const filtrarPorFuente = (operaciones = [], fuente) =>
+  (Array.isArray(operaciones) ? operaciones : []).filter((op) => op?.source === fuente);
+
+/**
+ * ¿Es una compra, según el lado declarado?
+ * @param {string|undefined} lado
+ * @returns {boolean}
+ */
+export const esCompraPorLado = (lado) => String(lado ?? '').toUpperCase() === 'BUY';
+
+/**
+ * ¿Es una compra, según el signo de la cantidad?
+ *
+ * Las filas consolidadas de opciones no llevan `side`: codifican el lado en el
+ * signo de `totalQuantity` (positivo = compra). Es la **misma** pregunta que
+ * `esCompraPorLado` sobre otra forma de fila, y las dos tienen que coincidir.
+ * Cuando las filas de vista unifiquen su forma, esta debería desaparecer.
+ *
+ * @param {number} cantidad
+ * @returns {boolean}
+ */
+export const esCompraPorCantidad = (cantidad) => Number(cantidad) > 0;
+
+/**
+ * Neto de una operación: una compra paga el bruto más los fees, una venta
+ * recibe el bruto menos los fees.
+ *
+ * La aritmética estaba duplicada en `OperationsTable` y `CompraVentaView`, cada
+ * una con su propia forma de deducir el lado.
+ *
+ * @param {number} bruto
+ * @param {number} fees
+ * @param {boolean} esCompra
+ * @returns {number}
+ */
+export const calcularNetoOperacion = (bruto, fees, esCompra) => {
+  const grossNotional = bruto ?? 0;
+  const feeAmount = fees ?? 0;
+  return esCompra ? grossNotional + feeAmount : grossNotional - feeAmount;
+};

@@ -23,6 +23,7 @@ import ArrowCircleDownIcon from '@mui/icons-material/ArrowCircleDown';
 import FeeTooltip from './FeeTooltip.jsx';
 import AddStrikeExceptionButton from './AddStrikeExceptionButton.jsx';
 import { formatCantidad, formatDecimal, formatMoneda } from '../../services/formato.js';
+import { calcularNetoOperacion, esCompraPorCantidad } from '../../services/operacion.js';
 
 
 /**
@@ -36,30 +37,15 @@ const formatNetTotal = (value, totalQuantity) => {
   }
   const formattedValue = formatMoneda(value);
   // BUY operations (positive quantity): show negative
-  if (totalQuantity > 0) {
+  if (esCompraPorCantidad(totalQuantity)) {
     return `-${formattedValue}`;
   }
   // SELL operations (negative quantity): show with + prefix
   return `+${formattedValue}`;
 };
 
-/**
- * Calculate net total based on operation type.
- * BUY operations (positive quantity): add fees to gross total
- * SELL operations (negative quantity): subtract fees from gross total
- */
-const calculateNetTotal = (grossNotional, feeAmount, totalQuantity) => {
-  const gross = grossNotional ?? 0;
-  const fee = feeAmount ?? 0;
-  
-  // BUY operations have positive quantity: gross + fees
-  if (totalQuantity > 0) {
-    return gross + fee;
-  }
-  
-  // SELL operations have negative quantity: gross - fees
-  return gross - fee;
-};
+const calculateNetTotal = (grossNotional, feeAmount, totalQuantity) =>
+  calcularNetoOperacion(grossNotional, feeAmount, esCompraPorCantidad(totalQuantity));
 
 const OperationsTable = ({ 
   title, 

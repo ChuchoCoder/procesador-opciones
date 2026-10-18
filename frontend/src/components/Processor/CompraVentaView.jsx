@@ -21,6 +21,9 @@ import { getBuySellOperations } from '../../services/csv/buy-sell-matcher.js';
 import FeeTooltip from './FeeTooltip.jsx';
 import TooltipRepoFees from './TooltipRepoFees.jsx';
 import { formatCantidad, formatDecimal, formatMoneda } from '../../services/formato.js';
+// Era una copia carácter por carácter de extractBaseSymbol.
+import { extractBaseSymbol as normalizeSymbol } from '../../services/clasificacion-instrumentos.js';
+import { calcularNetoOperacion, esCompraPorLado } from '../../services/operacion.js';
 
 // This view leaves money cells blank when a value is absent, rather than
 // showing an em dash.
@@ -37,7 +40,7 @@ const formatNetTotal = (value, side) => {
   }
   const formattedValue = formatFee(value);
   // BUY operations: show negative
-  if (side === 'BUY') {
+  if (esCompraPorLado(side)) {
     return `-${formattedValue}`;
   }
   // SELL operations: show with + prefix
@@ -102,18 +105,8 @@ const cloneFeeBreakdown = (breakdown) => {
  * @param {string} side - The operation side: 'BUY' or 'SELL'
  * @returns {number} The net total
  */
-const calculateNetTotal = (grossNotional, feeAmount, side) => {
-  const gross = grossNotional ?? 0;
-  const fee = feeAmount ?? 0;
-  
-  // BUY operations: gross + fees (you pay the gross amount plus fees)
-  if (side === 'BUY') {
-    return gross + fee;
-  }
-  
-  // SELL operations: gross - fees (you receive the gross amount minus fees)
-  return gross - fee;
-};
+const calculateNetTotal = (grossNotional, feeAmount, side) =>
+  calcularNetoOperacion(grossNotional, feeAmount, esCompraPorLado(side));
 
 const DEFAULT_SETTLEMENT = 'CI';
 const OPTION_OPERATION_TYPES = new Set(['CALL', 'PUT']);
@@ -144,34 +137,6 @@ const extractOptionToken = (operation = {}) => {
   return '';
 };
 
-const normalizeSymbol = (symbol = '') => {
-  const trimmed = symbol.trim();
-  if (!trimmed) {
-    return '';
-  }
-
-  const parts = trimmed
-    .split(/\s*-\s*/)
-    .map((part) => part.trim())
-    .filter(Boolean);
-
-  if (parts.length > 1) {
-    const candidate = parts
-      .slice(0, -1)
-      .reverse()
-      .find((part) => /[A-Z]/i.test(part) && !/^\d+$/.test(part));
-
-    if (candidate) {
-      const tokenMatch = candidate.match(/^([A-Z0-9]+?)[CV]\d+/i);
-      if (tokenMatch) {
-        return tokenMatch[1];
-      }
-      return candidate;
-    }
-  }
-
-  return parts[0] ?? trimmed;
-};
 
 const normalizeSettlement = (value = '') => {
   const settlement = value?.trim();
