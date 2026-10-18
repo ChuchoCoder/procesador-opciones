@@ -39,6 +39,11 @@ import {
 } from '../../services/clasificacion-instrumentos.js';
 import { computeScopedData } from '../../services/alcance-reporte.js';
 import { FUENTES, filtrarPorFuente } from '../../services/operacion.js';
+import {
+  ACCIONES_SESION,
+  construirSnapshotSesion,
+  interpretarSesionGuardada,
+} from '../../services/sesion-jornada.js';
 
 import OperationTypeTabs from './OperationTypeTabs.jsx';
 import { OPERATION_TYPES } from './operation-types.js';
@@ -53,7 +58,6 @@ import DataSourceSelector from './DataSourceSelector.jsx';
 import DataSourcesPanel from './DataSourcesPanel.jsx';
 import FileMenu from './FileMenu.jsx';
 
-const LAST_SESSION_STORAGE_VERSION = 1;
 
 const sanitizeForTestId = (value = '') => value.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase();
 
@@ -1064,72 +1068,36 @@ const ProcessorScreen = () => {
         return;
       }
 
-      const stored = await readItem(storageKeys.lastReport);
-      if (!stored || typeof stored !== 'object') {
-        sessionRestoredRef.current = true;
-        return;
-      }
-
-      if (stored.version !== LAST_SESSION_STORAGE_VERSION || !stored.report) {
-        await removeItem(storageKeys.lastReport);
-        sessionRestoredRef.current = true;
-        return;
-      }
-
       try {
-        const storedReport = stored.report;
-        if (!storedReport || typeof storedReport !== 'object') {
-          throw new Error('invalid report');
+        const { accion, sesion } = interpretarSesionGuardada(
+          await readItem(storageKeys.lastReport),
+          {
+            tipos: Object.values(OPERATION_TYPES),
+            alcancesPreview: Object.values(CLIPBOARD_SCOPES),
+          },
+        );
+
+        if (accion === ACCIONES_SESION.DESCARTAR) {
+          await removeItem(storageKeys.lastReport);
+          return;
         }
 
-        setReport(storedReport);
-        setWarningCodes(Array.isArray(storedReport?.summary?.warnings) ? storedReport.summary.warnings : []);
-        setSelectedFile(stored.fileName ? { name: stored.fileName } : { name: 'Operaciones previas' });
-        
-        // Restore selectedGroupIds (new multi-type format) with backward compatibility
-        if (stored.selectedGroupIds && typeof stored.selectedGroupIds === 'object') {
-          const entries = Object.entries(stored.selectedGroupIds).filter(([, value]) => typeof value === 'string');
-          if (entries.length > 0) {
-            setSelectedGroupIds((prev) => {
-              let next = prev;
-              entries.forEach(([type, value]) => {
-                const currentValue = next[type] ?? ALL_GROUP_ID;
-                if (currentValue !== value) {
-                  if (next === prev) {
-                    next = { ...prev };
-                  }
-                  next[type] = value;
-                }
-              });
-              return next;
-            });
-          }
-        } else if (typeof stored.selectedGroupId === 'string') {
-          // Backward compatibility: migrate old selectedGroupId to selectedGroupIds
-          const fallbackValue = stored.selectedGroupId;
-          setSelectedGroupIds((prev) => {
-            const keys = Object.keys(prev).length > 0
-              ? Object.keys(prev)
-              : Object.keys(createInitialGroupSelections());
-            let next = prev;
-            keys.forEach((key) => {
-              if ((next[key] ?? ALL_GROUP_ID) !== fallbackValue) {
-                if (next === prev) {
-                  next = { ...prev };
-                }
-                next[key] = fallbackValue;
-              }
-            });
-            return next;
-          });
+        if (accion !== ACCIONES_SESION.RESTAURAR) {
+          return;
         }
 
-        if (Object.values(OPERATION_TYPES).includes(stored.activeOperationType)) {
-          setActiveOperationType(stored.activeOperationType);
-        }
+        setReport(sesion.report);
+        setWarningCodes(sesion.warnings);
+        setSelectedFile({ name: sesion.fileName });
 
-        if (Object.values(CLIPBOARD_SCOPES).includes(stored.activePreview)) {
-          setActivePreview(stored.activePreview);
+        if (sesion.selecciones) {
+          setSelectedGroupIds((prev) => ({ ...prev, ...sesion.selecciones }));
+        }
+        if (sesion.activeOperationType) {
+          setActiveOperationType(sesion.activeOperationType);
+        }
+        if (sesion.activePreview) {
+          setActivePreview(sesion.activePreview);
         }
       } catch (restoreError) {
         console.warn('PO: Failed to restore last session', restoreError);
@@ -1138,7 +1106,7 @@ const ProcessorScreen = () => {
         sessionRestoredRef.current = true;
       }
     };
-    
+
     restoreSession();
   }, []);
 
@@ -1147,18 +1115,14 @@ const ProcessorScreen = () => {
       return;
     }
 
-    const snapshot = {
-      version: LAST_SESSION_STORAGE_VERSION,
-      savedAt: Date.now(),
-      fileName: selectedFile.name ?? null,
+    writeItem(storageKeys.lastReport, construirSnapshotSesion({
+      fileName: selectedFile.name,
       report,
       selectedGroupId,
       selectedGroupIds,
       activeOperationType,
       activePreview,
-    };
-
-    writeItem(storageKeys.lastReport, snapshot);
+    }));
   }, [report, selectedFile, selectedGroupId, selectedGroupIds, activeOperationType, activePreview]);
 
   const renderActiveView = () => {
