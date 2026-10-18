@@ -4,6 +4,8 @@
 import { describe, it, beforeAll } from 'vitest';
 import Papa from 'papaparse';
 import { readFile } from 'node:fs/promises';
+import { fileURLToPath } from 'node:url';
+import { dirname, join } from 'path';
 
 import { normalizeOperationRows } from '../../src/services/csv/legacy-normalizer.js';
 import { validateAndFilterRows } from '../../src/services/csv/validators.js';
@@ -40,7 +42,7 @@ describe('V parseToken debug', () => {
   let validateRow;
 
   beforeAll(async () => {
-    const csvContent = await readFile('C:\\Users\\feder\\Downloads\\ReporteOperaciones_17825 (34).csv', 'utf-8');
+    const csvContent = await readFile(join(dirname(fileURLToPath(import.meta.url)), 'data', 'arbitrage-V-ticker.csv'), 'utf-8');
     const parsed = Papa.parse(csvContent, { header: true, skipEmptyLines: true, dynamicTyping: true });
     const allRows = parsed.data.filter(row => row.symbol);
     const { rows: normalized } = normalizeOperationRows(allRows, {});
