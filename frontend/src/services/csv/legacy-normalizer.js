@@ -34,7 +34,20 @@ const deriveStrike = (digits) => {
   return Number(sanitized);
 };
 
-const REQUIRED_COLUMNS = [
+/**
+ * Las columnas que este normalizador **garantiza que existan** en cada fila de
+ * salida, rellenando con `null` las que falten.
+ *
+ * Es un superconjunto del contrato de validación (`REQUIRED_COLUMNS` en
+ * `validators.js`, 4 columnas). Son dos listas distintas a propósito y no hay
+ * que fusionarlas: una dice qué se rellena, la otra qué se exige.
+ *
+ * Ojo con la interacción: como acá se rellena con `null`, el chequeo
+ * `=== undefined` del validador no las ve como faltantes. Por eso
+ * `processOperations` hace después un scan entre filas para decidir si una
+ * columna está realmente sin resolver.
+ */
+const NORMALIZED_COLUMNS = [
   'order_id',
   'symbol',
   'side',
@@ -133,7 +146,7 @@ const assignIfMissing = (target, key, value) => {
 
 export const normalizeOperationRows = (rows = [], configuration) => {
   if (!Array.isArray(rows) || rows.length === 0) {
-    return { rows: Array.isArray(rows) ? rows : [], missingColumns: [...REQUIRED_COLUMNS] };
+    return { rows: Array.isArray(rows) ? rows : [], missingColumns: [...NORMALIZED_COLUMNS] };
   }
 
   const presentColumns = new Set();
@@ -143,19 +156,19 @@ export const normalizeOperationRows = (rows = [], configuration) => {
       return;
     }
 
-    REQUIRED_COLUMNS.forEach((column) => {
+    NORMALIZED_COLUMNS.forEach((column) => {
       if (Object.prototype.hasOwnProperty.call(row, column)) {
         presentColumns.add(column);
       }
     });
   });
 
-  const missingColumns = REQUIRED_COLUMNS.filter((column) => !presentColumns.has(column));
+  const missingColumns = NORMALIZED_COLUMNS.filter((column) => !presentColumns.has(column));
 
   const normalizedRows = rows.map((row) => {
     const normalized = { ...row };
 
-    REQUIRED_COLUMNS.forEach((column) => {
+    NORMALIZED_COLUMNS.forEach((column) => {
       if (!(column in normalized)) {
         normalized[column] = null;
       }
