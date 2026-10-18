@@ -4,7 +4,7 @@ import Typography from '@mui/material/Typography';
 import Chip from '@mui/material/Chip';
 
 const DEFAULT_LABEL = 'Filter by instrument';
-const ALL_OPTION_ID = '__ALL__';
+import { ALL_GROUP_ID as ALL_OPTION_ID } from '../../services/clasificacion-instrumentos.js';
 
 const GroupFilter = ({ options = [], selectedGroupId, onChange, strings = {} }) => {
   if (!options.length) {

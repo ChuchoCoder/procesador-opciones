@@ -1059,7 +1059,7 @@ export const processOperations = async ({
 
   let validated;
   try {
-    validated = validateAndFilterRows({ rows: normalizedRows, configuration: activeConfiguration });
+    validated = validateAndFilterRows({ rows: normalizedRows });
   } catch (error) {
     logger.warn('Validación fallida', { error: error.message });
     throw error;
