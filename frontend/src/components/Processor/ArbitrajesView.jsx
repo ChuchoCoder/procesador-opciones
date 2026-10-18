@@ -15,7 +15,6 @@ import ArbitrageTable from './ArbitrageTable.jsx';
 
 import { parseOperations, parseCauciones, aggregateByInstrumentoPlazo, calculateAvgTNAByCurrency } from '../../services/data-aggregation.js';
 import { calculatePnL } from '../../services/pnl-calculations.js';
-import { enrichArbitrageOperations, enrichCauciones } from '../../services/arbitrage-fee-enrichment.js';
 import { LADOS } from '../../services/arbitrage-types.js';
 
 /**
@@ -137,12 +136,9 @@ const ArbitrajesView = ({
       // Allow UI to update first
       setTimeout(async () => {
         try {
-          const enrichOpsId = `enrich-ops-${Date.now()}`;
-          console.time(`[ArbitrajesView] Enrich operations (${enrichOpsId})`);
-          // Enrich operations with fee calculations FIRST
-          const enrichedOperations = await enrichArbitrageOperations(operations);
-          console.timeEnd(`[ArbitrajesView] Enrich operations (${enrichOpsId})`);
-          console.log('[ArbitrajesView] Enriched operations count:', enrichedOperations.length);
+          // `operations` is `report.operations` from processOperations, which has
+          // already applied fee enrichment to every row.
+          const enrichedOperations = operations;
 
           const parseOpsId = `parse-ops-${Date.now()}`;
           console.time(`[ArbitrajesView] Parse operations (${parseOpsId})`);
@@ -157,11 +153,8 @@ const ArbitrajesView = ({
           console.timeEnd(`[ArbitrajesView] Parse cauciones (${parseCaucId})`);
           console.log('[ArbitrajesView] Parsed cauciones count:', parsedCauciones.length);
 
-          const enrichCaucId = `enrich-cauc-${Date.now()}`;
-          console.time(`[ArbitrajesView] Enrich cauciones (${enrichCaucId})`);
-          // Enrich cauciones with fees
-          const enrichedCauciones = await enrichCauciones(parsedCauciones);
-          console.timeEnd(`[ArbitrajesView] Enrich cauciones (${enrichCaucId})`);
+          // parseCauciones carries the pipeline's fee fields through.
+          const enrichedCauciones = parsedCauciones;
 
           if (cancelled) return;
 
