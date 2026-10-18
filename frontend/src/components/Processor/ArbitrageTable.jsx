@@ -353,6 +353,9 @@ function getPnLCaucionBreakdown(row) {
         const netSettlement = Number.isFinite(c.netSettlement) ? c.netSettlement : (Number.isFinite(c.neto) ? c.neto : null);
         const roleLabel = c.tipo || c.role || (c.roleLabel ?? 'Caución');
         const currency = c.currency || (c.instrument && c.instrument.currency) || 'ARS';
+        // Rates for the annotations below: prefer this caución's own normalized
+        // breakdown, falling back to the row-level breakdown when absent.
+        const caucionRates = c.rates || row.caucionFeesBreakdown?.rates || row.feeBreakdown?.rates || null;
 
         return (
           <Box key={idx} sx={{ mb: 1 }}>
@@ -378,28 +381,28 @@ function getPnLCaucionBreakdown(row) {
             </Typography>
             <Typography variant="body2" sx={{ display: 'block', color: 'grey.400', ml: 1 }}>
               Arancel: {fmtSigned(arancel)}
-              {Number.isFinite(breakdown?.rates?.arancelPercent) && breakdown.rates.arancelPercent > 0 && (
-                <span style={{ opacity: 0.7 }}> ({breakdown.rates.arancelPercent.toFixed(2)}% anual)</span>
+              {Number.isFinite(caucionRates?.arancelPercent) && caucionRates.arancelPercent > 0 && (
+                <span style={{ opacity: 0.7 }}> ({caucionRates.arancelPercent.toFixed(2)}% anual)</span>
               )}
             </Typography>
             <Typography variant="body2" sx={{ display: 'block', color: 'grey.400', ml: 1 }}>
               Derechos de mercado: {fmtSigned(derechos)}
-              {Number.isFinite(breakdown?.rates?.derechosDailyPercent) && breakdown.rates.derechosDailyPercent > 0 && (
-                <span style={{ opacity: 0.7 }}> ({breakdown.rates.derechosDailyPercent.toFixed(4)}% diario)</span>
+              {Number.isFinite(caucionRates?.derechosDailyPercent) && caucionRates.derechosDailyPercent > 0 && (
+                <span style={{ opacity: 0.7 }}> ({caucionRates.derechosDailyPercent.toFixed(4)}% diario)</span>
               )}
             </Typography>
             {Number.isFinite(gastosGarantia) && (
               <Typography variant="body2" sx={{ display: 'block', color: 'grey.400', ml: 1 }}>
                 Gastos de garantía: {fmtSigned(gastosGarantia)}
-                {Number.isFinite(breakdown?.rates?.gastosDailyPercent) && breakdown.rates.gastosDailyPercent > 0 && (
-                  <span style={{ opacity: 0.7 }}> ({breakdown.rates.gastosDailyPercent.toFixed(4)}% diario)</span>
+                {Number.isFinite(caucionRates?.gastosDailyPercent) && caucionRates.gastosDailyPercent > 0 && (
+                  <span style={{ opacity: 0.7 }}> ({caucionRates.gastosDailyPercent.toFixed(4)}% diario)</span>
                 )}
               </Typography>
             )}
             <Typography variant="body2" sx={{ display: 'block', color: 'grey.400', ml: 1 }}>
               IVA sobre gastos: {fmtSigned(iva)}
-              {Number.isFinite(breakdown?.rates?.ivaRate) && breakdown.rates.ivaRate > 0 && (
-                <span style={{ opacity: 0.7 }}> ({(breakdown.rates.ivaRate * 100).toFixed(2)}%)</span>
+              {Number.isFinite(caucionRates?.ivaRate) && caucionRates.ivaRate > 0 && (
+                <span style={{ opacity: 0.7 }}> ({(caucionRates.ivaRate * 100).toFixed(2)}%)</span>
               )}
             </Typography>
             <Typography variant="body2" sx={{ display: 'block', mt: 1, fontWeight: 600, borderTop: '1px solid', borderColor: 'grey.700', pt: 0.5, color: 'grey.100' }}>

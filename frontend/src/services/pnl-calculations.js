@@ -148,11 +148,13 @@ async function calculatePatronVentaCICompra24h(grupo) {
   if (plazo > 0) {
     // Financing INCOME (positive - lending / colocadora)
     const operationTotal = resultado.precioPromedio * matchedQty;
+    // `comisiones` already carries the per-operation feeAmount (see
+    // data-aggregation.parseOperations), so this is the full broker cost for the
+    // matched proportion — it must not be subtracted a second time.
     const proportionalBrokerCommissions = totalComisionesVentas;
-    const totalOperationFeeAmount = ventasCI.reduce((sum, op) => sum + (op.feeAmount || 0), 0) * (matchedQty / (totalVentasCI || matchedQty));
 
     // Principal (net cash received when selling CI and lending)
-    const principal = operationTotal - proportionalBrokerCommissions - totalOperationFeeAmount;
+    const principal = operationTotal - proportionalBrokerCommissions;
     const accruedInterest = principal * (avgTNA / 100) * (plazo / 365);
     const baseAmount = principal + accruedInterest;
 
@@ -323,11 +325,13 @@ async function calculatePatronCompraCIVenta24h(grupo) {
   if (plazo > 0) {
     // Financing COST (negative - borrowing / tomadora)
     const operationTotal = resultado.precioPromedio * matchedQty;
+    // `comisiones` already carries the per-operation feeAmount (see
+    // data-aggregation.parseOperations), so this is the full broker cost for the
+    // matched proportion — it must not be added a second time.
     const proportionalBrokerCommissions = totalComisionesCompras;
-    const totalOperationFeeAmount = comprasCI.reduce((sum, op) => sum + (op.feeAmount || 0), 0) * (matchedQty / (totalComprasCI || matchedQty));
 
     // Principal (cash paid when buying CI and borrowing)
-    const principal = operationTotal + proportionalBrokerCommissions + totalOperationFeeAmount;
+    const principal = operationTotal + proportionalBrokerCommissions;
     const accruedInterest = principal * (avgTNA / 100) * (plazo / 365);
     const baseAmount = principal + accruedInterest;
 

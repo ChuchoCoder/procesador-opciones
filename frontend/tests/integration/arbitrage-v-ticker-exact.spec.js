@@ -29,14 +29,7 @@ describe('V Ticker Exact Production Flow', () => {
       // Step 1: Read and parse CSV
       const filePath = join(dirname(fileURLToPath(import.meta.url)), 'data', 'arbitrage-V-ticker.csv');
       const csvContent = await readFile(filePath, 'utf-8');
-      
-      let allCsv;
-      try {
-        allCsv = await readFile('C:\\Users\\feder\\Downloads\\ReporteOperaciones_17825 (34).csv', 'utf-8');
-      } catch {
-        // fallback - use V-only file if full CSV not available in CI
-        allCsv = csvContent;
-      }
+      const allCsv = csvContent;
 
       const parsed = Papa.parse(allCsv, {
         header: true,
