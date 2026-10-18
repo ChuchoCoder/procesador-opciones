@@ -1,3 +1,7 @@
+/**
+ * El contrato mínimo para que una fila sea una operación válida. Distinto del
+ * superconjunto que rellena `legacy-normalizer` (ver NORMALIZED_COLUMNS allá).
+ */
 const REQUIRED_COLUMNS = ['order_id', 'side', 'quantity', 'price'];
 
 const EXECUTION_EVENT = 'execution_report';

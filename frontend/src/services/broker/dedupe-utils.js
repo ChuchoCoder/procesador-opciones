@@ -1,6 +1,8 @@
 // Pure dedupe & merge utilities (T008-T010)
 // Implements duplicate detection, normalization, and batch merging per data-model.md
 
+import { resolveCantidad, resolvePrecio, resolveSymbol } from '../operacion.js';
+
 // Simple UUID generator (fallback if crypto.randomUUID unavailable)
 function generateUUID() {
   if (typeof crypto !== 'undefined' && crypto.randomUUID) {
@@ -24,7 +26,7 @@ export function normalizeOperation(raw, source) {
   const now = Date.now();
   
   // Extract symbol from nested instrumentId structure for broker data
-  const symbolValue = raw.symbol || raw.instrumentId?.symbol || '';
+  const symbolValue = resolveSymbol(raw);
   
   // For broker operations, normalize fields while preserving raw data
   if (source === 'broker') {
@@ -47,6 +49,9 @@ export function normalizeOperation(raw, source) {
       underlying: (raw.underlying || '').toUpperCase().trim() || null,
       optionType: raw.optionType || 'stock',
       action: (raw.side || '').toLowerCase(),
+      // Deliberadamente NO se usan los resolvers de `operacion.js`: acá la
+      // semántica es propia de la API del broker —cantidad acumulada y precio
+      // promedio de la orden— y no "la cantidad ejecutada de este fill".
       quantity: Number(raw.cumQty || raw.lastQty || raw.orderQty || 0),
       price: Number(raw.avgPx || raw.lastPx || raw.price || 0),
       tradeTimestamp,
@@ -70,8 +75,8 @@ export function normalizeOperation(raw, source) {
     underlying: raw.underlying ? raw.underlying.toUpperCase().trim() : null,
     optionType: raw.optionType || raw.option_type || 'stock',
     action: (raw.action || raw.side || '').toLowerCase(),
-    quantity: Number(raw.quantity || raw.last_qty || raw.lastQty || 0),
-    price: Number(raw.price || raw.last_price || raw.lastPx || 0),
+    quantity: resolveCantidad(raw),
+    price: resolvePrecio(raw),
     tradeTimestamp: raw.tradeTimestamp || raw.trade_timestamp || now,
     strike: raw.strike !== undefined && raw.strike !== null ? Number(raw.strike) : null,
     expirationDate: raw.expirationDate || raw.expiration_date || raw.expiration || null,

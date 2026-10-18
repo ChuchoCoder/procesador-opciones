@@ -5,6 +5,16 @@
 
 import { createGrupoInstrumentoPlazo, VENUES, LADOS } from './arbitrage-types.js';
 import { getInstrumentDetails } from './fees/instrument-mapping.js';
+import {
+  resolveCantidad,
+  resolveComisiones,
+  resolveFactores,
+  resolveFechaHora,
+  resolveLado,
+  resolveOrderId,
+  resolvePrecio,
+  resolveSymbol,
+} from './operacion.js';
 
 /**
  * Consolidate partial fills by order_id
@@ -369,14 +379,10 @@ export function parseOperations(rawOperations) {
       try {
         // Extract instrument, venue, and plazo from symbol
         const symbolStart = performance.now();
-        const symbolStr = raw.symbol || raw.instrumento || '';
+        const symbolStr = resolveSymbol(raw);
         const { instrument, venue, isCaucion } = parseSymbol(symbolStr);
         symbolParseTime += performance.now() - symbolStart;
 
-        // DEBUG: track V operations
-        if (instrument === 'V' || symbolStr.includes(' - V ')) {
-          console.log('[DEBUG parseOps] V op:', { symbolStr, instrument, venue, isCaucion, lado: raw.lado || raw.side, cantidad: raw.cantidad || raw.quantity || raw.last_qty, precio: raw.precio || raw.price || raw.last_price });
-        }
         
         // Skip cauciones - they'll be parsed separately
         if (isCaucion) {
@@ -385,38 +391,32 @@ export function parseOperations(rawOperations) {
         
     // Fetch instrument metadata to normalize price using PriceConversionFactor
     // Optimize: use cache and try symbolStr first, then instrument
-    const detailsStart = performance.now();
-    const instrumentDetails = raw.instrumentDetails || 
-                             getCachedInstrumentDetails(symbolStr) || 
-                             (symbolStr !== instrument ? getCachedInstrumentDetails(instrument) : null);
-    instrumentDetailsTime += performance.now() - detailsStart;
-        const priceConversionFactor = instrumentDetails?.priceConversionFactor ?? 1;
-        const contractMultiplier = instrumentDetails?.contractMultiplier ?? 1;
+        const detailsStart = performance.now();
+        const { priceConversionFactor, contractMultiplier } = resolveFactores(
+          raw,
+          (symbol) => getCachedInstrumentDetails(symbol)
+            || (symbol !== instrument ? getCachedInstrumentDetails(instrument) : null),
+        );
+        instrumentDetailsTime += performance.now() - detailsStart;
 
-        // Parse quantity and price from various field names
-        const rawCantidad = parseFloat(
-          raw.cantidad || raw.quantity || raw.last_qty || 0
-        );
-        const rawPrecio = parseFloat(
-          raw.precio || raw.price || raw.last_price || 0
-        );
+        const rawCantidad = resolveCantidad(raw);
+        const rawPrecio = resolvePrecio(raw);
         // Apply PriceConversionFactor so downstream P&L works with monetary values
         const precio = rawPrecio * priceConversionFactor;
         const cantidad = rawCantidad;
         
         // Extract date/time from nested raw object if available
-        const rawData = raw.raw || raw;
-        const dateField = rawData.transact_time || rawData.fechaHora || rawData.date || raw.transact_time || raw.fechaHora || raw.date;
+        const dateField = resolveFechaHora(raw);
 
         return {
           id: raw.id || `op-${Date.now()}-${Math.random()}`,
-          order_id: raw.order_id || raw.orderId || raw.id || `op-${Date.now()}-${Math.random()}`,
+          order_id: resolveOrderId(raw) || `op-${Date.now()}-${Math.random()}`,
           instrumento: instrument,
-          lado: parseLado(raw.lado || raw.side),
+          lado: parseLado(resolveLado(raw)),
           fechaHora: parseDate(dateField),
           cantidad,
           precio,
-          comisiones: parseFloat(raw.feeAmount || 0), // feeAmount comes from the pipeline (fees/fee-enrichment)
+          comisiones: resolveComisiones(raw),
           total: cantidad * precio,
           venue,
           feeBreakdown: raw.feeBreakdown || null, // Keep fee breakdown for detailed info
@@ -459,15 +459,13 @@ export function parseCauciones(rawCauciones) {
     .map((raw) => {
       try {
         // Check if this is a PESOS operation from CSV
-        const symbolStr = raw.symbol || raw.instrumento || '';
+        const symbolStr = resolveSymbol(raw);
         const { instrument, plazo, isCaucion } = parseSymbol(symbolStr);
         
         if (isCaucion && plazo) {
           // This is a PESOS operation - convert to caución format
           // Check both top level and nested raw object for date
-          const rawData = raw.raw || raw;
-          const dateValue = raw.transact_time || raw.fechaHora || raw.date || 
-                           rawData.transact_time || rawData.fechaHora || rawData.date;
+          const dateValue = resolveFechaHora(raw);
           if (!dateValue) {
             // No date information - skip this PESOS caución
             return null;
@@ -477,8 +475,8 @@ export function parseCauciones(rawCauciones) {
           const fin = new Date(inicio);
           fin.setDate(fin.getDate() + plazo);
           
-          const cantidad = parseFloat(raw.last_qty || raw.cantidad || raw.quantity || 0);
-          const precio = parseFloat(raw.last_price || raw.precio || raw.price || 0);
+          const cantidad = resolveCantidad(raw);
+          const precio = resolvePrecio(raw);
           const monto = cantidad * precio;
           
           // Calculate tasa from price (simplified - assumes price represents tasa%)
@@ -487,7 +485,7 @@ export function parseCauciones(rawCauciones) {
           const interes = monto * (tasa / 100) * (plazo / 365);
           
           // Determine tipo based on side (BUY = colocadora, SELL = tomadora)
-          const lado = parseLado(raw.lado || raw.side);
+          const lado = parseLado(resolveLado(raw));
           const tipo = lado === LADOS.COMPRA ? 'colocadora' : 'tomadora';
           
           // Link to underlying instrument (extract from other operations)
