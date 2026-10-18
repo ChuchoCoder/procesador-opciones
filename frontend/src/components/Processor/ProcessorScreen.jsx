@@ -528,59 +528,11 @@ const ProcessorScreen = () => {
   const syncState = useMemo(() => (sync ?? { status: 'idle', inProgress: false }), [sync]);
   const syncInProgress = Boolean(syncState.inProgress);
 
-  const localizedSyncState = useMemo(() => {
-    if (!syncState || !syncState.error) {
-      return syncState;
-    }
-
-    const waitMsFromState = syncState.rateLimitMs;
-    let message = syncState.error;
-
-    if (typeof syncState.error === 'string' && syncState.error.startsWith('RATE_LIMITED')) {
-      const rawValue = syncState.error.split(':')[1];
-      const waitMs = Number.isFinite(Number.parseInt(rawValue, 10))
-        ? Number.parseInt(rawValue, 10)
-        : waitMsFromState;
-      const seconds = Number.isFinite(waitMs) ? Math.max(Math.round(waitMs / 1000), 1) : 60;
-      const template = brokerStrings.rateLimitedWait || brokerStrings.rateLimited || message;
-      message = template.replace('{seconds}', seconds);
-    } else if (
-      typeof syncState.error === 'string'
-      && syncState.error.startsWith('TOKEN_EXPIRED')
-    ) {
-      message = brokerStrings.sessionExpired || brokerStrings.loginError || message;
-    }
-
-    return {
-      ...syncState,
-      error: message,
-    };
-  }, [brokerStrings.loginError, brokerStrings.rateLimited, brokerStrings.rateLimitedWait, brokerStrings.sessionExpired, syncState]);
-  // localizedSyncState is derived for debugging/display; reference to avoid unused-var lint
-  void localizedSyncState;
 
   const existingOperations = useMemo(
     () => (Array.isArray(syncedOperations) ? syncedOperations : []),
     [syncedOperations],
   );
-
-  const sourceCounts = useMemo(() => {
-    return existingOperations.reduce(
-      (acc, operation) => {
-        const sourceKey = operation?.source;
-        if (sourceKey === 'broker') {
-          acc.broker += 1;
-        } else if (sourceKey === 'csv') {
-          acc.csv += 1;
-        } else {
-          acc.other += 1;
-        }
-        acc.total += 1;
-        return acc;
-      },
-      { broker: 0, csv: 0, other: 0, total: 0 },
-    );
-  }, [existingOperations]);
 
   const setSelectedGroupIdForType = useCallback((type, nextValue) => {
     if (!type) {
@@ -1700,48 +1652,6 @@ const ProcessorScreen = () => {
     }
   };
 
-  const renderSourceSummary = () => {
-    if (!sourceCounts.total) {
-      return null;
-    }
-
-    const indicatorStrings = processorStrings.sourcesIndicator ?? {};
-
-    return (
-      <Box
-        sx={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 2,
-          px: 3,
-          pt: 2,
-        }}
-        data-testid="processor-source-indicator"
-      >
-        <Typography variant="caption" color="text.secondary">
-          {indicatorStrings.title ?? 'Operaciones cargadas'}
-        </Typography>
-        <Stack direction="row" spacing={2}>
-          <Typography variant="caption" color="text.secondary">
-            {(indicatorStrings.brokerLabel ?? 'Broker')}: {sourceCounts.broker}
-          </Typography>
-          <Typography variant="caption" color="text.secondary">
-            {(indicatorStrings.csvLabel ?? 'CSV')}: {sourceCounts.csv}
-          </Typography>
-          <Typography variant="caption" color="text.secondary">
-            {(indicatorStrings.totalLabel ?? 'Total')}: {sourceCounts.total}
-          </Typography>
-          {sourceCounts.other > 0 && (
-            <Typography variant="caption" color="text.secondary">
-              {(indicatorStrings.otherLabel ?? 'Otros')}: {sourceCounts.other}
-            </Typography>
-          )}
-        </Stack>
-      </Box>
-    );
-  };
-  // renderSourceSummary is defined for potential UI slots; reference to avoid unused-var lint
-  void renderSourceSummary;
 
   return (
     <Box

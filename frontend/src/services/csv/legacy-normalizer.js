@@ -177,13 +177,3 @@ export const normalizeOperationRows = (rows = [], configuration) => {
 
   return { rows: normalizedRows, missingColumns };
 };
-
-export const __testUtils = {
-  normalizeString,
-  parseNumber,
-  deriveStrike,
-  extractInstrumentToken,
-  deriveOptionData,
-  deriveQuantity,
-  derivePrice,
-};
