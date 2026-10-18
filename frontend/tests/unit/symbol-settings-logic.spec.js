@@ -1,4 +1,3 @@
-/* global global */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { validatePrefix, validateDecimals } from '../../src/services/settings-utils.js';
 import { loadSymbolConfig, saveSymbolConfig } from '../../src/services/storage-settings.js';

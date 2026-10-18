@@ -393,7 +393,7 @@ const normalizeSettlement = (value = '') => {
   return settlement.toUpperCase();
 };
 
-const resolveSettlementLabel = (operation = {}, { expirationLabels: _expirationLabels } = {}) => {
+const resolveSettlementLabel = (operation = {}) => {
   const fallbackValue = operation?.settlement ?? operation?.expiration;
 
   if (OPTION_OPERATION_TYPES.has(operation?.optionType)) {

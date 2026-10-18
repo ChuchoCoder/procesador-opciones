@@ -428,7 +428,6 @@ function calculateSeparatedFees(operations, proportion) {
   let totalCommission = 0;
   let totalRights = 0;
   let totalGrossNotional = 0;
-  let countWithBreakdown = 0;
 
   operations.forEach((op) => {
     if (op.feeBreakdown && op.feeBreakdown.commissionAmount !== undefined) {
@@ -436,7 +435,6 @@ function calculateSeparatedFees(operations, proportion) {
       totalRights += op.feeBreakdown.rightsAmount || 0;
       const opGrossNotional = Math.abs(op.precio * op.cantidad);
       totalGrossNotional += opGrossNotional;
-      countWithBreakdown++;
     }
   });
 

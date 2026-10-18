@@ -43,7 +43,7 @@ export const getDotDecimalLocale = () => {
             if (formatted.includes('.')) {
                 return lang;
             }
-        } catch (e) {
+        } catch {
             // Ignore invalid locales
         }
     }

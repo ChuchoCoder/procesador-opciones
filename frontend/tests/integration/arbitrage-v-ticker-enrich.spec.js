@@ -23,7 +23,7 @@ describe('V Ticker enrichOperationRow', () => {
     vRows = validated.rows.filter(r => r.symbol.includes(' - V '));
     console.log(`[Test] V validated rows: ${vRows.length}`);
 
-    enriched = await Promise.all(vRows.map((row, i) => enrichOperationRow(row, {})));
+    enriched = await Promise.all(vRows.map((row) => enrichOperationRow(row, {})));
     console.log(`[Test] Enriched V rows: ${enriched.length}`);
     enriched.forEach((e, i) => {
       console.log(`[Test] Enriched ${i}: symbol="${e.symbol}"`);

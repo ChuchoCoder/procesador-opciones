@@ -101,7 +101,6 @@ describe('V Ticker Arbitrage Full Flow', () => {
       });
 
       const sumQty = (ops) => ops.reduce((s, o) => s + o.cantidad, 0);
-      const sumPrice = (ops) => ops.reduce((s, o) => s + o.precio * o.cantidad, 0);
       const totalVCI = sumQty(vGrupo.ventasCI);
       const totalC24 = sumQty(vGrupo.compras24h);
       console.log(`[Test] V CI SELL total qty: ${totalVCI}, 24h BUY total qty: ${totalC24}`);

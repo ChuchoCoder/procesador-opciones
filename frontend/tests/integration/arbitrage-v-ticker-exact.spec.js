@@ -18,38 +18,17 @@ import { enrichArbitrageOperations } from '../../src/services/arbitrage-fee-enri
 import { parseOperations, parseCauciones, aggregateByInstrumentoPlazo, filterGruposByInstrument, calculateAvgTNAByCurrency } from '../../src/services/data-aggregation.js';
 import { calculatePnL } from '../../src/services/pnl-calculations.js';
 
-function transformToTableRow(grupo, resultado) {
-  return {
-    id: `${grupo.instrumento}-${grupo.plazo}-${resultado.patron}`,
-    instrumento: grupo.instrumento,
-    plazo: grupo.plazo,
-    patron: resultado.patron,
-    cantidad: resultado.matchedQty,
-    pnl_trade: resultado.pnl_trade,
-    pnl_caucion: resultado.pnl_caucion,
-    pnl_total: resultado.pnl_total,
-    estado: resultado.estado,
-    operations: resultado.operations,
-    cauciones: resultado.cauciones,
-    avgTNA: resultado.avgTNA,
-  };
-}
-
 describe('V Ticker Exact Production Flow', () => {
   let validatedRows;
   let allRows;
   let parsedOperations;
   let grupos;
-  let errored;
 
   beforeAll(async () => {
-    errored = false;
-
     try {
       // Step 1: Read and parse CSV
       const filePath = join(dirname(fileURLToPath(import.meta.url)), 'data', 'arbitrage-V-ticker.csv');
       const csvContent = await readFile(filePath, 'utf-8');
-      const csvPath = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..', '..', 'users', 'feder', 'Downloads', 'ReporteOperaciones_17825 (34).csv');
       
       let allCsv;
       try {
@@ -118,7 +97,6 @@ describe('V Ticker Exact Production Flow', () => {
       }
     } catch (error) {
       console.error('[Test] Error:', error);
-      errored = true;
     }
   });
 

@@ -52,11 +52,6 @@ describe('clipboard-service', () => {
     minimumFractionDigits: 0,
     maximumFractionDigits: 4,
   });
-  const priceFormatter = new Intl.NumberFormat(globalThis?.navigator?.language || undefined, {
-    useGrouping: false,
-    minimumFractionDigits: 4,
-    maximumFractionDigits: 4,
-  });
   const fmt = (n) => (Number.isInteger(n) ? n.toString() : numberFormatter.format(n));
   describe('buildClipboardPayload', () => {
     it('formats CALLS scope into tab-delimited rows with date as first column', () => {

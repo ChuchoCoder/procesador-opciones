@@ -1,7 +1,7 @@
 /**
  * Deep dive: what does enrichOperationRow do to V?
  */
-import { describe, it, beforeAll, expect } from 'vitest';
+import { describe, it, beforeAll } from 'vitest';
 import Papa from 'papaparse';
 import { readFile } from 'node:fs/promises';
 
@@ -25,7 +25,7 @@ describe('V enrichOperationRow deep dive', () => {
       console.log(`\n[Test] Row ${i} input: side=${r.side}, symbol="${r.symbol}", security_id="${r.security_id}", status="${r.status}"`);
     });
 
-    enriched = await Promise.all(vRows.map((row, i) => enrichOperationRow(row, {})));
+    enriched = await Promise.all(vRows.map((row) => enrichOperationRow(row, {})));
 
     enriched.forEach((e, i) => {
       console.log(`[Test] Row ${i} output: symbol="${e.symbol}", expiration="${e.expiration}", strike=${e.strike}, type="${e.type}"`);

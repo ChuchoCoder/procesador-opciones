@@ -7,7 +7,6 @@ import { readFile } from 'node:fs/promises';
 
 import { normalizeOperationRows } from '../../src/services/csv/legacy-normalizer.js';
 import { validateAndFilterRows } from '../../src/services/csv/validators.js';
-import { enrichOperationRow } from '../../src/services/csv/process-operations.js';
 
 // Copy of OPTION_TOKEN_REGEX and parseToken logic from process-operations.js
 const OPTION_TOKEN_REGEX = /^([A-Z0-9]+?)([CV])(\d+(?:\.\d+)?)(.*)$/;
