@@ -22,12 +22,11 @@
 /* eslint-env node, jest */
 import { describe, it, beforeAll, expect } from 'vitest';
 import Papa from 'papaparse';
-import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'path';
 
 // Real imports - NO MOCKS
-import { enrichArbitrageOperations, enrichCauciones } from '../../src/services/arbitrage-fee-enrichment.js';
+import { loadEnrichedOperations } from './helpers/arbitrage-pipeline.js';
 import { parseOperations, parseCauciones, aggregateByInstrumentoPlazo, filterGruposByInstrument, calculateAvgTNAByCurrency } from '../../src/services/data-aggregation.js';
 import { calculatePnL } from '../../src/services/pnl-calculations.js';
 
@@ -64,26 +63,13 @@ describe('D30E6 Arbitrage Plazo Calculation Bug', () => {
   beforeAll(async () => {
     console.log('\n=== D30E6 Arbitrage Plazo Test Setup ===\n');
 
-    // Step 1: Load CSV
-    const filePath = join(
-      dirname(fileURLToPath(import.meta.url)),
-      'data',
-      'ReporteOperaciones_17825-2025-12-30.csv'
-    );
-    console.log('[Step 1] Loading CSV:', filePath);
-    const csvContent = await readFile(filePath, 'utf-8');
-    const parsed = Papa.parse(csvContent, {
-      header: true,
-      skipEmptyLines: true,
-      dynamicTyping: true,
-    });
-
-    allRows = parsed.data.filter((row) => row.symbol);
+    // Step 1: Load the CSV through the real pipeline, as ProcessorScreen does.
+    enrichedOperations = await loadEnrichedOperations('ReporteOperaciones_17825-2025-12-30.csv');
+    allRows = enrichedOperations;
     console.log(`[Step 1] ✓ Loaded ${allRows.length} rows from CSV\n`);
 
     // Step 2: Enrich operations with fees
     console.log('[Step 2] Enriching operations with fees...');
-    enrichedOperations = await enrichArbitrageOperations(allRows);
     console.log(`[Step 2] ✓ Enriched ${enrichedOperations.length} operations\n`);
 
     // Step 3: Parse operations and cauciones
@@ -94,7 +80,7 @@ describe('D30E6 Arbitrage Plazo Calculation Bug', () => {
 
     // Step 4: Enrich cauciones with fees
     console.log('[Step 4] Enriching cauciones with fees...');
-    enrichedCauciones = await enrichCauciones(parsedCaucionesRaw);
+    enrichedCauciones = parsedCaucionesRaw; // fees already applied by the pipeline
     console.log(`[Step 4] ✓ Enriched ${enrichedCauciones.length} cauciones\n`);
 
     // Step 5: Calculate weighted average TNA per currency

@@ -2,7 +2,7 @@
  * Exact replication of production flow for V ticker
  * Step 1: normalizeOperationRows (like processOperations)
  * Step 2: validateAndFilterRows (excludes 23 rows)
- * Step 3: enrichArbitrageOperations
+ * Step 3: enriched operations via processOperations
  * Step 4: parseOperations -> aggregate -> calculatePnL
  * Step 5: Assert V is present with matchedQty=51
  */
@@ -14,7 +14,7 @@ import { dirname, join } from 'path';
 
 import { normalizeOperationRows } from '../../src/services/csv/legacy-normalizer.js';
 import { validateAndFilterRows } from '../../src/services/csv/validators.js';
-import { enrichArbitrageOperations } from '../../src/services/arbitrage-fee-enrichment.js';
+import { loadEnrichedOperations } from './helpers/arbitrage-pipeline.js';
 import { parseOperations, parseCauciones, aggregateByInstrumentoPlazo, filterGruposByInstrument, calculateAvgTNAByCurrency } from '../../src/services/data-aggregation.js';
 import { calculatePnL } from '../../src/services/pnl-calculations.js';
 
@@ -58,7 +58,7 @@ describe('V Ticker Exact Production Flow', () => {
 
       // Step 4: Build operations in processOperations format
       // (simplified - just use validated rows directly)
-      const enrichedForArbitrage = await enrichArbitrageOperations(validatedRows);
+      const enrichedForArbitrage = await loadEnrichedOperations('arbitrage-V-ticker.csv');
       console.log(`[Test] Enriched for arbitrage: ${enrichedForArbitrage.length}`);
 
       // Step 5: Parse

@@ -7,11 +7,8 @@
 /* eslint-env node, jest */
 import { describe, it, beforeAll, expect } from 'vitest';
 import Papa from 'papaparse';
-import { readFile } from 'node:fs/promises';
-import { fileURLToPath } from 'node:url';
-import { dirname, join } from 'path';
 
-import { enrichArbitrageOperations, enrichCauciones } from '../../src/services/arbitrage-fee-enrichment.js';
+import { loadEnrichedOperations } from './helpers/arbitrage-pipeline.js';
 import { parseOperations, parseCauciones, aggregateByInstrumentoPlazo, filterGruposByInstrument, calculateAvgTNAByCurrency } from '../../src/services/data-aggregation.js';
 import { calculatePnL } from '../../src/services/pnl-calculations.js';
 
@@ -43,15 +40,9 @@ describe('V Ticker Arbitrage Full Flow', () => {
 
   beforeAll(async () => {
     // Step 1: Load CSV with just V ticker rows
-    const filePath = join(dirname(fileURLToPath(import.meta.url)), 'data', 'arbitrage-V-ticker.csv');
-    const csvContent = await readFile(filePath, 'utf-8');
-    const parsed = Papa.parse(csvContent, {
-      header: true,
-      skipEmptyLines: true,
-      dynamicTyping: true,
-    });
-
-    allRows = parsed.data.filter((row) => row.symbol);
+    // Load through the real pipeline, as ProcessorScreen does.
+    enrichedOperations = await loadEnrichedOperations('arbitrage-V-ticker.csv');
+    allRows = enrichedOperations;
     console.log(`[Test] Loaded ${allRows.length} V ticker rows from CSV`);
 
     allRows.forEach((row, i) => {
@@ -59,7 +50,6 @@ describe('V Ticker Arbitrage Full Flow', () => {
     });
 
     // Step 2: Enrich operations with fees
-    enrichedOperations = await enrichArbitrageOperations(allRows);
     console.log(`[Test] Enriched ${enrichedOperations.length} operations`);
 
     // Step 3: Parse operations and cauciones
@@ -67,7 +57,7 @@ describe('V Ticker Arbitrage Full Flow', () => {
     const parsedCaucionesRaw = parseCauciones(enrichedOperations);
 
     // Step 4: Enrich cauciones with fees
-    enrichedCauciones = await enrichCauciones(parsedCaucionesRaw);
+    enrichedCauciones = parsedCaucionesRaw; // fees already applied by the pipeline
     console.log(`[Test] Parsed ${parsedOperations.length} operations, ${enrichedCauciones.length} cauciones`);
 
     // Log parsed operations for V

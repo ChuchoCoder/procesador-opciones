@@ -6,12 +6,8 @@
 
 /* eslint-env node, jest */
 import { describe, it, beforeAll, expect } from 'vitest';
-import Papa from 'papaparse';
-import { readFile } from 'node:fs/promises';
-import { fileURLToPath } from 'node:url';
-import { dirname, join } from 'path';
 
-import { enrichArbitrageOperations, enrichCauciones } from '../../src/services/arbitrage-fee-enrichment.js';
+import { loadEnrichedOperations } from './helpers/arbitrage-pipeline.js';
 import { parseOperations, parseCauciones, aggregateByInstrumentoPlazo, filterGruposByInstrument, calculateAvgTNAByCurrency } from '../../src/services/data-aggregation.js';
 import { calculatePnL } from '../../src/services/pnl-calculations.js';
 import * as bootstrapDefaults from '../../src/services/bootstrap-defaults.js';
@@ -37,7 +33,6 @@ function transformToTableRow(grupo, resultado) {
 }
 
 describe('S31O5 Arbitrage Full Flow', () => {
-    let allRows;
     let enrichedOperations;
     let parsedOperations;
     let enrichedCauciones;
@@ -60,31 +55,18 @@ describe('S31O5 Arbitrage Full Flow', () => {
     });
 
     beforeAll(async () => {
-        // Step 1: Load CSV (same as user uploading file)
-        const filePath = join(dirname(fileURLToPath(import.meta.url)), 'data', 'Arbitraje-Plazos.csv');
-        const csvContent = await readFile(filePath, 'utf-8');
-        const parsed = Papa.parse(csvContent, {
-            header: true,
-            skipEmptyLines: true,
-            dynamicTyping: true,
-        });
-
-        allRows = parsed.data.filter((row) => row.symbol);
-        console.log(`[Test Setup] Loaded ${allRows.length} rows from CSV`);
-
-        // Step 2: Enrich operations with fees (FIRST - same as ArbitrajesView)
-        console.log('[Test Setup] Enriching operations with fees...');
-        enrichedOperations = await enrichArbitrageOperations(allRows);
-        console.log(`[Test Setup] Enriched ${enrichedOperations.length} operations`);
+        // Steps 1-2: Load the CSV through the real pipeline, exactly as
+        // ProcessorScreen does. `report.operations` is what ArbitrajesView gets.
+        enrichedOperations = await loadEnrichedOperations('Arbitraje-Plazos.csv');
+        console.log(`[Test Setup] Pipeline produced ${enrichedOperations.length} enriched operations`);
 
         // Step 3: Parse operations and cauciones (same as ArbitrajesView)
         console.log('[Test Setup] Parsing operations and cauciones...');
         parsedOperations = parseOperations(enrichedOperations);
         const parsedCaucionesRaw = parseCauciones(enrichedOperations);
 
-        // Step 4: Enrich cauciones with fees
-        console.log('[Test Setup] Enriching cauciones with fees...');
-        enrichedCauciones = await enrichCauciones(parsedCaucionesRaw);
+        // Cauciones carry the pipeline's fee fields already.
+        enrichedCauciones = parsedCaucionesRaw;
         console.log(`[Test Setup] Parsed ${parsedOperations.length} operations, ${enrichedCauciones.length} cauciones`);
 
         // Step 5: Aggregate by instrument and plazo (same as ArbitrajesView)
@@ -296,16 +278,22 @@ describe('S31O5 Arbitrage Full Flow', () => {
         expect(ventaCICompra24h.pnl_trade).toBeCloseTo(-39933842.917743795, 2);
     });
 
+    // These two expectations were lowered when this spec moved onto the real
+    // pipeline. The previous values (51854360.64 / 11920517.72) were computed
+    // over Papa-parsed rows, which include `event_subtype: "replace"` records.
+    // A replace event is an order-replacement record, not a fill, and it repeats
+    // the preceding execution_report verbatim — so two fills were counted twice
+    // (100000 + 83614 = 183614 extra nominals on orders ...C8TK and ...F3N9).
+    // processOperations drops them, which moves the weighted avgTNA from
+    // 34.42615% to 34.41344% and with it the caución interest.
     it('validates caución interest matches UI', () => {
-        // UI shows: Interés Neto Caución: $ 551,798.517
-        expect(s31o5Row.pnl_caucion).toBeCloseTo(51854360.64, 2);
-        expect(ventaCICompra24h.pnl_caucion).toBeCloseTo(51854360.64, 2);
+        expect(s31o5Row.pnl_caucion).toBeCloseTo(51834010.97, 2);
+        expect(ventaCICompra24h.pnl_caucion).toBeCloseTo(51834010.97, 2);
     });
 
     it('validates total profit matches UI', () => {
-        // UI shows: Profit: $ 187,562.437
-        expect(s31o5Row.pnl_total).toBeCloseTo(11920517.72, 2);
-        expect(ventaCICompra24h.pnl_total).toBeCloseTo(11920517.722256206, 2);
+        expect(s31o5Row.pnl_total).toBeCloseTo(11900168.05, 2);
+        expect(ventaCICompra24h.pnl_total).toBeCloseTo(11900168.052256204, 2);
     });
 
     it('ensures caucion monto calculation stays finite', () => {

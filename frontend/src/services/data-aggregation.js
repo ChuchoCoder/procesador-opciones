@@ -405,7 +405,7 @@ export function parseOperations(rawOperations) {
           fechaHora: parseDate(dateField),
           cantidad,
           precio,
-          comisiones: parseFloat(raw.feeAmount || 0), // feeAmount is added by enrichArbitrageOperations
+          comisiones: parseFloat(raw.feeAmount || 0), // feeAmount comes from the pipeline (fees/fee-enrichment)
           total: cantidad * precio,
           venue,
           feeBreakdown: raw.feeBreakdown || null, // Keep fee breakdown for detailed info
