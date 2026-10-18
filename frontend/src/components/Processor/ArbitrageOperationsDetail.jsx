@@ -18,32 +18,21 @@ import Chip from '@mui/material/Chip';
 import Tooltip from '@mui/material/Tooltip';
 import InfoIcon from '@mui/icons-material/Info';
 import IconButton from '@mui/material/IconButton';
-import { getDotDecimalLocale } from '../../services/locale.js';
+import { formatCantidad, formatMoneda, crearFormateador } from '../../services/formato.js';
 
-const formatQuantity = (value) => {
-  if (!Number.isFinite(value)) return '';
-  return new Intl.NumberFormat(getDotDecimalLocale(), {
-    useGrouping: true,
-    maximumFractionDigits: 0,
-  }).format(value);
-};
-
+// Prices here carry at least cents and up to 4 decimals, which is narrower
+// than any shared kind; the escape hatch keeps the locale handling shared.
 const formatPrice = (value) => {
   if (!Number.isFinite(value)) return '';
-  return new Intl.NumberFormat(getDotDecimalLocale(), {
+  const formatter = crearFormateador({
     useGrouping: true,
     minimumFractionDigits: 2,
     maximumFractionDigits: 4,
-  }).format(value);
+  });
+  return formatter ? formatter.format(value) : String(value);
 };
 
-const formatCurrency = (value) => {
-  if (!Number.isFinite(value)) return '';
-  return new Intl.NumberFormat(getDotDecimalLocale(), {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(value);
-};
+const formatCurrency = (value) => formatMoneda(value, { placeholder: '' });
 
 /**
  * Group operations by order_id (same as COMPRA y VENTA)
@@ -184,7 +173,7 @@ const OperationsTable = ({ title, operations, _sideLabel, isSell }) => {
                 Cantidad
                 {hasData && (
                   <Typography variant="caption" display="block" sx={{ fontWeight: 700, color: 'text.primary' }}>
-                    {formatQuantity(totals.cantidad)}
+                    {formatCantidad(totals.cantidad)}
                   </Typography>
                 )}
               </TableCell>
@@ -240,7 +229,7 @@ const OperationsTable = ({ title, operations, _sideLabel, isSell }) => {
                         variant="body2"
                         sx={{ color: isSellOp ? 'error.main' : 'inherit', fontWeight: isSellOp ? 500 : 400 }}
                       >
-                        {formatQuantity(displayQuantity)}
+                        {formatCantidad(displayQuantity)}
                       </Typography>
                       {op.order_id && (
                         <Tooltip title={`ID: ${op.order_id}`} placement="top">

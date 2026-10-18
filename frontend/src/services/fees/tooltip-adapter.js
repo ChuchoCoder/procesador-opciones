@@ -1,20 +1,13 @@
 // tooltip-adapter.js - Adapts fee breakdown data for tooltip display
 // Formats numeric values to 2-decimal ARS and provides display-ready object.
 
-import { getDotDecimalLocale } from '../locale.js';
+import { formatMoneda } from '../formato.js';
 
 /**
  * Formats a number to 2-decimal ARS currency string.
  * @param {number} value
  * @returns {string}
  */
-function formatARS(value) {
-  if (!Number.isFinite(value)) return '—';
-  return new Intl.NumberFormat(getDotDecimalLocale(), {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(value);
-}
 
 /**
  * Formats a percentage (fraction) to display percentage with 4 decimals.
@@ -76,15 +69,15 @@ export function adaptFeeBreakdownForTooltip(feeBreakdown, grossNotional, netTota
 
   return {
     categoria: getCategoryLabel(category),
-    brutoARS: formatARS(grossNotional),
+    brutoARS: formatMoneda(grossNotional),
     comisionPct: formatPercentage(commissionPct),
     derechosPct: formatPercentage(rightsPct),
     ivaPct: formatPercentage(vatPct),
-    comisionARS: formatARS(commissionAmount),
-    derechosARS: formatARS(rightsAmount),
-    ivaARS: formatARS(vatAmount),
-    totalARS: formatARS(totalFee),
-    netoARS: formatARS(netTotal),
+    comisionARS: formatMoneda(commissionAmount),
+    derechosARS: formatMoneda(rightsAmount),
+    ivaARS: formatMoneda(vatAmount),
+    totalARS: formatMoneda(totalFee),
+    netoARS: formatMoneda(netTotal),
     fuente: source === 'placeholder' ? 'Próximamente' : 'Configuración',
   };
 }

@@ -20,54 +20,11 @@ import GroupFilter from './GroupFilter.jsx';
 import { getBuySellOperations } from '../../services/csv/buy-sell-matcher.js';
 import FeeTooltip from './FeeTooltip.jsx';
 import TooltipRepoFees from './TooltipRepoFees.jsx';
-import { getDotDecimalLocale } from '../../services/locale.js';
+import { formatCantidad, formatDecimal, formatMoneda } from '../../services/formato.js';
 
-const quantityFormatter = typeof Intl !== 'undefined'
-  ? new Intl.NumberFormat(getDotDecimalLocale(), {
-      useGrouping: true,
-      maximumFractionDigits: 0,
-    })
-  : null;
-
-const decimalFormatter = typeof Intl !== 'undefined'
-  ? new Intl.NumberFormat(getDotDecimalLocale(), {
-      useGrouping: true,
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 4,
-    })
-  : null;
-
-const formatQuantity = (value) => {
-  if (!Number.isFinite(value)) {
-    return '';
-  }
-  const safeValue = Object.is(value, -0) ? 0 : value;
-  if (quantityFormatter) {
-    return quantityFormatter.format(safeValue);
-  }
-  return String(safeValue);
-};
-
-const formatDecimal = (value) => {
-  if (!Number.isFinite(value)) {
-    return '';
-  }
-  const safeValue = Object.is(value, -0) ? 0 : value;
-  if (decimalFormatter) {
-    return decimalFormatter.format(safeValue);
-  }
-  return String(safeValue);
-};
-
-const formatFee = (value) => {
-  if (!Number.isFinite(value)) {
-    return '';
-  }
-  return new Intl.NumberFormat(getDotDecimalLocale(), {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(value);
-};
+// This view leaves money cells blank when a value is absent, rather than
+// showing an em dash.
+const formatFee = (value) => formatMoneda(value, { placeholder: '' });
 
 /**
  * Format net total with sign prefix based on operation side.
@@ -562,7 +519,7 @@ const BuySellTable = ({
                     align="right"
                     sx={{ color: row.quantity < 0 ? 'error.main' : undefined }}
                   >
-                    {formatQuantity(row.quantity)}
+                    {formatCantidad(row.quantity)}
                   </TableCell>
                   <TableCell align="right">{formatDecimal(row.price)}</TableCell>
                   <TableCell 

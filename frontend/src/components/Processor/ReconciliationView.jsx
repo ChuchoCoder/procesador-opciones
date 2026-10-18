@@ -20,19 +20,10 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 
 import { reconcileOperations, DEFAULT_TIME_WINDOW_MS } from '../../services/broker/reconciliation.js';
+import { formatDecimal } from '../../services/formato.js';
 import { getDotDecimalLocale } from '../../services/locale.js';
 import GroupFilter from './GroupFilter.jsx';
 
-const decimalFormatter = typeof Intl !== 'undefined'
-  ? new Intl.NumberFormat(getDotDecimalLocale(), { maximumFractionDigits: 4 })
-  : null;
-
-const formatNumber = (value) => {
-  if (!Number.isFinite(value)) {
-    return '';
-  }
-  return decimalFormatter ? decimalFormatter.format(value) : String(value);
-};
 
 const formatTimestamp = (value) => {
   if (!Number.isFinite(value)) {
@@ -123,9 +114,9 @@ const MatchedTable = ({ rows, strings, testId }) => {
                 </TableCell>
                 <TableCell>{row.csv.symbol}</TableCell>
                 <TableCell>{row.csv.action}</TableCell>
-                <TableCell align="right">{formatNumber(row.csv.price)}</TableCell>
-                <TableCell align="right">{formatNumber(row.csv.quantity)}</TableCell>
-                <TableCell align="right">{formatNumber(row.broker.quantity)}</TableCell>
+                <TableCell align="right">{formatDecimal(row.csv.price)}</TableCell>
+                <TableCell align="right">{formatDecimal(row.csv.quantity)}</TableCell>
+                <TableCell align="right">{formatDecimal(row.broker.quantity)}</TableCell>
                 <TableCell align="right">{formatTimestamp(row.csv.tradeTimestamp)}</TableCell>
                 <TableCell align="right">{formatTimestamp(row.broker.tradeTimestamp)}</TableCell>
                 <TableCell align="right">{row.deltaMs}</TableCell>
@@ -185,9 +176,9 @@ const MismatchedTable = ({ rows, strings, testId }) => {
                 </TableCell>
                 <TableCell>{row.csv.symbol}</TableCell>
                 <TableCell>{row.csv.action}</TableCell>
-                <TableCell align="right">{formatNumber(row.csv.price)}</TableCell>
-                <TableCell align="right" sx={{ color: 'warning.main', fontWeight: 600 }}>{formatNumber(row.csv.quantity)}</TableCell>
-                <TableCell align="right" sx={{ color: 'warning.main', fontWeight: 600 }}>{formatNumber(row.broker.quantity)}</TableCell>
+                <TableCell align="right">{formatDecimal(row.csv.price)}</TableCell>
+                <TableCell align="right" sx={{ color: 'warning.main', fontWeight: 600 }}>{formatDecimal(row.csv.quantity)}</TableCell>
+                <TableCell align="right" sx={{ color: 'warning.main', fontWeight: 600 }}>{formatDecimal(row.broker.quantity)}</TableCell>
                 <TableCell>
                   <Stack direction="row" spacing={0.5} flexWrap="wrap">
                     {row.diffFields.map((diff) => (
@@ -251,8 +242,8 @@ const AbsentTable = ({ rows, strings, testId }) => {
                 </TableCell>
                 <TableCell>{op.symbol}</TableCell>
                 <TableCell>{op.action}</TableCell>
-                <TableCell align="right">{formatNumber(op.price)}</TableCell>
-                <TableCell align="right">{formatNumber(op.quantity)}</TableCell>
+                <TableCell align="right">{formatDecimal(op.price)}</TableCell>
+                <TableCell align="right">{formatDecimal(op.quantity)}</TableCell>
                 <TableCell>
                   <Chip
                     size="small"
