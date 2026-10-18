@@ -5,19 +5,20 @@ import { readFileSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { loadInstrumentMapping, resolveCfiCategory, getInstrumentDetails } from '../../src/services/fees/instrument-mapping.js';
+import { EXPIRED_DLR_CONTRACTS } from '../fixtures/expired-instruments.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 describe('DLR Futures Misclassification Issue', () => {
-  let instrumentsData;
   let csvData;
 
   beforeEach(() => {
-    // Load instruments data
-    const instrumentsPath = join(__dirname, '../../InstrumentsWithDetails.json');
-    instrumentsData = JSON.parse(readFileSync(instrumentsPath, 'utf-8'));
-    loadInstrumentMapping(instrumentsData);
+    // The November 2025 DLR contracts this spec is about have matured and are
+    // gone from the live InstrumentsWithDetails.json snapshot, so the spec
+    // declares them (see tests/fixtures/expired-instruments.js) rather than
+    // reading a file whose contents drift.
+    loadInstrumentMapping(EXPIRED_DLR_CONTRACTS);
 
     // Load CSV with DLR futures operations
     const csvPath = join(__dirname, 'data/ReporteOperaciones_17825-2025-11-25.csv');
