@@ -2,7 +2,7 @@
 
 - **Fecha**: 2026-10-18
 - **Estado**: aceptada
-- **PRs**: #20
+- **PRs**: #21
 
 ## Contexto
 
