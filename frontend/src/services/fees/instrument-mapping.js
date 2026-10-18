@@ -1,12 +1,25 @@
 // instrument-mapping.js - Load and resolve instrument CfiCode -> fee category
-// Uses InstrumentsWithDetails.json; fallback to 'bonds' for unknown codes.
-// Deduplicates warnings via Set.
+//
+// This module owns one replaceable mapping, built from a snapshot of the
+// broker's instrument list (InstrumentsWithDetails.json in production).
+//
+// Interface contract, in full:
+//   - `loadInstrumentMapping(data)` must run before any read. It REPLACES the
+//     mapping: the last call wins. Production calls it once, from
+//     `bootstrapFeeServices()`; tests call it with their own snapshot.
+//   - Reading before a load THROWS. An unloaded mapping used to answer with
+//     plausible-but-wrong values ('bonds', `null`) behind a `console.warn`,
+//     which turned a bootstrap failure into silently wrong money.
+//   - A load followed by a read for a symbol the snapshot does not carry still
+//     returns `null`: that is a genuine "not in this snapshot", not an
+//     initialization error. See docs/adr/0004.
+//   - `resetInstrumentMapping()` clears it, for test teardown.
 
 import { logUnknownCfiCode, logMappingDedupSummary } from '../logging/fee-logging.js';
 
-// Lazy-loaded mapping and dedup set
+// The loaded mapping. `null` means "not loaded yet", which is an error to read.
 let _cfiCodeMap = null;
-let _instrumentDetailsMap = null; // New: stores PriceConversionFactor and ContractMultiplier by symbol
+let _instrumentDetailsMap = null; // PriceConversionFactor / ContractMultiplier by symbol
 let _unknownCfiCodes = null;
 
 /**
@@ -32,11 +45,10 @@ const CFI_PATTERNS = {
 };
 
 /**
- * Builds the CfiCode -> category map from InstrumentsWithDetails.json.
+ * Builds the CfiCode -> category map from an instruments snapshot.
  * Also builds a symbol -> instrument details map.
- * Executed once at first call.
  * @param {Array} instrumentsData - parsed JSON array
- * @returns {Map<string, string>}
+ * @returns {{ cfiMap: Map<string, string>, detailsMap: Map<string, object> }}
  */
 function buildCfiCodeMap(instrumentsData) {
   const map = new Map();
@@ -107,31 +119,58 @@ function buildCfiCodeMap(instrumentsData) {
 }
 
 /**
- * Loads the instrument mapping (once per session).
- * Must be called after instruments data is available.
- * @param {Array} instrumentsData - parsed InstrumentsWithDetails.json
+ * Loads an instruments snapshot, replacing whatever was loaded before.
+ *
+ * Last call wins. This used to be a silent no-op after the first call, so a
+ * test that handed it a fixture kept reading whatever had been loaded first
+ * (in the suite's case, the production snapshot) with no way to tell.
+ *
+ * @param {Array} instrumentsData - parsed instruments array
  */
 export function loadInstrumentMapping(instrumentsData) {
-  if (!_cfiCodeMap) {
-    const result = buildCfiCodeMap(instrumentsData);
-    _cfiCodeMap = result.cfiMap;
-    _instrumentDetailsMap = result.detailsMap;
-    _unknownCfiCodes = new Set();
+  const result = buildCfiCodeMap(instrumentsData);
+  _cfiCodeMap = result.cfiMap;
+  _instrumentDetailsMap = result.detailsMap;
+  _unknownCfiCodes = new Set();
+}
+
+/**
+ * Clears the loaded mapping. After this, reads throw until the next load.
+ * For test teardown; production never unloads.
+ */
+export function resetInstrumentMapping() {
+  _cfiCodeMap = null;
+  _instrumentDetailsMap = null;
+  _unknownCfiCodes = null;
+}
+
+/**
+ * Whether a snapshot is currently loaded.
+ * @returns {boolean}
+ */
+export function isInstrumentMappingLoaded() {
+  return _cfiCodeMap !== null;
+}
+
+const NOT_LOADED_MESSAGE =
+  'instrument mapping not loaded: call loadInstrumentMapping() ' +
+  '(production does so in bootstrapFeeServices) before resolving instruments';
+
+function assertLoaded(context) {
+  if (_cfiCodeMap === null) {
+    throw new Error(`PO: ${NOT_LOADED_MESSAGE} [${context}]`);
   }
 }
 
 /**
  * Resolves a CfiCode to its fee category.
- * Falls back to 'bonds' and logs once per unknown code.
+ * Falls back to 'bonds' and logs once per CfiCode the snapshot does not carry.
  * @param {string} cfiCode
  * @returns {string} category name
+ * @throws {Error} if no snapshot has been loaded
  */
 export function resolveCfiCategory(cfiCode) {
-  if (!_cfiCodeMap) {
-     
-    console.warn('PO: mapping-not-loaded', { cfiCode });
-    return 'bonds'; // safe fallback
-  }
+  assertLoaded('resolveCfiCategory');
 
   const category = _cfiCodeMap.get(cfiCode);
   if (category) {
@@ -150,16 +189,17 @@ export function resolveCfiCategory(cfiCode) {
 /**
  * Gets instrument details (PriceConversionFactor, ContractMultiplier, CfiCode) by symbol.
  * Tries exact match first, then partial match for tokenized symbols (e.g., GFGC50131O -> MERV - XMEV - GFGC50131O - 24hs)
+ *
+ * `null` means "this symbol is not in the loaded snapshot" — a real answer,
+ * distinct from "nothing is loaded", which throws.
+ *
  * @param {string} symbol - instrument symbol
- * @returns {object|null} - { cfiCode, priceConversionFactor, contractMultiplier } or null if not found
+ * @returns {object|null} - { cfiCode, priceConversionFactor, contractMultiplier } or null if not in the snapshot
+ * @throws {Error} if no snapshot has been loaded
  */
 export function getInstrumentDetails(symbol) {
-  if (!_instrumentDetailsMap) {
-     
-    console.warn('PO: mapping-not-loaded-for-symbol', { symbol });
-    return null;
-  }
-  
+  assertLoaded('getInstrumentDetails');
+
   // Try exact match first
   const exactMatch = _instrumentDetailsMap.get(symbol);
   if (exactMatch) {

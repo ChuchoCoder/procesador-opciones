@@ -76,18 +76,16 @@ export const refreshFeeServices = async () => {
 };
 
 /**
- * Initializes instrument CfiCode mapping.
- * Call once during app bootstrap after instruments data available.
+ * Loads the instrument snapshot into the instrument mapping.
+ *
+ * Call once during app bootstrap. Failures propagate on purpose: reads from an
+ * unloaded mapping now throw, so swallowing this error here would only move
+ * the failure to the first instrument lookup, far from its cause.
  */
 export function initializeInstrumentMapping() {
-  try {
-    loadInstrumentMapping(instrumentsData);
-     
-    console.info('PO: instrument-mapping-initialized');
-  } catch (e) {
-     
-    console.error('PO: instrument-mapping-init-failed', e);
-  }
+  loadInstrumentMapping(instrumentsData);
+   
+  console.info('PO: instrument-mapping-initialized');
 }
 
 /**

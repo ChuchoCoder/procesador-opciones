@@ -5,7 +5,9 @@ import { loadInstrumentMapping, getInstrumentDetails } from '../../src/services/
 
 describe('instrument mapping with RoundLot', () => {
   beforeEach(() => {
-    // Reset module state
+    // `loadInstrumentMapping` replaces the loaded snapshot, so this fixture —
+    // not the production one the suite bootstrap loads — is what the
+    // assertions below read.
     const instrumentsData = [
       {
         InstrumentId: { marketId: 'ROFX', symbol: 'MERV - XMEV - GFGC50131O - 24hs' },
@@ -34,7 +36,7 @@ describe('instrument mapping with RoundLot', () => {
   });
 
   it('should use RoundLot as contractMultiplier when ContractMultiplier is 1', () => {
-    const details = getInstrumentDetails('MERV - XMEV - GFGC11000D - 24hs');
+    const details = getInstrumentDetails('MERV - XMEV - GFGC50131O - 24hs');
     
     expect(details).not.toBeNull();
     expect(details.contractMultiplier).toBe(100.0); // Should use RoundLot (100) not ContractMultiplier (1)
@@ -42,7 +44,7 @@ describe('instrument mapping with RoundLot', () => {
   });
 
   it('should use ContractMultiplier when it is not 1', () => {
-    const details = getInstrumentDetails('GGAL/DIC25');
+    const details = getInstrumentDetails('GGAL/OCT25');
     
     expect(details).not.toBeNull();
     expect(details.contractMultiplier).toBe(100.0); // Should use ContractMultiplier (100)
@@ -50,8 +52,8 @@ describe('instrument mapping with RoundLot', () => {
   });
 
   it('should find instrument by partial symbol match (tokenized symbol)', () => {
-    // CSV might have "GFGC11000D" but JSON has "MERV - XMEV - GFGC50131O - 24hs"
-    const details = getInstrumentDetails('GFGC11000D');
+    // CSV might have the bare token while the snapshot has the qualified symbol
+    const details = getInstrumentDetails('GFGC50131O');
     
     expect(details).not.toBeNull();
     expect(details.contractMultiplier).toBe(100.0);
@@ -63,7 +65,7 @@ describe('instrument mapping with RoundLot', () => {
     
     expect(details).not.toBeNull();
     expect(details.contractMultiplier).toBe(1.0);
-    expect(details.cfiCode).toBe('ESXXXX');
+    expect(details.cfiCode).toBe('ESVUFR');
   });
 
   it('should return null when no match found', () => {

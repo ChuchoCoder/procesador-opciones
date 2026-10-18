@@ -24,9 +24,12 @@ import { describe, it, beforeAll, expect } from 'vitest';
 import Papa from 'papaparse';
 
 // Real imports - NO MOCKS
+import instrumentsData from '../../InstrumentsWithDetails.json';
 import { loadEnrichedOperations } from './helpers/arbitrage-pipeline.js';
 import { parseOperations, parseCauciones, aggregateByInstrumentoPlazo, filterGruposByInstrument, calculateAvgTNAByCurrency } from '../../src/services/data-aggregation.js';
+import { loadInstrumentMapping } from '../../src/services/fees/instrument-mapping.js';
 import { calculatePnL } from '../../src/services/pnl-calculations.js';
+import { EXPIRED_INSTRUMENTS_2025_12_30 } from '../fixtures/expired-instruments.js';
 
 /**
  * Transform ResultadoPatron to table row format (same as ArbitrajesView.jsx)
@@ -60,6 +63,12 @@ describe('D30E6 Arbitrage Plazo Calculation Bug', () => {
 
   beforeAll(async () => {
     console.log('\n=== D30E6 Arbitrage Plazo Test Setup ===\n');
+
+    // Step 0: D30E6 matured in January 2026 and is gone from the live
+    // InstrumentsWithDetails.json snapshot. Without it the pipeline finds no
+    // instrument details and falls back to priceConversionFactor = 1 instead
+    // of the 0.01 every MERV bond uses, inflating this jornada's P&L ~100x.
+    loadInstrumentMapping([...instrumentsData, ...EXPIRED_INSTRUMENTS_2025_12_30]);
 
     // Step 1: Load the CSV through the real pipeline, as ProcessorScreen does.
     enrichedOperations = await loadEnrichedOperations('ReporteOperaciones_17825-2025-12-30.csv');
