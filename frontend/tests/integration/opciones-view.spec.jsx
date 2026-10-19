@@ -19,7 +19,7 @@ import { CLIPBOARD_SCOPES } from '../../src/services/csv/clipboard-service.js';
 import { EXPORT_SCOPES } from '../../src/services/csv/export-service.js';
 import strings from '../../src/strings/es-AR.js';
 import theme from '../../src/app/theme.js';
-import { loadEnrichedOperations } from './helpers/arbitrage-pipeline.js';
+import { loadReport } from './helpers/arbitrage-pipeline.js';
 
 const processorStrings = strings.processor;
 const montar = (ui) => render(<ThemeProvider theme={theme}>{ui}</ThemeProvider>);
@@ -33,14 +33,15 @@ describe('OpcionesView', () => {
     // la configuración trae la regla de prefijo GFG -> GGAL: sin ella el
     // pipeline devuelve CALLS: 0, PUTS: 0.
     const reglaGgal = { GFG: { symbol: 'GGAL', prefixes: ['GFG'], strikeDefaultDecimals: 1 } };
-    const operaciones = await loadEnrichedOperations('GGAL-PUTS.csv', {
+    const report = await loadReport('GGAL-PUTS.csv', {
       prefixRules: reglaGgal,
       prefixMap: reglaGgal,
       expirations: { Octubre: { suffixes: ['O', 'OC', 'OCT'] } },
       activeExpiration: 'Octubre',
     });
-    calls = operaciones.filter((op) => op.optionType === 'CALL');
-    puts = operaciones.filter((op) => op.optionType === 'PUT');
+    // Las tablas consumen las operaciones CONSOLIDADAS, no las crudas.
+    calls = report.calls?.operations ?? [];
+    puts = report.puts?.operations ?? [];
     expect(puts.length).toBeGreaterThan(0);
   }, 60000);
 
@@ -61,11 +62,17 @@ describe('OpcionesView', () => {
     ...extra,
   });
 
-  it('renderiza las dos tablas, CALLS y PUTS, con opciones reales', () => {
+  it('renderiza las dos tablas, y la de PUTS con datos de verdad', () => {
     montar(<OpcionesView {...props()} />);
 
     expect(screen.getByTestId('processor-calls-table')).toBeTruthy();
-    expect(screen.getByTestId('processor-puts-table')).toBeTruthy();
+
+    const puts = screen.getByTestId('processor-puts-table');
+    expect(puts).toBeTruthy();
+    // No alcanza con que la tabla exista: este fixture tiene PUTS, así que
+    // tiene que mostrarlos.
+    expect(puts.textContent).not.toContain('Sin datos');
+    expect(puts.querySelectorAll('tbody tr').length).toBeGreaterThan(0);
   });
 
   it('no muestra el filtro cuando no hay grupos', () => {
@@ -203,4 +210,85 @@ describe('GroupFilter', () => {
       <GroupFilter options={opciones} selectedGroupId="GGAL::OC" onChange={() => {}} />,
     )).not.toThrow();
   });
+});
+
+describe('OpcionesView: comportamiento', () => {
+  let puts;
+
+  beforeAll(async () => {
+    const reglaGgal = { GFG: { symbol: 'GGAL', prefixes: ['GFG'], strikeDefaultDecimals: 1 } };
+    const report = await loadReport('GGAL-PUTS.csv', {
+      prefixRules: reglaGgal,
+      prefixMap: reglaGgal,
+      expirations: { Octubre: { suffixes: ['O', 'OC', 'OCT'] } },
+      activeExpiration: 'Octubre',
+    });
+    puts = report.puts?.operations ?? [];
+  }, 60000);
+
+  afterEach(() => cleanup());
+
+  const base = (extra = {}) => ({
+    callsOperations: [],
+    putsOperations: puts,
+    groupOptions: [],
+    selectedGroupId: [],
+    strings: processorStrings,
+    onGroupChange: () => {},
+    onCopy: () => {},
+    onDownload: () => {},
+    averagingEnabled: false,
+    onToggleAveraging: () => {},
+    onStrikeExceptionSaved: () => {},
+    ...extra,
+  });
+
+  it('muestra valores reales en la tabla, no el estado vacío', () => {
+    montar(<OpcionesView {...base()} />);
+
+    const tabla = screen.getByTestId('processor-puts-table');
+    const texto = tabla.textContent;
+
+    // El bug que esto atrapa: pasarle operaciones crudas en vez de
+    // consolidadas hace que la tabla renderice "Sin datos para mostrar".
+    expect(texto).not.toContain('Sin datos');
+
+    // Y los valores salen formateados: strike con separador y neto con signo.
+    expect(texto).toMatch(/\d{1,3}[.,]\d{3}/);
+    expect(texto).toMatch(/[+-]/);
+  });
+
+  it('pide promediar al accionar el switch', async () => {
+    const usuario = userEvent.setup();
+    const onToggleAveraging = vi.fn();
+    montar(<OpcionesView {...base({ onToggleAveraging })} />);
+
+    const vista = screen.getByTestId('processor-puts-table-averaging-switch');
+    await usuario.click(vista.querySelector('input'));
+
+    expect(onToggleAveraging).toHaveBeenCalledWith(true);
+  }, 20000);
+
+  it('refleja el estado de promediado que recibe', () => {
+    montar(<OpcionesView {...base({ averagingEnabled: true })} />);
+
+    const vista = screen.getByTestId('processor-puts-table-averaging-switch');
+    expect(vista.querySelector('input')).toBeChecked();
+  });
+
+  it('avisa el grupo elegido al filtrar', async () => {
+    const usuario = userEvent.setup();
+    const onGroupChange = vi.fn();
+    montar(<OpcionesView {...base({
+      groupOptions: [
+        { id: ALL_GROUP_ID, label: 'Todos' },
+        { id: 'GGAL::OC', label: 'GGAL Octubre' },
+      ],
+      onGroupChange,
+    })} />);
+
+    await usuario.click(screen.getByText('GGAL Octubre'));
+
+    expect(onGroupChange).toHaveBeenCalledWith(['GGAL::OC']);
+  }, 20000);
 });
