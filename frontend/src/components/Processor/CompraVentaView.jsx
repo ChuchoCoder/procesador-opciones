@@ -495,7 +495,7 @@ const BuySellTable = ({
                     }}
                   >
                     {serviceCaucionBreakdown?.source?.startsWith('repo') ? (
-                      <TooltipRepoFees breakdown={serviceCaucionBreakdown} strings={strings}>
+                      <TooltipRepoFees breakdown={serviceCaucionBreakdown}>
                         <Typography variant="body2" component="span" sx={{ fontWeight: 'inherit', color: 'inherit' }}>
                           {formatNetTotal(netTotal, row.side)}
                         </Typography>
@@ -506,7 +506,6 @@ const BuySellTable = ({
                         grossNotional={row.grossNotional}
                         netTotal={netTotal}
                         totalQuantity={row.quantity}
-                        strings={strings}
                       >
                         <Typography variant="body2" component="span" sx={{ fontWeight: 'inherit', color: 'inherit' }}>
                           {formatNetTotal(netTotal, row.side)}

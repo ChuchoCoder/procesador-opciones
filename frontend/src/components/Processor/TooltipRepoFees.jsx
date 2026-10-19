@@ -1,5 +1,9 @@
 import { useEffect } from 'react';
 import { formatMonedaConDecimales } from '../../services/formato.js';
+// Importa su propia slice en lugar de recibirla: venía recibiendo
+// `strings.processor`, donde `repo` no existe, así que `strings?.repo?.tooltip`
+// era siempre undefined y todas las etiquetas caían al literal hardcodeado.
+import todosLosStrings from '../../strings/es-AR.js';
 import Box from '@mui/material/Box';
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
@@ -132,7 +136,8 @@ const buildSuccessTooltip = (breakdown, strings) => {
   );
 };
 
-const TooltipRepoFees = ({ breakdown, strings, children }) => {
+const TooltipRepoFees = ({ breakdown, children }) => {
+  const strings = todosLosStrings;
   useEffect(() => {
     if (breakdown?.status === 'error' && breakdown?.source === 'repo-config-error') {
       tooltipLogger.warn('Repo tooltip rendering configuration warning', {

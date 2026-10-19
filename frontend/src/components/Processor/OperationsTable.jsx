@@ -268,7 +268,7 @@ const OperationsTable = ({
                   >
                     <Stack direction="row" alignItems="center" justifyContent="flex-end">
                       <span>{formatDecimal(operation.strike)}</span>
-                      <AddStrikeExceptionButton operation={operation} strings={strings} onSaved={onStrikeExceptionSaved} />
+                      <AddStrikeExceptionButton operation={operation} onSaved={onStrikeExceptionSaved} />
                     </Stack>
                   </TableCell>
                   <TableCell align="right">{formatDecimal(operation.averagePrice)}</TableCell>
@@ -284,7 +284,6 @@ const OperationsTable = ({
                       grossNotional={grossNotional}
                       netTotal={netTotal}
                       totalQuantity={quantityValue}
-                      strings={strings}
                     >
                       <Typography variant="body2" component="span" sx={{ fontWeight: 'inherit', color: 'inherit' }}>
                         {formatNetTotal(netTotal, quantityValue)}

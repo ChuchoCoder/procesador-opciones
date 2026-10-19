@@ -3,6 +3,9 @@ import Typography from '@mui/material/Typography';
 import Tooltip from '@mui/material/Tooltip';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import { adaptFeeBreakdownForTooltip } from '../../services/fees/tooltip-adapter.js';
+// Recibía `strings.processor` y leía `strings.feeTooltipLabels`, que en realidad
+// vive en `processor.tables.feeTooltipLabels`: siempre undefined.
+import todosLosStrings from '../../strings/es-AR.js';
 
 /**
  * FeeTooltip - Displays fee breakdown tooltip on hover
@@ -14,7 +17,8 @@ import { adaptFeeBreakdownForTooltip } from '../../services/fees/tooltip-adapter
  * @param {object} props.strings - localized strings
  * @param {React.ReactNode} props.children - trigger element (usually fee amount cell content)
  */
-const FeeTooltip = ({ feeBreakdown, grossNotional, netTotal, totalQuantity, strings, children }) => {
+const FeeTooltip = ({ feeBreakdown, grossNotional, netTotal, totalQuantity, children }) => {
+  const strings = { feeTooltipLabels: todosLosStrings.processor.tables.feeTooltipLabels };
   if (!feeBreakdown || feeBreakdown.source === 'placeholder') {
     // Caucion placeholder tooltip
     return (
