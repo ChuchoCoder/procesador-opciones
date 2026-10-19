@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
 
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
@@ -38,6 +38,14 @@ import {
 } from '../../services/clasificacion-instrumentos.js';
 import { computeScopedData } from '../../services/alcance-reporte.js';
 import { FUENTES, filtrarPorFuente } from '../../services/operacion.js';
+import {
+  EVENTOS,
+  FASES,
+  debeProcesar,
+  esperaSync,
+  estadoInicial as estadoProcesamientoInicial,
+  reducirProcesamiento,
+} from '../../services/maquina-procesamiento.js';
 import {
   elegirPreviewInicial,
   fusionarOperacionesCsv,
@@ -98,9 +106,13 @@ const ProcessorScreen = () => {
   } = useConfig();
 
   const [selectedFile, setSelectedFile] = useState(null);
-  const [selectedDataSource, setSelectedDataSource] = useState(null); // { type: 'csv' | 'broker', file?, name }
+  // El ciclo de procesamiento es una máquina de estados explícita: antes
+  // estaba repartido entre `report === null` como comando, `pendingRefreshRef`
+  // y `lastSyncTimestampRef`.
+  const [estadoProc, despachar] = useReducer(reducirProcesamiento, estadoProcesamientoInicial);
+  const selectedDataSource = estadoProc.fuente;
   const [report, setReport] = useState(null);
-  const [isProcessing, setIsProcessing] = useState(false);
+  const isProcessing = estadoProc.fase === FASES.PROCESANDO;
   const [processingError, setProcessingError] = useState(null);
   const [warningCodes, setWarningCodes] = useState([]);
   const [activePreview, setActivePreview] = useState(CLIPBOARD_SCOPES.CALLS);
@@ -184,7 +196,7 @@ const ProcessorScreen = () => {
         return;
       }
 
-      setIsProcessing(true);
+      despachar({ tipo: EVENTOS.PROCESAMIENTO_INICIADO });
       setProcessingError(null);
       // Don't clear actionFeedback during auto-reprocessing - preserve broker sync notifications
       // setActionFeedback(null);
@@ -205,6 +217,7 @@ const ProcessorScreen = () => {
         });
 
         setReport(result);
+        despachar({ tipo: EVENTOS.PROCESAMIENTO_OK });
         setWarningCodes(result.summary.warnings ?? []);
         
         if (fileOrDataSource.type === 'csv' && typeof setOperations === 'function') {
@@ -225,10 +238,8 @@ const ProcessorScreen = () => {
         removeItem(storageKeys.lastReport);
         setProcessingError(err?.message ?? processorStrings.errors.processingFailed);
         // Clear the data source to prevent infinite loop when auto-processing fails
-        setSelectedDataSource(null);
+        despachar({ tipo: EVENTOS.PROCESAMIENTO_FALLIDO });
         setSelectedFile(null);
-      } finally {
-        setIsProcessing(false);
       }
     },
     [
@@ -433,27 +444,28 @@ const ProcessorScreen = () => {
 
   const handleFileSelected = (file) => {
     setSelectedFile(file);
-    // Add timestamp to ensure each file selection creates a unique data source object
-    // This guarantees the auto-process effect will detect the change
-    setSelectedDataSource(file ? { 
-      type: 'csv', 
-      file, 
-      name: file.name,
-      timestamp: Date.now() // Ensure unique object reference
-    } : null);
+    despachar({
+      tipo: EVENTOS.FUENTE_SELECCIONADA,
+      fuente: file ? { type: 'csv', file, name: file.name } : null,
+    });
   setProcessingError(null);
   // Clear any visible toasts when selecting a new file
   dismissAllToasts();
     setWarningCodes([]);
     setActivePreview(CLIPBOARD_SCOPES.CALLS);
     resetGroupSelections();
-    // Always clear the report when selecting a new file (even if not null)
-    // This ensures the auto-process effect will trigger
     setReport(null);
     if (!file) {
       removeItem(storageKeys.lastReport);
     }
   };
+
+  const construirFuenteBroker = useCallback((operaciones) => ({
+    type: 'broker',
+    data: operaciones,
+    name: `Broker-${brokerAuth?.accountId || 'Unknown'}`,
+    timestamp: Date.now(),
+  }), [brokerAuth?.accountId]);
 
   const handleBrokerDataSelected = useCallback(() => {
     if (!isAuthenticated || !syncedOperations || syncedOperations.length === 0) {
@@ -463,15 +475,10 @@ const ProcessorScreen = () => {
     // Filter to only broker operations
     const brokerOnlyOperations = filtrarPorFuente(syncedOperations, FUENTES.BROKER);
     
-    const dataSource = {
-      type: 'broker',
-      data: brokerOnlyOperations,
-      name: `Broker-${brokerAuth?.accountId || 'Unknown'}`,
-      timestamp: Date.now(), // Ensure unique object reference for re-processing
-    };
-    
+    const dataSource = construirFuenteBroker(brokerOnlyOperations);
+
     setSelectedFile(null); // Clear CSV file
-    setSelectedDataSource(dataSource);
+    despachar({ tipo: EVENTOS.FUENTE_SELECCIONADA, fuente: dataSource });
     setProcessingError(null);
     // Don't clear actionFeedback here - let success/error messages from sync show
     // setActionFeedback(null);
@@ -479,10 +486,8 @@ const ProcessorScreen = () => {
     setActivePreview(CLIPBOARD_SCOPES.CALLS);
     resetGroupSelections();
     setReport(null);
-  }, [isAuthenticated, syncedOperations, brokerAuth, resetGroupSelections]);
+  }, [isAuthenticated, syncedOperations, brokerAuth, resetGroupSelections, construirFuenteBroker]);
 
-  const lastSyncTimestampRef = useRef(null);
-  const pendingRefreshRef = useRef(false);
 
   const handleBrokerRefresh = useCallback(async () => {
     if (!isAuthenticated || syncInProgress) {
@@ -497,16 +502,11 @@ const ProcessorScreen = () => {
       syncedOpsCount: syncedOperations?.length,
     });
     
-    // Clear report if viewing broker data to avoid showing stale data during refresh
+    // Mirando datos del broker, se suspende el procesamiento hasta que la
+    // sincronización traiga operaciones nuevas.
     if (wasViewingBrokerData) {
       setReport(null);
-    }
-    
-    // Mark that we're expecting new operations
-    if (wasViewingBrokerData) {
-      pendingRefreshRef.current = true;
-      lastSyncTimestampRef.current = sync?.lastSyncTimestamp;
-      console.log('[ProcessorScreen] Set pendingRefresh=true, lastTimestamp:', lastSyncTimestampRef.current);
+      despachar({ tipo: EVENTOS.REFRESH_PEDIDO, timestamp: sync?.lastSyncTimestamp });
     }
     
     const result = await triggerSync({ authOverride: brokerAuth, mode: 'refresh', brokerApiUrl });
@@ -520,53 +520,27 @@ const ProcessorScreen = () => {
     return result;
   }, [isAuthenticated, syncInProgress, triggerSync, brokerAuth, brokerApiUrl, selectedDataSource?.type, sync?.lastSyncTimestamp, syncedOperations]);
 
-  // Effect to re-process broker data when operations are updated after a refresh
+  // Cuando la sincronización termina con un timestamp nuevo, la máquina
+  // vuelve a PENDIENTE con la fuente del broker renovada.
   useEffect(() => {
-    if (!pendingRefreshRef.current) {
+    if (!esperaSync(estadoProc) || syncInProgress) {
       return;
     }
-    
-    // CRITICAL: Only trigger when sync is NOT in progress to avoid multiple re-renders
-    // Wait for sync to fully complete before re-processing
-    if (syncInProgress) {
-      return;
-    }
-    
-    // Check if sync timestamp has changed (indicating sync completed successfully)
-    const currentSyncTimestamp = sync?.lastSyncTimestamp;
-    
-    console.log('[ProcessorScreen] Refresh effect check:', {
-      pendingRefresh: pendingRefreshRef.current,
-      currentTimestamp: currentSyncTimestamp,
-      lastTimestamp: lastSyncTimestampRef.current,
-      syncInProgress,
-      timestampChanged: currentSyncTimestamp !== lastSyncTimestampRef.current,
-    });
-    
-    // Only trigger re-process if:
-    // 1. Sync is complete (checked above)
-    // 2. Timestamp has changed (indicating successful sync)
-    if (currentSyncTimestamp && currentSyncTimestamp !== lastSyncTimestampRef.current) {
-      console.log('[ProcessorScreen] Triggering re-process after sync completion');
-      pendingRefreshRef.current = false;
-      lastSyncTimestampRef.current = null;
-      
-      // Re-trigger broker data selection with updated operations
-      handleBrokerDataSelected();
-    }
-  }, [sync?.lastSyncTimestamp, handleBrokerDataSelected, syncInProgress]);
 
-  // Auto-process when a data source is selected
+    despachar({
+      tipo: EVENTOS.SYNC_TERMINADO,
+      timestamp: sync?.lastSyncTimestamp,
+      fuente: construirFuenteBroker(filtrarPorFuente(syncedOperations, FUENTES.BROKER)),
+    });
+  }, [estadoProc, syncInProgress, sync?.lastSyncTimestamp, syncedOperations, construirFuenteBroker]);
+
+  // Procesar es responsabilidad de una sola fase, así que el efecto ya no
+  // tiene que deducirla de `!report && !isProcessing` ni mirar refs ajenos.
   useEffect(() => {
-    // Skip auto-processing if we have a pending refresh - let the refresh effect handle it
-    if (pendingRefreshRef.current) {
-      return;
+    if (debeProcesar(estadoProc)) {
+      runProcessing(estadoProc.fuente);
     }
-    
-    if (selectedDataSource && !report && !isProcessing) {
-      runProcessing(selectedDataSource);
-    }
-  }, [selectedDataSource, report, isProcessing, runProcessing]);
+  }, [estadoProc, runProcessing]);
 
   const handleToggleAveraging = async (nextValue) => {
     setAveraging(nextValue);
@@ -1210,7 +1184,7 @@ const ProcessorScreen = () => {
                 activeTab={activeOperationType}
                 onTabChange={handleOperationTypeChange}
                 onClose={() => {
-                  setSelectedDataSource(null);
+                  despachar({ tipo: EVENTOS.LIMPIADO });
                   setSelectedFile(null);
                 }}
                 fileName={selectedDataSource?.name || selectedFile?.name}
