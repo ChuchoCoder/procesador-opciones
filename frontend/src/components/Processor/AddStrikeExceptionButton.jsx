@@ -1,4 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
+
+import todosLosStrings from '../../strings/es-AR.js';
 import IconButton from '@mui/material/IconButton';
 import Tooltip from '@mui/material/Tooltip';
 import Dialog from '@mui/material/Dialog';
@@ -25,9 +27,8 @@ import { showToast } from '../../services/toastService.js';
  * 
  * @param {Object} props
  * @param {Object} props.operation - Operation object with symbol, expiration, strike, and metadata
- * @param {Object} props.strings - Localization strings
  */
-export default function AddStrikeExceptionButton({ operation, strings, onSaved }) {
+export default function AddStrikeExceptionButton({ operation, onSaved }) {
   const [open, setOpen] = useState(false);
   const [rawToken, setRawToken] = useState('');
   const [formatted, setFormatted] = useState('');
@@ -36,7 +37,8 @@ export default function AddStrikeExceptionButton({ operation, strings, onSaved }
   const [error, setError] = useState('');
   const [hasException, setHasException] = useState(false);
 
-  const s = strings?.addStrikeException || {};
+  // Importa su propia slice en lugar de que la encadenen 4 componentes.
+  const s = todosLosStrings.processor?.addStrikeException || {};
 
   // Check if this strike already has an exception configured
   useEffect(() => {
