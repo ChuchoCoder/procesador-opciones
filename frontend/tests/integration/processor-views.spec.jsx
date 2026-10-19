@@ -16,8 +16,7 @@ import ArbitrajesView from '../../src/components/Processor/ArbitrajesView.jsx';
 import ReconciliationView from '../../src/components/Processor/ReconciliationView.jsx';
 import strings from '../../src/strings/es-AR.js';
 import theme from '../../src/app/theme.js';
-import { loadEnrichedOperations } from './helpers/arbitrage-pipeline.js';
-import { FUENTES, filtrarPorFuente } from '../../src/services/operacion.js';
+import { loadEnrichedOperations, loadReport } from './helpers/arbitrage-pipeline.js';
 
 const processorStrings = strings.processor;
 
@@ -40,7 +39,7 @@ describe('vistas del Procesador', () => {
   afterEach(() => cleanup());
 
   describe('CompraVentaView', () => {
-    it('renderiza las tablas de compras y ventas con operaciones reales', () => {
+    it('muestra filas con valores reales, no el estado vacío', () => {
       montar(
         <CompraVentaView
           operations={operaciones}
@@ -50,8 +49,21 @@ describe('vistas del Procesador', () => {
         />,
       );
 
-      expect(screen.getByTestId('processor-buy-table')).toBeTruthy();
+      const compras = screen.getByTestId('processor-buy-table');
       expect(screen.getByTestId('processor-sell-table')).toBeTruthy();
+
+      // No alcanza con que exista la tabla: tiene que mostrar operaciones.
+      expect(compras.textContent).not.toContain('Sin datos');
+      const filas = compras.querySelectorAll('tbody tr');
+      expect(filas.length).toBeGreaterThan(1);
+
+      // Cada fila trae símbolo, venue, cantidad, precio y neto.
+      const celdas = [...filas[0].querySelectorAll('td')].map((c) => c.textContent.trim());
+      expect(celdas.length).toBeGreaterThanOrEqual(5);
+      expect(celdas[0]).toBeTruthy();
+      expect(['CI', '24HS']).toContain(celdas[1]);
+      // El neto de una compra es negativo.
+      expect(celdas[celdas.length - 1]).toMatch(/^-/);
     });
 
     it('no explota sin operaciones', () => {
@@ -86,6 +98,16 @@ describe('vistas del Procesador', () => {
         },
         { timeout: 20000 },
       );
+
+      // Y la tabla tiene resultados de verdad: instrumento, plazo y P&L.
+      const tabla = screen.getByRole('table');
+      await waitFor(() => {
+        expect(tabla.querySelectorAll('tbody tr').length).toBeGreaterThan(0);
+      }, { timeout: 20000 });
+
+      expect(tabla.textContent).toMatch(/S31O5|D31O5|TX26/);
+      // Montos con separador de miles y símbolo de moneda.
+      expect(tabla.textContent).toMatch(/ARS/);
     }, 40000);
 
     it('no explota sin operaciones', async () => {
@@ -99,68 +121,90 @@ describe('vistas del Procesador', () => {
   });
 
   describe('ReconciliationView', () => {
-    /** La conciliación necesita las dos fuentes; el pipeline marca todo como csv. */
-    const dosFuentes = () => {
-      const csv = filtrarPorFuente(operaciones, FUENTES.CSV).slice(0, 20);
-      const broker = csv.slice(0, 10).map((op) => ({ ...op, source: FUENTES.BROKER }));
-      return { csv, broker };
-    };
+    let csvOps;
+    let brokerOps;
+
+    beforeAll(async () => {
+      // La conciliación consume las operaciones NORMALIZADAS —las que tienen
+      // `order_id`, `action` y `tradeTimestamp`—, no las de `report.operations`.
+      // Es lo que le pasa ProcessorScreen vía `fusionarOperacionesCsv`.
+      const report = await loadReport('Arbitraje-Plazos.csv');
+      const porOrden = new Map();
+      (report.normalizedOperations ?? []).forEach((op) => {
+        if (!porOrden.has(op.order_id)) porOrden.set(op.order_id, []);
+        porOrden.get(op.order_id).push(op);
+      });
+
+      // Órdenes completas: la conciliación colapsa los fills por order_id, así
+      // que pasarle una porción de una orden da cantidades que no coinciden.
+      const ordenes = [...porOrden.keys()].slice(0, 6);
+      csvOps = ordenes.flatMap((id) => porOrden.get(id));
+      // El broker vio las mismas órdenes salvo la última: eso deja una ausente.
+      brokerOps = ordenes.slice(0, 5)
+        .flatMap((id) => porOrden.get(id))
+        .map((op) => ({ ...op, source: 'broker' }));
+    }, 60000);
+
+    const props = () => ({
+      strings: processorStrings,
+      csvOperations: csvOps,
+      brokerOperations: brokerOps,
+      ...propsFiltro,
+    });
 
     it('pide las dos fuentes antes de poder conciliar', () => {
       montar(
         <ReconciliationView
           strings={processorStrings}
-          csvOperations={filtrarPorFuente(operaciones, FUENTES.CSV).slice(0, 5)}
+          csvOperations={csvOps}
           brokerOperations={[]}
           {...propsFiltro}
         />,
       );
-      // Con una sola fuente no hay nada que conciliar: estado vacío, sin pestañas.
       expect(screen.queryByTestId('reconciliation-tab-matched')).toBeNull();
       expect(screen.getByText(processorStrings.reconciliation.emptyNeedsBothSources)).toBeTruthy();
     });
 
-    it('muestra las tres pestañas con operaciones de ambas fuentes', () => {
-      const { csv, broker } = dosFuentes();
-      montar(
-        <ReconciliationView
-          strings={processorStrings}
-          csvOperations={csv}
-          brokerOperations={broker}
-          {...propsFiltro}
-        />,
-      );
+    it('muestra filas en la pestaña de coincidentes', () => {
+      montar(<ReconciliationView {...props()} />);
 
-      expect(screen.getByTestId('reconciliation-tab-matched')).toBeTruthy();
-      expect(screen.getByTestId('reconciliation-tab-mismatched')).toBeTruthy();
-      expect(screen.getByTestId('reconciliation-tab-absent')).toBeTruthy();
+      const tabla = screen.getByTestId('reconciliation-matched-table');
+      expect(tabla.querySelectorAll('tbody tr').length).toBeGreaterThan(0);
     });
 
-    it('cambia de pestaña al clickear', async () => {
+    it('muestra filas en la pestaña de diferencias', async () => {
       const usuario = userEvent.setup();
-      const { csv, broker } = dosFuentes();
-      montar(
-        <ReconciliationView
-          strings={processorStrings}
-          csvOperations={csv}
-          brokerOperations={broker}
-          {...propsFiltro}
-        />,
-      );
+      montar(<ReconciliationView {...props()} />);
 
-      const pestanaCoincidentes = screen.getByTestId('reconciliation-tab-matched');
-      const pestanaAusentes = screen.getByTestId('reconciliation-tab-absent');
-
-      // Arranca en "coincidentes".
-      expect(pestanaCoincidentes).toHaveAttribute('aria-selected', 'true');
-      expect(pestanaAusentes).toHaveAttribute('aria-selected', 'false');
-
-      await usuario.click(pestanaAusentes);
+      await usuario.click(screen.getByTestId('reconciliation-tab-mismatched'));
 
       await waitFor(() => {
-        expect(pestanaAusentes).toHaveAttribute('aria-selected', 'true');
+        const tabla = screen.getByTestId('reconciliation-mismatched-table');
+        expect(tabla.querySelectorAll('tbody tr').length).toBeGreaterThan(0);
       });
-      expect(pestanaCoincidentes).toHaveAttribute('aria-selected', 'false');
-    }, 20000);
+    }, 30000);
+
+    it('muestra la orden que el broker no vio', async () => {
+      const usuario = userEvent.setup();
+      montar(<ReconciliationView {...props()} />);
+
+      await usuario.click(screen.getByTestId('reconciliation-tab-absent'));
+
+      await waitFor(() => {
+        const tabla = screen.getByTestId('reconciliation-absent-table');
+        expect(tabla.querySelectorAll('tbody tr').length).toBeGreaterThan(0);
+      });
+    }, 30000);
+
+    it('resume el resultado en los chips', () => {
+      montar(<ReconciliationView {...props()} />);
+
+      const resumen = processorStrings.reconciliation;
+      const conEtiqueta = (etiqueta) => screen.getAllByText(
+        (contenido) => contenido.startsWith(`${etiqueta}: `),
+      );
+      expect(conEtiqueta(resumen.summaryMatched).length).toBeGreaterThan(0);
+      expect(conEtiqueta(resumen.summaryAbsentBroker).length).toBeGreaterThan(0);
+    });
   });
 });
