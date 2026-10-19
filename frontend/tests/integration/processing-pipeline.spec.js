@@ -501,3 +501,36 @@ describe('Processing Pipeline - Data Source Decoupling', () => {
     );
   });
 });
+
+describe('re-derivar sin re-parsear', () => {
+  it(
+    'produce el mismo reporte reusando las filas ya parseadas',
+    async () => {
+      const csvFile = await loadCsvFile('GGAL-PUTS.csv');
+      const configuration = createTestConfiguration();
+
+      const primera = await processOperations({
+        dataSource: new CsvDataSource(),
+        file: csvFile,
+        fileName: 'GGAL-PUTS.csv',
+        configuration,
+      });
+
+      expect(primera.filasParseadas).toBeDefined();
+      expect(Array.isArray(primera.filasParseadas.rows)).toBe(true);
+      expect(primera.filasParseadas.rows.length).toBeGreaterThan(0);
+
+      // Sin archivo ni dataSource: si tocara parsear, fallaría.
+      const rederivada = await processOperations({
+        fileName: 'GGAL-PUTS.csv',
+        configuration,
+        filasYaParseadas: primera.filasParseadas,
+      });
+
+      expect(rederivada.operations).toHaveLength(primera.operations.length);
+      expect(rederivada.summary.totalOperations).toBe(primera.summary.totalOperations);
+      expect(rederivada.groups).toHaveLength(primera.groups.length);
+    },
+    TEST_TIMEOUT,
+  );
+});

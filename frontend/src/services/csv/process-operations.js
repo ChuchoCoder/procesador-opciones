@@ -1000,12 +1000,21 @@ const sanitizeConfiguration = (configuration) => {
   return configuration;
 };
 
+/**
+ * @param {object} entrada
+ * @param {*} [entrada.filasYaParseadas] - Filas crudas de una corrida anterior.
+ *   Cuando se pasan, se saltean el parseo, la detección de formato y la
+ *   validación: el reporte se re-deriva desde el enriquecimiento en adelante.
+ *   Sirve para re-derivar tras cambiar configuración —por ejemplo una excepción
+ *   de strike— sin volver a leer ni re-parsear el archivo.
+ */
 export const processOperations = async ({
   file,
   configuration,
   fileName,
   parserConfig,
   dataSource,
+  filasYaParseadas = null,
 } = {}) => {
   const activeConfiguration = sanitizeConfiguration(configuration);
   
@@ -1019,11 +1028,13 @@ export const processOperations = async ({
   const startTime = getNow();
 
   const resolvedFileName = resolveFileName({ fileName, file });
-  const { rows: parsedRows, meta: parseMeta } = await resolveRows({ 
-    file, 
-    parserConfig,
-    dataSource,
-  });
+  const { rows: parsedRows, meta: parseMeta } = filasYaParseadas
+    ? filasYaParseadas
+    : await resolveRows({
+      file,
+      parserConfig,
+      dataSource,
+    });
 
   const reportFormat = detectOperationsReportFormat(parsedRows);
   const processingRows = reportFormat === 'historical'
@@ -1221,5 +1232,7 @@ export const processOperations = async ({
       parse: parseMeta,
       reportFormat,
     },
+    // Se devuelven para poder re-derivar sin re-parsear (ver `filasYaParseadas`).
+    filasParseadas: { rows: parsedRows, meta: parseMeta },
   };
 };
