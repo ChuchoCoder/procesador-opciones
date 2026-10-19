@@ -1,4 +1,5 @@
 import Tabs from '@mui/material/Tabs';
+import todosLosStrings from '../../strings/es-AR.js';
 import Tab from '@mui/material/Tab';
 import Box from '@mui/material/Box';
 import IconButton from '@mui/material/IconButton';
@@ -12,7 +13,7 @@ import FactCheckIcon from '@mui/icons-material/FactCheck';
 import { OPERATION_TYPES } from './operation-types.js';
 
 const OperationTypeTabs = ({ 
-  strings, 
+  strings = todosLosStrings.processor, 
   activeTab, 
   onTabChange, 
   onClose, 

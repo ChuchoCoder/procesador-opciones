@@ -1,4 +1,5 @@
 import Box from '@mui/material/Box';
+import todosLosStrings from '../../strings/es-AR.js';
 import Stack from '@mui/material/Stack';
 
 import GroupFilter from './GroupFilter.jsx';
@@ -14,7 +15,7 @@ const OpcionesView = ({
   putsOperations,
   groupOptions,
   selectedGroupId,
-  strings,
+  strings = todosLosStrings.processor,
   onGroupChange,
   onCopy,
   onDownload,
@@ -53,7 +54,6 @@ const OpcionesView = ({
           <OperationsTable
             title={strings?.tables?.callsTitle ?? 'Operaciones CALLS'}
             operations={callsOperations}
-            strings={strings}
             testId="processor-calls-table"
             onCopy={() => onCopy(CLIPBOARD_SCOPES.CALLS)}
             onDownload={() => onDownload(EXPORT_SCOPES.CALLS)}
@@ -68,7 +68,6 @@ const OpcionesView = ({
           <OperationsTable
             title={strings?.tables?.putsTitle ?? 'Operaciones PUTS'}
             operations={putsOperations}
-            strings={strings}
             testId="processor-puts-table"
             onCopy={() => onCopy(CLIPBOARD_SCOPES.PUTS)}
             onDownload={() => onDownload(EXPORT_SCOPES.PUTS)}

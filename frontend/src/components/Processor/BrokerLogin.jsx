@@ -1,5 +1,6 @@
 // BrokerLogin.jsx - Broker authentication UI component (T017)
 import { useState, useEffect } from 'react';
+import todosLosStrings from '../../strings/es-AR.js';
 
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
@@ -33,7 +34,7 @@ const CUSTOM_URL_VALUE = '__custom__';
  * @param {boolean} props.disabled - True to disable form (e.g., during sync)
  * @param {string} props.defaultApiUrl - Default API URL from config
  */
-const BrokerLogin = ({ strings, onLogin, isLoading = false, error = null, disabled = false, defaultApiUrl = 'https://api.remarkets.primary.com.ar' }) => {
+const BrokerLogin = ({ strings = todosLosStrings, onLogin, isLoading = false, error = null, disabled = false, defaultApiUrl = 'https://api.remarkets.primary.com.ar' }) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   

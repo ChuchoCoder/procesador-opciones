@@ -1,4 +1,5 @@
 import Box from '@mui/material/Box';
+import todosLosStrings from '../../strings/es-AR.js';
 import Paper from '@mui/material/Paper';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
@@ -7,7 +8,7 @@ import UploadFileIcon from '@mui/icons-material/UploadFile';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import InboxOutlinedIcon from '@mui/icons-material/InboxOutlined';
 
-const EmptyState = ({ strings, onSelectFile }) => {
+const EmptyState = ({ strings = todosLosStrings.processor, onSelectFile }) => {
   const handleFileSelection = (event) => {
     const file = event.target.files?.[0];
     if (file) {

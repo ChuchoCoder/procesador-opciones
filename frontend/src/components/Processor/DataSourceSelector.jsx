@@ -1,4 +1,5 @@
 import Alert from '@mui/material/Alert';
+import todosLosStrings from '../../strings/es-AR.js';
 import Box from '@mui/material/Box';
 import Divider from '@mui/material/Divider';
 import Grid from '@mui/material/Grid';
@@ -17,7 +18,7 @@ import BrokerLogin from './BrokerLogin.jsx';
  * Component that displays both CSV upload and Broker login options side by side
  */
 const DataSourceSelector = ({
-  strings,
+  strings = todosLosStrings,
   onSelectFile,
   onSelectBroker,
   onBrokerRefresh,
@@ -260,7 +261,6 @@ const DataSourceSelector = ({
 
                 {!isAuthenticated ? (
                   <BrokerLogin
-                    strings={strings}
                     onLogin={onBrokerLogin}
                     isLoading={isBrokerLoginLoading}
                     error={brokerLoginError}

@@ -1133,7 +1133,6 @@ const ProcessorScreen = () => {
         );
         return (
           <ReconciliationView
-            strings={processorStrings}
             groupOptions={reconciliationGroupOptions}
             selectedGroupId={selectedGroupId}
             onGroupChange={handleGroupChange}
@@ -1174,7 +1173,6 @@ const ProcessorScreen = () => {
           {!selectedDataSource ? (
             <>
               <DataSourceSelector
-                strings={strings}
                 onSelectFile={handleFileSelected}
                 onSelectBroker={handleBrokerDataSelected}
                 onBrokerRefresh={handleBrokerRefresh}
@@ -1194,7 +1192,6 @@ const ProcessorScreen = () => {
             <>
               {/* Operation Type Tabs */}
               <OperationTypeTabs
-                strings={processorStrings}
                 activeTab={activeOperationType}
                 onTabChange={handleOperationTypeChange}
                 onClose={() => {
@@ -1229,7 +1226,6 @@ const ProcessorScreen = () => {
                 }
                 fileMenuSlot={
                   <FileMenu
-                    strings={strings}
                     selectedFileName={null}
                     isProcessing={isProcessing}
                     onSelectFile={handleFileSelected}

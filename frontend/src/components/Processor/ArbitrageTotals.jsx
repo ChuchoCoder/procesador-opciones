@@ -4,6 +4,7 @@
  */
 
 import Box from '@mui/material/Box';
+import todosLosStrings from '../../strings/es-AR.js';
 import Paper from '@mui/material/Paper';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
@@ -24,7 +25,7 @@ function getTotalColor(value) {
 /**
  * ArbitrageTotals component
  */
-const ArbitrageTotals = ({ data = [], strings = {} }) => {
+const ArbitrageTotals = ({ data = [], strings = todosLosStrings.processor }) => {
   const arbitrageStrings = strings?.arbitrage || {};
   const totalsStrings = arbitrageStrings?.totals || {};
 

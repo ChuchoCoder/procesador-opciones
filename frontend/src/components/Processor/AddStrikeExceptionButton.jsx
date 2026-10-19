@@ -96,7 +96,6 @@ export default function AddStrikeExceptionButton({ operation, onSaved }) {
     };
 
     checkException();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [operation]);
 
   const handleOpen = () => {

@@ -1,4 +1,5 @@
 import { Fragment, useMemo, useState } from 'react';
+import todosLosStrings from '../../strings/es-AR.js';
 import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
 import Paper from '@mui/material/Paper';
@@ -300,7 +301,7 @@ const FLAT_HEADERS = {
 };
 
 const ReconciliationView = ({
-  strings,
+  strings = todosLosStrings.processor,
   csvOperations = [],
   brokerOperations = [],
   groupOptions = [],
