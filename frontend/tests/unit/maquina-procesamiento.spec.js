@@ -194,3 +194,39 @@ describe('maquina-procesamiento', () => {
     });
   });
 });
+
+describe('maquina-procesamiento: re-derivar', () => {
+  const csv = { type: 'csv', file: { name: 'Operaciones.csv' } };
+
+  it('vuelve a PENDIENTE conservando la fuente', () => {
+    const listo = [
+      { tipo: EVENTOS.FUENTE_SELECCIONADA, fuente: csv },
+      { tipo: EVENTOS.PROCESAMIENTO_INICIADO },
+      { tipo: EVENTOS.PROCESAMIENTO_OK },
+    ].reduce(reducirProcesamiento, estadoInicial);
+
+    const rederivando = reducirProcesamiento(listo, { tipo: EVENTOS.REDERIVAR });
+
+    expect(rederivando.fase).toBe(FASES.PENDIENTE);
+    expect(debeProcesar(rederivando)).toBe(true);
+    // Clave: no suelta la fuente, así que se re-deriva lo mismo.
+    expect(rederivando.fuente).toBe(csv);
+  });
+
+  it('no hace nada si no hay fuente', () => {
+    expect(reducirProcesamiento(estadoInicial, { tipo: EVENTOS.REDERIVAR }))
+      .toBe(estadoInicial);
+  });
+
+  it('no interrumpe una sync que se está esperando', () => {
+    const esperando = [
+      { tipo: EVENTOS.FUENTE_SELECCIONADA, fuente: { type: 'broker' } },
+      { tipo: EVENTOS.REFRESH_PEDIDO, timestamp: 100 },
+    ].reduce(reducirProcesamiento, estadoInicial);
+
+    const despues = reducirProcesamiento(esperando, { tipo: EVENTOS.REDERIVAR });
+    // Pasa a PENDIENTE, que es lo correcto: re-derivar es inmediato y no
+    // depende de la sync.
+    expect(despues.fase).toBe(FASES.PENDIENTE);
+  });
+});

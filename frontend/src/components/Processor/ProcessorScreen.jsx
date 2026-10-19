@@ -124,6 +124,9 @@ const ProcessorScreen = () => {
   const [brokerLoginError, setBrokerLoginError] = useState(null);
   const [isBrokerLoginLoading, setIsBrokerLoginLoading] = useState(false);
   const syncCancellationRef = useRef(null);
+  // Filas crudas de la última corrida, para re-derivar sin volver a parsear.
+  const filasParseadasRef = useRef(null);
+  const rederivarRef = useRef(false);
   const autoSyncTokenRef = useRef(null);
 
   const isAuthenticated = Boolean(brokerAuth?.token);
@@ -209,12 +212,18 @@ const ProcessorScreen = () => {
           brokerAccountId: brokerAuth?.accountId,
         });
         
+        const reusarFilas = rederivarRef.current ? filasParseadasRef.current : null;
+        rederivarRef.current = false;
+
         const result = await processOperations({
           dataSource,
           file,
           fileName,
           configuration: configurationPayload,
+          filasYaParseadas: reusarFilas,
         });
+
+        filasParseadasRef.current = result.filasParseadas ?? null;
 
         setReport(result);
         despachar({ tipo: EVENTOS.PROCESAMIENTO_OK });
@@ -1084,7 +1093,12 @@ const ProcessorScreen = () => {
             onDownload={handleDownload}
             averagingEnabled={useAveraging}
             onToggleAveraging={handleToggleAveraging}
-            onStrikeExceptionSaved={() => { if (selectedDataSource) runProcessing(selectedDataSource); }}
+            onStrikeExceptionSaved={() => {
+              // Las filas crudas no cambiaron: sólo la configuración de strikes.
+              // Se re-deriva reusándolas en lugar de releer y re-parsear.
+              rederivarRef.current = Boolean(filasParseadasRef.current);
+              despachar({ tipo: EVENTOS.REDERIVAR });
+            }}
           />
         );
 

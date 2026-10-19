@@ -52,6 +52,7 @@ export const EVENTOS = Object.freeze({
   PROCESAMIENTO_INICIADO: 'procesamiento-iniciado',
   PROCESAMIENTO_OK: 'procesamiento-ok',
   PROCESAMIENTO_FALLIDO: 'procesamiento-fallido',
+  REDERIVAR: 'rederivar',
   LIMPIADO: 'limpiado',
 });
 
@@ -142,6 +143,16 @@ export const reducirProcesamiento = (estado = estadoInicial, evento = {}) => {
       // Se suelta la fuente a propósito: si quedara seleccionada, el efecto de
       // auto-procesamiento volvería a dispararse en loop.
       return { fase: FASES.FALLIDO, fuente: null, esperandoSyncDesde: null };
+    }
+
+    case EVENTOS.REDERIVAR: {
+      // Cambió configuración que afecta a lo derivado (una excepción de strike),
+      // pero las filas crudas siguen siendo las mismas. Vuelve a PENDIENTE sin
+      // soltar la fuente, y el componente re-deriva reusando esas filas.
+      if (!estado.fuente) {
+        return estado;
+      }
+      return { ...estado, fase: FASES.PENDIENTE };
     }
 
     case EVENTOS.LIMPIADO: {
