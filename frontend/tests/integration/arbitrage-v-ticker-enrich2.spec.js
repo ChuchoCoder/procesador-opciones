@@ -1,46 +1,79 @@
 /**
- * Deep dive: what does enrichOperationRow do to V?
+ * El ticker V no se corrompe al pasar por `enrichOperationRow`.
+ *
+ * Compañero de `arbitrage-v-ticker-enrich3.spec.js`. Los dos eran sesiones de
+ * debug commiteadas como specs, con cero aserciones y todo `console.log`:
+ * `enrich3` investigaba el token y el strike, este el **símbolo**.
+ *
+ * La pregunta que perseguía sí vale un test. Cuando el regex de opciones
+ * matchea por accidente (`MERVXMEVV24HS`, la forma colapsada de la acción V a
+ * 24 horas), el código asigna el símbolo del token —`MERVXMEV`— antes de saber
+ * si el instrumento es una opción. La revisión marcó que la reparación existía
+ * en una sola de las tres ramas del gate de CfiCode.
+ *
+ * Para la V el CfiCode se conoce (`EMXXXX`, acción), así que cae en la rama que
+ * sí repara y el símbolo completo sobrevive. Esto lo fija.
  */
-import { describe, it, beforeAll } from 'vitest';
+/* eslint-env node */
+import { describe, it, expect, beforeAll } from 'vitest';
 import Papa from 'papaparse';
 import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
-import { dirname, join } from 'path';
+import { dirname, resolve } from 'node:path';
 
 import { normalizeOperationRows } from '../../src/services/csv/legacy-normalizer.js';
 import { validateAndFilterRows } from '../../src/services/csv/validators.js';
 import { enrichOperationRow } from '../../src/services/csv/process-operations.js';
 
-describe('V enrichOperationRow deep dive', () => {
-  let enriched;
+const dataDir = resolve(dirname(fileURLToPath(import.meta.url)), 'data');
+
+describe('ticker V: enrichOperationRow no corrompe el símbolo', () => {
+  let enriquecidas;
 
   beforeAll(async () => {
-    const csvContent = await readFile(join(dirname(fileURLToPath(import.meta.url)), 'data', 'arbitrage-V-ticker.csv'), 'utf-8');
-    const parsed = Papa.parse(csvContent, { header: true, skipEmptyLines: true, dynamicTyping: true });
-    const allRows = parsed.data.filter(row => row.symbol);
+    const contenido = await readFile(resolve(dataDir, 'arbitrage-V-ticker.csv'), 'utf-8');
+    const crudas = Papa.parse(contenido, {
+      header: true,
+      skipEmptyLines: true,
+      dynamicTyping: true,
+    }).data.filter((row) => row.symbol);
 
-    const { rows: normalized } = normalizeOperationRows(allRows, {});
-    const validated = validateAndFilterRows({ rows: normalized });
-    const vRows = validated.rows.filter(r => r.symbol?.includes(' - V '));
+    const { rows: normalizadas } = normalizeOperationRows(crudas, {});
+    const { rows: validadas } = validateAndFilterRows({ rows: normalizadas });
+    const filasV = validadas.filter((r) => String(r.symbol ?? '').includes(' - V '));
 
-    vRows.forEach((r, i) => {
-      console.log(`\n[Test] Row ${i} input: side=${r.side}, symbol="${r.symbol}", security_id="${r.security_id}", status="${r.status}"`);
-    });
+    expect(filasV.length).toBeGreaterThan(0);
+    enriquecidas = await Promise.all(filasV.map((row) => enrichOperationRow(row, {})));
+  }, 60000);
 
-    enriched = await Promise.all(vRows.map((row) => enrichOperationRow(row, {})));
-
-    enriched.forEach((e, i) => {
-      console.log(`[Test] Row ${i} output: symbol="${e.symbol}", expiration="${e.expiration}", strike=${e.strike}, type="${e.type}"`);
+  it('conserva el símbolo completo del reporte', () => {
+    enriquecidas.forEach((e) => {
+      // Sin la reparación quedaría el símbolo del token, `MERVXMEV`.
+      expect(e.symbol).toMatch(/^MERV - XMEV - V - /i);
+      expect(e.symbol).not.toBe('MERVXMEV');
     });
   });
 
-  it('should trace the symbol transformation', () => {
-    // Check which rows had symbol changed
-    enriched.forEach((e, i) => {
-      const symbolChanged = e.symbol !== 'MERV - XMEV - V - CI' && e.symbol !== 'MERV - XMEV - V - 24hs' && e.symbol !== 'MERV - XMEV - V - 24HS';
-      if (symbolChanged) {
-        console.log(`[TEST] Row ${i}: SYMBOL CHANGED from original to "${e.symbol}"`);
-      }
+  it('no la clasifica como opción', () => {
+    enriquecidas.forEach((e) => {
+      expect(e.type).not.toBe('CALL');
+      expect(e.type).not.toBe('PUT');
     });
+  });
+
+  it('no le inventa un strike', () => {
+    // Regresión de #32: el `24` de "24hs" se leía como strike.
+    enriquecidas.forEach((e) => {
+      expect(e.strike, `strike fantasma en ${e.symbol}`).toBeFalsy();
+    });
+  });
+
+  it('usa el venue como expiración, no una expiración de opción', () => {
+    const expiraciones = new Set(enriquecidas.map((e) => e.expiration));
+    expiraciones.forEach((exp) => {
+      expect(['CI', '24HS']).toContain(exp);
+    });
+    // Las dos puntas del arbitraje tienen que estar presentes.
+    expect(expiraciones.size).toBe(2);
   });
 });
