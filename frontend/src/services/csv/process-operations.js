@@ -588,8 +588,21 @@ export const enrichOperationRow = async (row = {}, configuration = {}) => {
 
   const normalizedSymbol = toUpperCase(symbol);
   const normalizedExpiration = expiration ? toUpperCase(expiration) : DEFAULT_EXPIRATION;
-  const normalizedStrike = Number.isFinite(strike) ? strike : null;
   const normalizedType = type === 'CALL' || type === 'PUT' ? type : 'UNKNOWN';
+
+  // Un strike sólo tiene sentido en una opción. Si el tipo quedó rechazado y el
+  // strike venía del token, era un falso positivo del regex y hay que soltarlo.
+  //
+  // El caso que lo motiva: `MERV - XMEV - V - 24hs` es la acción V a 24 horas,
+  // pero su forma colapsada `MERVXMEVV24HS` matchea OPTION_TOKEN_REGEX leyendo
+  // la `V` del ticker como marca de PUT y el `24` de "24hs" como strike. El gate
+  // de CfiCode rechaza el tipo (queda accionCedear), pero el strike 24 sobrevivía
+  // hasta la operación final.
+  //
+  // Un strike que venga de la propia fila (columna `strike` del reporte) se
+  // conserva: ahí no hay inferencia que pueda estar equivocada.
+  const strikeEsFalsoPositivo = normalizedType === 'UNKNOWN' && tokenFilledStrike;
+  const normalizedStrike = strikeEsFalsoPositivo || !Number.isFinite(strike) ? null : strike;
 
   const detectedFromToken =
     tokenFilledSymbol || tokenFilledExpiration || tokenFilledStrike || tokenFilledType;
