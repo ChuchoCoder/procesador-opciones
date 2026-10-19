@@ -5,7 +5,38 @@ import { mergeBrokerBatch, normalizeOperation, dedupeOperations } from './dedupe
 import { classifyError, shouldRetry, ERROR_CATEGORIES } from './error-taxonomy.js';
 import { retryWithBackoff, parseRetryAfter } from './retry-util.js';
 
-const DAILY_MODE = 'daily';
+export const DAILY_MODE = 'daily';
+
+/**
+ * La línea de base de operaciones con la que arranca una sincronización.
+ *
+ * La regla difiere según el modo, y es una decisión de dominio, no un detalle
+ * de la función de sync:
+ *
+ * - **daily**: se descartan **todas** las operaciones del broker y se conservan
+ *   sólo las de CSV. Cada jornada arranca de cero por el lado del broker.
+ * - **refresh**: se conserva todo, porque el dedupe incremental necesita las
+ *   operaciones previas para reconocer lo que ya estaba.
+ *
+ * Estaba inline dentro de `startDailySync`, y el spec que la cubría
+ * (`broker-sync-daily-mode`) no importaba nada de `src/`: re-escribía el filtro
+ * dentro del test y asserteaba sobre su propia copia. Esa copia afirmaba que en
+ * modo daily se conservaban las operaciones del broker de hoy, es decir lo
+ * contrario de lo que hace producción, y estaba en verde.
+ *
+ * @param {Array<object>} operaciones
+ * @param {'daily'|'refresh'} modo
+ * @returns {Array<object>}
+ */
+export const filtrarLineaDeBase = (operaciones = [], modo = DAILY_MODE) => {
+  const lista = Array.isArray(operaciones) ? operaciones : [];
+
+  if (modo === DAILY_MODE) {
+    return lista.filter((op) => op?.source === 'csv');
+  }
+
+  return lista;
+};
 const REFRESH_MODE = 'refresh';
 
 const isNumber = (value) => typeof value === 'number' && Number.isFinite(value);
@@ -111,9 +142,7 @@ export async function startDailySync({
   // - DAILY: Discard ALL broker ops (fresh start daily)
   // - REFRESH: Keep existing broker ops for deduplication (incremental)
   if (mode === DAILY_MODE) {
-    // DAILY: Discard all broker operations - start fresh
-    const csvOperations = baselineOperations.filter(op => op.source === 'csv');
-    baselineOperations = csvOperations;
+    baselineOperations = filtrarLineaDeBase(baselineOperations, DAILY_MODE);
     
     const afterCount = baselineOperations.length;
     const csvAfterCount = baselineOperations.length;
