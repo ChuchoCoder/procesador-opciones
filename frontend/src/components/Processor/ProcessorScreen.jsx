@@ -486,7 +486,7 @@ const ProcessorScreen = () => {
     setActivePreview(CLIPBOARD_SCOPES.CALLS);
     resetGroupSelections();
     setReport(null);
-  }, [isAuthenticated, syncedOperations, brokerAuth, resetGroupSelections, construirFuenteBroker]);
+  }, [isAuthenticated, syncedOperations, resetGroupSelections, construirFuenteBroker]);
 
 
   const handleBrokerRefresh = useCallback(async () => {

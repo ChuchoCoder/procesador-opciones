@@ -58,16 +58,3 @@ export function calculateFee(operation, effectiveRates) {
   };
 }
 
-/**
- * Calculates aggregated fee for consolidated operations.
- * Uses aggregated gross notional; recomputes components (not sum of rounded).
- * @param {number} aggregatedGrossNotional
- * @param {string} category - dominant/homogeneous category
- * @param {object} effectiveRates
- * @returns {object} same structure as calculateFee
- */
-export function aggregateFee(aggregatedGrossNotional, category, effectiveRates) {
-  // Treat as single operation with aggregated notional
-  const operation = { grossNotional: aggregatedGrossNotional, category };
-  return calculateFee(operation, effectiveRates);
-}
