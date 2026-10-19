@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import todosLosStrings from '../../strings/es-AR.js';
 import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
 import Paper from '@mui/material/Paper';
@@ -337,7 +338,7 @@ const buildRows = (operations = [], side = 'BUY', { expirationLabels } = {}) => 
 const BuySellTable = ({
   title,
   operations,
-  strings,
+  strings = todosLosStrings.processor,
   testId,
   averagingEnabled,
   onToggleAveraging,
@@ -590,7 +591,6 @@ const CompraVentaView = ({
         <BuySellTable
           title={strings?.tables?.buyTitle ?? 'Operaciones de Compra'}
           operations={processedBuys}
-          strings={strings}
           testId="processor-buy-table"
           averagingEnabled={averagingEnabled}
           onToggleAveraging={handleToggleAveraging}
@@ -601,7 +601,6 @@ const CompraVentaView = ({
         <BuySellTable
           title={strings?.tables?.sellTitle ?? 'Operaciones de Venta'}
           operations={processedSells}
-          strings={strings}
           testId="processor-sell-table"
           averagingEnabled={averagingEnabled}
           onToggleAveraging={handleToggleAveraging}

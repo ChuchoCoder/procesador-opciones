@@ -5,6 +5,7 @@
  */
 
 import { useState, useEffect, useMemo } from 'react';
+import todosLosStrings from '../../strings/es-AR.js';
 import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
 import CircularProgress from '@mui/material/CircularProgress';
@@ -93,7 +94,7 @@ const ArbitrajesView = ({
   operations = [],
   groupOptions,
   selectedGroupId,
-  strings,
+  strings = todosLosStrings.processor,
   onGroupChange,
   avgTNAByCurrency: avgTNAProp = null,
 }) => {
@@ -346,7 +347,7 @@ const ArbitrajesView = ({
               </Typography>
             </Box>
           ) : (
-            <ArbitrageTable data={tableData} strings={strings} />
+            <ArbitrageTable data={tableData} />
           )}
         </Box>
       </Box>

@@ -1,4 +1,5 @@
 import Paper from '@mui/material/Paper';
+import todosLosStrings from '../../strings/es-AR.js';
 import Stack from '@mui/material/Stack';
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
@@ -50,7 +51,7 @@ const calculateNetTotal = (grossNotional, feeAmount, totalQuantity) =>
 const OperationsTable = ({ 
   title, 
   operations, 
-  strings, 
+  strings = todosLosStrings.processor,
   testId, 
   onCopy, 
   onDownload,

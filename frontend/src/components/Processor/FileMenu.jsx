@@ -1,4 +1,5 @@
 import React, { useRef } from 'react';
+import todosLosStrings from '../../strings/es-AR.js';
 import IconButton from '@mui/material/IconButton';
 import Tooltip from '@mui/material/Tooltip';
 import UploadFileIcon from '@mui/icons-material/UploadFile';
@@ -9,7 +10,7 @@ import ClearIcon from '@mui/icons-material/Clear';
  * Opens native file dialog immediately on button click, then auto-processes after selection.
  */
 const FileMenu = ({
-  strings,
+  strings = todosLosStrings,
   selectedFileName,
   isProcessing,
   onSelectFile,

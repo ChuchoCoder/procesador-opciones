@@ -1,10 +1,11 @@
 import Paper from '@mui/material/Paper';
+import todosLosStrings from '../../strings/es-AR.js';
 import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
 import Typography from '@mui/material/Typography';
 
 const ProcessorActions = ({
-  strings,
+  strings = todosLosStrings.processor,
   disabled,
   hasCalls,
   hasPuts,

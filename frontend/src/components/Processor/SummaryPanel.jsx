@@ -1,4 +1,5 @@
 import Box from '@mui/material/Box';
+import todosLosStrings from '../../strings/es-AR.js';
 import Paper from '@mui/material/Paper';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
@@ -28,7 +29,7 @@ const SummaryMetric = ({ label, value, testId, icon, color = 'text.primary' }) =
   </Card>
 );
 
-const SummaryPanel = ({ summary, strings }) => {
+const SummaryPanel = ({ summary, strings = todosLosStrings.processor }) => {
   if (!summary) {
     return null;
   }

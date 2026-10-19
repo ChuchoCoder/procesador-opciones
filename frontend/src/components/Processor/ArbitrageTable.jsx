@@ -4,6 +4,7 @@
  */
 
 import { useState, useMemo, lazy, Suspense, memo } from 'react';
+import todosLosStrings from '../../strings/es-AR.js';
 import Box from '@mui/material/Box';
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
@@ -493,7 +494,7 @@ const ArbitrageRow = memo(function ArbitrageRow({ row, strings, expandedRows, on
 /**
  * ArbitrageTable component
  */
-const ArbitrageTable = ({ data = [], strings = {}, onSort }) => {
+const ArbitrageTable = ({ data = [], strings = todosLosStrings.processor, onSort }) => {
   const renderStartTime = performance.now();
   
   const [expandedRows, setExpandedRows] = useState(new Set());

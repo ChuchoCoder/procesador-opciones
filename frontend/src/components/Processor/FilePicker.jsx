@@ -1,4 +1,5 @@
 import { useRef } from 'react';
+import todosLosStrings from '../../strings/es-AR.js';
 
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
@@ -9,7 +10,7 @@ import Switch from '@mui/material/Switch';
 import Typography from '@mui/material/Typography';
 
 const FilePicker = ({
-  strings,
+  strings = todosLosStrings.processor,
   useAveraging,
   onToggleAveraging,
   isProcessing,
