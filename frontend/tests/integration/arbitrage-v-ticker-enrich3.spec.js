@@ -1,88 +1,82 @@
 /**
- * Final trace: find which token candidate matches for V
+ * El falso positivo del ticker V, y por qué el gate de CfiCode es necesario.
+ *
+ * Este archivo era una sesión de debug commiteada como spec: 87 líneas, **cero
+ * aserciones**, todo `console.log`, y con `OPTION_TOKEN_REGEX` más el tokenizer
+ * copiados de `process-operations.js` en lugar de importados. No podía fallar.
+ *
+ * Lo que estaba investigando sí vale un test, así que es lo que afirma ahora:
+ * `MERV - XMEV - V - 24hs` es la **acción** V a 24 horas, pero su forma
+ * colapsada `MERVXMEVV24HS` matchea el regex de tokens de opción, leyendo la
+ * `V` del ticker como marca de PUT y el `24` de "24hs" como strike.
  */
-import { describe, it, beforeAll } from 'vitest';
-import Papa from 'papaparse';
-import { readFile } from 'node:fs/promises';
-import { fileURLToPath } from 'node:url';
-import { dirname, join } from 'path';
+/* eslint-env node */
+import { describe, it, expect, beforeAll } from 'vitest';
 
-import { normalizeOperationRows } from '../../src/services/csv/legacy-normalizer.js';
-import { validateAndFilterRows } from '../../src/services/csv/validators.js';
+import { parseToken } from '../../src/services/csv/process-operations.js';
+import { loadEnrichedOperations } from './helpers/arbitrage-pipeline.js';
 
-// Copy of OPTION_TOKEN_REGEX and parseToken logic from process-operations.js
-const OPTION_TOKEN_REGEX = /^([A-Z0-9]+?)([CV])(\d+(?:\.\d+)?)(.*)$/;
+describe('ticker V: falso positivo de token de opción', () => {
+  describe('parseToken, aislado', () => {
+    it('matchea la forma colapsada de la acción V a 24hs (el falso positivo)', () => {
+      const resultado = parseToken('MERVXMEVV24HS');
 
-function parseTokenDebug(token) {
-  if (typeof token !== 'string' || !token.trim()) return null;
-  const candidate = token.trim().toUpperCase();
-  const match = candidate.match(OPTION_TOKEN_REGEX);
-  if (!match) return null;
-  return {
-    full: candidate,
-    symbol: match[1],
-    type: match[2],
-    strike: match[3],
-    remainder: match[4],
-  };
-}
+      // Esto NO es un bug de parseToken: es su trabajo, reconocer la forma de un
+      // token de opción. El problema sería confiarle la clasificación.
+      expect(resultado).not.toBeNull();
+      expect(resultado.type).toBe('PUT');
+      expect(resultado.strike).toBe(24);
+    });
 
-function tokenize(value) {
-  if (typeof value !== 'string') return [];
-  const upper = value.toUpperCase();
-  const segments = upper.split(/[\s|\-_/]+/).map(s => s.replace(/[^0-9A-Z.]/g, '')).filter(Boolean);
-  const longSegments = segments.filter(s => s.length > 3);
-  const collapsed = upper.replace(/[^0-9A-Z.]/g, '');
-  const unique = new Set([...longSegments, collapsed]);
-  return Array.from(unique);
-}
+    it('no matchea la forma de la misma acción a CI', () => {
+      // Sin el "24" no hay nada que parezca strike.
+      expect(parseToken('MERVXMEVVCI')).toBeNull();
+      expect(parseToken('V')).toBeNull();
+    });
 
-describe('V parseToken debug', () => {
-  let validateRow;
+    it('sí reconoce opciones de verdad', () => {
+      expect(parseToken('GFGC11000D')).toMatchObject({
+        symbol: 'GFG', type: 'CALL', strike: 11000,
+      });
+      expect(parseToken('GFGV5000O')).toMatchObject({
+        symbol: 'GFG', type: 'PUT', strike: 5000,
+      });
+    });
 
-  beforeAll(async () => {
-    const csvContent = await readFile(join(dirname(fileURLToPath(import.meta.url)), 'data', 'arbitrage-V-ticker.csv'), 'utf-8');
-    const parsed = Papa.parse(csvContent, { header: true, skipEmptyLines: true, dynamicTyping: true });
-    const allRows = parsed.data.filter(row => row.symbol);
-    const { rows: normalized } = normalizeOperationRows(allRows, {});
-    const validated = validateAndFilterRows({ rows: normalized });
-    const vRows = validated.rows.filter(r => r.symbol?.includes(' - V '));
-
-    // Row 1 = first BUY (24hs)
-    validateRow = vRows[1];
-    console.log('[Test] Row 1 (BUY 24hs):');
-    console.log('  keys:', Object.keys(validateRow).join(', '));
-    console.log('  symbol:', validateRow.symbol);
-    console.log('  security_id:', validateRow.security_id);
-    console.log('  text:', validateRow.text);
-
-    // Tokenize and test all candidates
-    const sources = ['token', 'option_token', 'instrumentToken', 'instrument_token',
-      'security_id', 'securityId', 'security', 'symbol', 'instrument', 'text',
-      'description', 'security_description', 'last_cl_ord_id'];
-
-    console.log('\n[Test] Token candidates:');
-    for (const src of sources) {
-      const val = validateRow[src];
-      const tokens = tokenize(val);
-      for (const token of tokens) {
-        const parsed = parseTokenDebug(token);
-        if (parsed) {
-          console.log(`  MATCH from ${src}="${val}" -> token="${token}" ->`, parsed);
-        } else {
-          if (token.length <= 5) {
-            console.log(`  no match from ${src}="${val}" -> token="${token}"`);
-          }
-        }
-      }
-    }
-
-    // Also check raw CSV row
-    const raw = validateRow.raw;
-    console.log('\n[Test] Raw CSV row keys:', Object.keys(raw || {}).join(', '));
+    it('no matchea un bono que termina en C', () => {
+      // AL30C es un bono, no un call. Misma familia de confusión.
+      expect(parseToken('AL30C')).toBeNull();
+    });
   });
 
-  it('should find the token match', () => {
-    // just to run beforeAll
+  describe('el pipeline completo no se deja engañar', () => {
+    let filasV;
+
+    beforeAll(async () => {
+      const operaciones = await loadEnrichedOperations('arbitrage-V-ticker.csv');
+      filasV = operaciones.filter((op) => String(op.symbol ?? '').includes(' - V - '));
+      expect(filasV.length).toBeGreaterThan(0);
+    }, 60000);
+
+    it('clasifica la V como acción, no como opción', () => {
+      filasV.forEach((op) => {
+        expect(op.optionType).not.toBe('CALL');
+        expect(op.optionType).not.toBe('PUT');
+        expect(op.category).toBe('accionCedear');
+      });
+    });
+
+    it('no le deja un strike inventado', () => {
+      // Regresión: el gate de CfiCode rechazaba el tipo pero el strike 24 del
+      // falso positivo sobrevivía hasta la operación final.
+      filasV.forEach((op) => {
+        expect(op.strike, `strike fantasma en ${op.symbol}`).toBeFalsy();
+      });
+    });
+
+    it('conserva el venue, que es lo que distingue CI de 24hs', () => {
+      const venues = new Set(filasV.map((op) => op.symbol.split(' - ').pop()));
+      expect(venues.size).toBeGreaterThan(1);
+    });
   });
 });
