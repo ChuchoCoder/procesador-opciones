@@ -31,10 +31,34 @@ export const createArbitrageConfiguration = (overrides = {}) => ({
 });
 
 /**
- * Run a CSV fixture through `processOperations` and return `report.operations`
- * — the enriched operations the arbitrage chain consumes in production.
+ * Run a CSV fixture through `processOperations` and return the whole report.
+ *
+ * Las vistas de tablas consumen las operaciones **consolidadas**
+ * (`report.calls.operations` / `report.puts.operations`), que tienen
+ * `totalQuantity`, `averagePrice` y `legs` — no las de `report.operations`.
+ * Pasarles las crudas hace que la tabla renderice su estado vacío.
  *
  * @param {string} fileName - fixture name under tests/integration/data
+ * @param {object} [configurationOverrides]
+ * @returns {Promise<object>}
+ */
+export const loadReport = async (fileName, configurationOverrides = {}) => {
+  const content = await readFile(resolve(dataDir, fileName), 'utf-8');
+  const file = new File([content], fileName, { type: 'text/csv' });
+
+  return processOperations({
+    dataSource: new CsvDataSource(),
+    file,
+    fileName,
+    configuration: createArbitrageConfiguration(configurationOverrides),
+  });
+};
+
+/**
+ * Sólo las operaciones enriquecidas (`report.operations`), que es lo que
+ * consume la cadena de arbitraje en producción.
+ *
+ * @param {string} fileName
  * @param {object} [configurationOverrides]
  * @returns {Promise<Array<object>>}
  */
