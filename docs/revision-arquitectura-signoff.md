@@ -76,11 +76,36 @@ Lo que confirmó: los números de S31O5 en Arbitrajes coinciden **exactamente**
 con las constantes corregidas en #14 (`ARS 51.834.010,97` y
 `ARS 11.900.168,05`), y las filas de PUTS con las que afirma el test de #39.
 
-## Lo que queda fuera de alcance
+## El camino HTTP del broker
 
-**La llamada HTTP real contra el servidor del broker.** Requiere las
-credenciales de la cuenta, así que no se puede verificar de forma
-automatizada. Lo que sí está cubierto, sin credenciales:
+Ejercitado de punta a punta contra un **servidor stub local**
+(`tools/broker-stub.mjs`), con el cliente real haciendo `fetch` reales desde
+la UI real — sin credenciales ni acceso al servidor del broker.
+
+La secuencia observada en el log del stub, incluidos los preflight de CORS:
+
+    OPTIONS/POST /auth/getToken
+    OPTIONS/GET  /rest/accounts
+    OPTIONS/GET  /rest/order/all?accountId=17825
+
+El `accountId` sale de la respuesta de cuentas y se usa en la consulta de
+órdenes: la cadena entera. Las tres órdenes del stub llegaron normalizadas,
+enriquecidas con fees y renderizadas en Compra y Venta:
+
+| símbolo | plazo | cantidad | precio | neto |
+|---|---|---|---|---|
+| GGAL | CI | 1.500 | 4.860 | −7.296.174,63 |
+| PFE | 24HS | −9 | 9.500 | +85.427,58 |
+| S31O5 | CI | −400 | 130,76 | +52.298,77 |
+
+La tercera es una orden **parcialmente ejecutada** (`cumQty` 400 de 1000), así
+que también queda verificado ese camino. Los signos siguen la convención de
+#22 y el formato el de #18, ahora sobre datos que llegaron por HTTP.
+
+Lo único que el stub no cubre es el servidor del broker respondiendo de formas
+que no anticipamos; para eso hace falta una sesión manual con una cuenta real.
+
+Cubierto además, sin credenciales:
 
 - `startDailySync` de punta a punta con el cliente mockeado (#39): camino
   feliz, paginación por `nextPageToken`, descarte de operaciones previas en
