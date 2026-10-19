@@ -11,7 +11,6 @@ import { processOperations } from '../../services/csv/process-operations.js';
 import { CsvDataSource, JsonDataSource } from '../../services/data-sources/index.js';
 import { login as brokerLogin, setBaseUrl } from '../../services/broker/jsrofex-client.js';
 import { startDailySync, refreshNewOperations } from '../../services/broker/sync-service.js';
-import { mergeBrokerBatch } from '../../services/broker/dedupe-utils.js';
 import {
   CLIPBOARD_SCOPES,
   copyReportToClipboard,
@@ -39,6 +38,12 @@ import {
 } from '../../services/clasificacion-instrumentos.js';
 import { computeScopedData } from '../../services/alcance-reporte.js';
 import { FUENTES, filtrarPorFuente } from '../../services/operacion.js';
+import {
+  elegirPreviewInicial,
+  fusionarOperacionesCsv,
+  puedeSincronizar,
+  resolverFuenteDeDatos,
+} from '../../services/orquestacion-jornada.js';
 import {
   ACCIONES_SESION,
   construirSnapshotSesion,
@@ -187,34 +192,10 @@ const ProcessorScreen = () => {
       try {
         const configurationPayload = buildConfiguration(overrides);
         
-        // Determine data source type
-        let dataSource;
-        let file;
-        let fileName;
-        
-        if (fileOrDataSource.type === 'broker') {
-          // Broker data source: use JsonDataSource with synced operations
-          // Always use the latest syncedOperations to ensure fresh data after refresh
-          dataSource = new JsonDataSource();
-          const brokerOnlyOperations = filtrarPorFuente(syncedOperations, FUENTES.BROKER);
-          console.log('[ProcessorScreen] Processing broker data:', {
-            totalSyncedOps: syncedOperations.length,
-            brokerOnlyOps: brokerOnlyOperations.length,
-            timestamp: fileOrDataSource.timestamp,
-          });
-          file = brokerOnlyOperations;
-          fileName = fileOrDataSource.name || `Broker-${brokerAuth?.accountId || 'Unknown'}.json`;
-        } else if (fileOrDataSource.type === 'csv') {
-          // CSV data source: use CsvDataSource with file
-          dataSource = new CsvDataSource();
-          file = fileOrDataSource.file;
-          fileName = fileOrDataSource.file?.name || 'operations.csv';
-        } else {
-          // Legacy: direct file object (for backward compatibility)
-          dataSource = new CsvDataSource();
-          file = fileOrDataSource;
-          fileName = fileOrDataSource.name || 'operations.csv';
-        }
+        const { dataSource, file, fileName } = resolverFuenteDeDatos(fileOrDataSource, {
+          syncedOperations,
+          brokerAccountId: brokerAuth?.accountId,
+        });
         
         const result = await processOperations({
           dataSource,
@@ -226,34 +207,18 @@ const ProcessorScreen = () => {
         setReport(result);
         setWarningCodes(result.summary.warnings ?? []);
         
-        // Handle CSV operations: remove previous CSV ops, keep broker ops, add new CSV ops
-        if (
-          fileOrDataSource.type === 'csv' &&
-          typeof setOperations === 'function' &&
-          Array.isArray(result.normalizedOperations) &&
-          result.normalizedOperations.length > 0
-        ) {
-          // Remove all previous CSV operations, keep only broker operations
-          const brokerOnlyOps = filtrarPorFuente(existingOperations, FUENTES.BROKER);
-
-          // No cross-source dedupe: a CSV row and a broker row are never "the same
-          // record" to merge away (incompatible order_id namespaces - see isDuplicate).
-          // Merge: broker ops + new CSV ops (previous CSV ops are now removed)
-          const { mergedOps } = mergeBrokerBatch(brokerOnlyOps, result.normalizedOperations);
-          setOperations(mergedOps);
+        if (fileOrDataSource.type === 'csv' && typeof setOperations === 'function') {
+          const mergedOps = fusionarOperacionesCsv(existingOperations, result.normalizedOperations);
+          if (mergedOps) {
+            setOperations(mergedOps);
+          }
         }
         
-        const initialViewKey = configurationPayload.useAveraging ? 'averaged' : 'raw';
-        const initialView = result.views?.[initialViewKey];
-        const initialCalls = initialView?.calls?.operations?.length ?? 0;
-        const initialPuts = initialView?.puts?.operations?.length ?? 0;
-        if (initialCalls > 0) {
-          setActivePreview(CLIPBOARD_SCOPES.CALLS);
-        } else if (initialPuts > 0) {
-          setActivePreview(CLIPBOARD_SCOPES.PUTS);
-        } else {
-          setActivePreview(CLIPBOARD_SCOPES.CALLS);
-        }
+        setActivePreview(
+          elegirPreviewInicial(result, configurationPayload.useAveraging) === 'puts'
+            ? CLIPBOARD_SCOPES.PUTS
+            : CLIPBOARD_SCOPES.CALLS,
+        );
       } catch (err) {
         setReport(null);
         setWarningCodes([]);
@@ -279,12 +244,9 @@ const ProcessorScreen = () => {
   const triggerSync = useCallback(
     async ({ authOverride = null, mode = 'daily', brokerApiUrl: apiUrlOverride = null } = {}) => {
       const auth = authOverride ?? brokerAuth;
-      if (!auth || !auth.token) {
-        return { success: false, error: 'NOT_AUTHENTICATED', mode };
-      }
-
-      if (syncInProgress) {
-        return { success: false, error: 'SYNC_IN_PROGRESS', mode };
+      const habilitacion = puedeSincronizar({ auth, syncInProgress });
+      if (!habilitacion.puede) {
+        return { success: false, error: habilitacion.motivo, mode };
       }
 
       // Don't clear actionFeedback when starting refresh - let success/error messages persist
