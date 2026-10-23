@@ -101,8 +101,11 @@ export class JsonDataSource extends DataSourceAdapter {
       return shouldInclude;
     });
 
+    const chainHeads = this.collapseReplaceChains(validOrders);
+    exclusionStats.supersededInChain = validOrders.length - chainHeads.length;
+
     // Normalize broker JSON format to expected row format
-    const rows = validOrders.map((order, index) => this.normalizeOrder(order, index, _config));
+    const rows = chainHeads.map((order, index) => this.normalizeOrder(order, index, _config));
 
     // Deduplicate rows by order_id + operation uniqueness (safety net for stale localStorage data)
     // Use a composite key of orderId/clOrdId + execId to identify unique operations
@@ -213,6 +216,55 @@ export class JsonDataSource extends DataSourceAdapter {
     };
 
     return row;
+  }
+
+  /**
+   * Keep only the latest link of each BYMA replace chain.
+   *
+   * BYMA order ids look like `O0TDmfe7JMnP-02501525`: the prefix identifies the
+   * order across modifications and the suffix changes on every replace. The
+   * successor's cumQty already includes what its predecessors filled, so a
+   * chain counts once, through its record with the highest cumQty.
+   *
+   * The replaced record can't be trusted to say it was replaced: sometimes it
+   * arrives as CANCELLED/REPLACED, sometimes as PARTIALLY_FILLED with no
+   * origClOrdId on the successor — which double-counted its fills.
+   *
+   * ROFX ids are plain numbers and are left alone: there a replace opens a new
+   * order with its own cumQty, and both must be counted.
+   *
+   * @param {Array<Object>} orders - Broker orders already filtered by status
+   * @returns {Array<Object>} The same orders, minus superseded chain links
+   */
+  collapseReplaceChains(orders) {
+    const chainKey = (order) => {
+      const match = /^(.+)-\d+$/.exec(order.orderId || '');
+      if (!match) {
+        return null;
+      }
+      return [match[1], this.extractSymbol(order), this.normalizeSide(order.side)].join('::');
+    };
+
+    const heads = new Map();
+    orders.forEach((order) => {
+      const key = chainKey(order);
+      if (!key) {
+        return;
+      }
+      const head = heads.get(key);
+      const cumQty = this.parseNumeric(order.cumQty) ?? 0;
+      const headCumQty = head ? this.parseNumeric(head.cumQty) ?? 0 : -1;
+      const isLater = head && cumQty === headCumQty
+        && String(order.transactTime ?? '') > String(head.transactTime ?? '');
+      if (cumQty > headCumQty || isLater) {
+        heads.set(key, order);
+      }
+    });
+
+    return orders.filter((order) => {
+      const key = chainKey(order);
+      return !key || heads.get(key) === order;
+    });
   }
 
   /**

@@ -20,6 +20,13 @@ parciales), todas con el mismo `order_id`. Los registros con
 reemplazo de una orden y repiten al `execution_report` anterior. Contarlos
 duplica fills.
 
+En la API del broker pasa lo mismo con otra forma: en BYMA una orden
+modificada cambia de `orderId` sólo en el sufijo (`O0TDmfe7JMnP-02501525` →
+`O0TDmfe7JMnP-03475819`), y el `cumQty` de la sucesora ya incluye lo que
+ejecutó la original. La cadena se cuenta una vez, por su eslabón con mayor
+`cumQty`. En ROFX no: el reemplazo abre una orden nueva con su propio
+`cumQty`, y se suman las dos.
+
 **Lado** — `C` (compra) o `V` (venta). En las filas crudas del broker aparece
 como `side` con valores `BUY` / `SELL`.
 
