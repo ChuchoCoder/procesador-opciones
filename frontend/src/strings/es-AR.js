@@ -15,6 +15,7 @@ const strings = {
   processor: {
     filters: {
       filterLabel: 'Filtrar por instrumento',
+      settlementLabel: 'Filtrar por plazo',
       all: 'Todos',
     },
     operationTypeTabs: {
@@ -141,6 +142,11 @@ const strings = {
       comingSoon: 'Esta funcionalidad estará disponible próximamente.',
       averageByInstrument: 'Promediar',
       averageTooltip: 'Promediar por instrumento y plazo',
+      netNominalsTitle: 'Neto de nominales',
+      netNominalsTooltip: 'Comprado menos vendido por símbolo, sumando los plazos filtrados',
+      bought: 'Comprado',
+      sold: 'Vendido',
+      netNominals: 'Neto',
       feeTooltipLabels: {
         categoria: 'Categoría',
         bruto: 'Bruto',

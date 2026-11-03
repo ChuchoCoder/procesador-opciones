@@ -16,6 +16,7 @@ import Tooltip from '@mui/material/Tooltip';
 import Chip from '@mui/material/Chip';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import TrendingDownIcon from '@mui/icons-material/TrendingDown';
+import CompareArrowsIcon from '@mui/icons-material/CompareArrows';
 
 import GroupFilter from './GroupFilter.jsx';
 import { getBuySellOperations } from '../../services/csv/buy-sell-matcher.js';
@@ -25,6 +26,13 @@ import { formatCantidad, formatDecimal, formatMoneda } from '../../services/form
 // Era una copia carácter por carácter de extractBaseSymbol.
 import { extractBaseSymbol as normalizeSymbol } from '../../services/clasificacion-instrumentos.js';
 import { calcularNetoOperacion, esCompraPorLado } from '../../services/operacion.js';
+import { ALL_GROUP_ID } from '../../services/clasificacion-instrumentos.js';
+import {
+  calcularNetoNominales,
+  filtrarPorPlazo,
+  listarPlazos,
+  plazosEfectivos,
+} from '../../services/neto-nominales.js';
 
 // This view leaves money cells blank when a value is absent, rather than
 // showing an em dash.
@@ -524,6 +532,78 @@ const BuySellTable = ({
   );
 };
 
+const formatNeto = (value) => {
+  const texto = formatCantidad(value);
+  return value > 0 ? `+${texto}` : texto;
+};
+
+const NetoNominalesPanel = ({ filas, strings }) => {
+  if (!filas.length) {
+    return null;
+  }
+
+  const titulo = strings?.tables?.netNominalsTitle ?? 'Neto de nominales';
+  const ayuda = strings?.tables?.netNominalsTooltip
+    ?? 'Comprado menos vendido por símbolo, sumando los plazos filtrados';
+
+  return (
+    <Box sx={{ px: 2, pb: 1 }}>
+      <TableContainer
+        component={Paper}
+        variant="outlined"
+        sx={{ maxHeight: 220, overflow: 'auto' }}
+      >
+        <Table size="small" stickyHeader data-testid="processor-net-nominals-table">
+          <TableHead>
+            <TableRow>
+              <TableCell colSpan={4} sx={{ backgroundColor: 'background.paper' }}>
+                <Tooltip title={ayuda}>
+                  <Chip
+                    icon={<CompareArrowsIcon sx={{ fontSize: 18 }} />}
+                    label={titulo}
+                    color="primary"
+                    variant="outlined"
+                    sx={{ fontWeight: 600, fontSize: '0.875rem', letterSpacing: '0.5px', px: 0.5 }}
+                  />
+                </Tooltip>
+              </TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell>{strings?.tables?.symbol ?? 'Símbolo'}</TableCell>
+              <TableCell align="right">{strings?.tables?.bought ?? 'Comprado'}</TableCell>
+              <TableCell align="right">{strings?.tables?.sold ?? 'Vendido'}</TableCell>
+              <TableCell align="right">{strings?.tables?.netNominals ?? 'Neto'}</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {filas.map((fila, index) => (
+              <TableRow
+                key={fila.symbol}
+                sx={index % 2 === 1 ? { backgroundColor: 'action.hover' } : undefined}
+              >
+                <TableCell>{fila.symbol}</TableCell>
+                <TableCell align="right">{formatCantidad(fila.comprado)}</TableCell>
+                <TableCell align="right" sx={{ color: fila.vendido ? 'error.main' : undefined }}>
+                  {formatCantidad(-fila.vendido)}
+                </TableCell>
+                <TableCell
+                  align="right"
+                  sx={{
+                    fontWeight: 600,
+                    color: fila.neto > 0 ? 'success.main' : fila.neto < 0 ? 'error.main' : 'text.secondary',
+                  }}
+                >
+                  {formatNeto(fila.neto)}
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </TableContainer>
+    </Box>
+  );
+};
+
 const CompraVentaView = ({
   operations,
   groupOptions,
@@ -549,14 +629,49 @@ const CompraVentaView = ({
     [sells, expirationLabels],
   );
 
+  // Filtro de plazo local a esta vista. `[]` significa "todos".
+  const [selectedSettlements, setSelectedSettlements] = useState([]);
+
+  const availableSettlements = useMemo(
+    () => listarPlazos(buyRows, sellRows),
+    [buyRows, sellRows],
+  );
+  // Un plazo elegido que ya no aparece (por el filtro de instrumento) no deja
+  // las tablas vacías: se ignora.
+  const activeSettlements = useMemo(
+    () => plazosEfectivos(selectedSettlements, availableSettlements),
+    [selectedSettlements, availableSettlements],
+  );
+  const settlementOptions = useMemo(
+    () => [
+      { id: ALL_GROUP_ID, label: filterStrings.all ?? 'Todos', testId: 'all' },
+      ...availableSettlements.map((plazo) => ({ id: plazo, label: plazo })),
+    ],
+    [availableSettlements, filterStrings.all],
+  );
+
+  const filteredBuyRows = useMemo(
+    () => filtrarPorPlazo(buyRows, activeSettlements),
+    [buyRows, activeSettlements],
+  );
+  const filteredSellRows = useMemo(
+    () => filtrarPorPlazo(sellRows, activeSettlements),
+    [sellRows, activeSettlements],
+  );
+
+  const netNominals = useMemo(
+    () => calcularNetoNominales(filteredBuyRows, filteredSellRows),
+    [filteredBuyRows, filteredSellRows],
+  );
+
   const processedBuys = useMemo(
-    () => (averagingEnabled ? aggregateRows(buyRows) : buyRows),
-    [averagingEnabled, buyRows],
+    () => (averagingEnabled ? aggregateRows(filteredBuyRows) : filteredBuyRows),
+    [averagingEnabled, filteredBuyRows],
   );
 
   const processedSells = useMemo(
-    () => (averagingEnabled ? aggregateRows(sellRows) : sellRows),
-    [averagingEnabled, sellRows],
+    () => (averagingEnabled ? aggregateRows(filteredSellRows) : filteredSellRows),
+    [averagingEnabled, filteredSellRows],
   );
 
   const handleToggleAveraging = (value) => {
@@ -565,14 +680,29 @@ const CompraVentaView = ({
 
   return (
     <Stack spacing={0} sx={{ flex: 1, minHeight: 0 }}>
-      {groupOptions.length > 0 && (
-        <GroupFilter
-          options={groupOptions}
-          selectedGroupId={selectedGroupId}
-          onChange={onGroupChange}
-          strings={filterStrings}
-        />
-      )}
+      <Box sx={{ display: 'flex', flexWrap: 'wrap', alignItems: 'flex-start' }}>
+        {groupOptions.length > 0 && (
+          <GroupFilter
+            options={groupOptions}
+            selectedGroupId={selectedGroupId}
+            onChange={onGroupChange}
+            strings={filterStrings}
+            sx={{ flex: '1 1 320px', minWidth: 0 }}
+          />
+        )}
+        {availableSettlements.length > 0 && (
+          <GroupFilter
+            options={settlementOptions}
+            selectedGroupId={activeSettlements}
+            onChange={setSelectedSettlements}
+            strings={{ filterLabel: filterStrings.settlementLabel ?? 'Filtrar por plazo' }}
+            testId="settlement-filter"
+            sx={{ flex: '0 0 auto' }}
+          />
+        )}
+      </Box>
+
+      <NetoNominalesPanel filas={netNominals} strings={strings} />
 
       <Box
         sx={{
