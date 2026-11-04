@@ -17,6 +17,7 @@ import ReconciliationView from '../../src/components/Processor/ReconciliationVie
 import strings from '../../src/strings/es-AR.js';
 import theme from '../../src/app/theme.js';
 import { loadEnrichedOperations, loadReport } from './helpers/arbitrage-pipeline.js';
+import { storageKeys } from '../../src/services/storage/local-storage.js';
 
 const processorStrings = strings.processor;
 
@@ -40,7 +41,11 @@ describe('vistas del Procesador', () => {
     expect(operaciones.length).toBeGreaterThan(0);
   }, 60000);
 
-  afterEach(() => cleanup());
+  afterEach(() => {
+    cleanup();
+    // La visibilidad del neto de nominales se persiste: que no pase de un test a otro.
+    localStorage.removeItem(storageKeys.showNetNominals);
+  });
 
   describe('CompraVentaView', () => {
     it('muestra filas con valores reales, no el estado vacío', () => {
@@ -159,6 +164,43 @@ describe('vistas del Procesador', () => {
       rerender(vista(operaciones));
       expect(plazosDe('processor-buy-table')).toEqual(todos);
       expect(screen.getByTestId('settlement-filter-option-all').getAttribute('aria-pressed')).toBe('true');
+    }, 30000);
+
+    it('oculta y muestra el neto de nominales, y recuerda la elección', async () => {
+      const user = userEvent.setup();
+      const vista = () => montar(
+        <CompraVentaView
+          operations={operaciones}
+          strings={processorStrings}
+          expirationLabels={{}}
+          {...propsFiltro}
+        />,
+      );
+      const toggle = () => screen.getByTestId('processor-net-nominals-toggle');
+
+      const { unmount } = vista();
+      // Visible por defecto.
+      expect(screen.getByTestId('processor-net-nominals-table')).toBeTruthy();
+      expect(toggle().getAttribute('aria-label')).toBe('Ocultar neto de nominales');
+
+      await user.click(toggle());
+      await waitFor(() => {
+        expect(screen.queryByTestId('processor-net-nominals-table')).toBeNull();
+      });
+      // La barra de título queda, para poder volver a mostrarlo.
+      expect(toggle().getAttribute('aria-expanded')).toBe('false');
+      expect(toggle().getAttribute('aria-label')).toBe('Mostrar neto de nominales');
+      // Ocultar el panel no toca las tablas.
+      expect(screen.getByTestId('processor-buy-table').tBodies[0].rows.length).toBeGreaterThan(1);
+
+      // Al volver a la vista sigue oculto.
+      unmount();
+      vista();
+      expect(screen.queryByTestId('processor-net-nominals-table')).toBeNull();
+
+      await user.click(toggle());
+      expect(screen.getByTestId('processor-net-nominals-table')).toBeTruthy();
+      expect(toggle().getAttribute('aria-expanded')).toBe('true');
     }, 30000);
 
     it('no explota sin operaciones', () => {

@@ -14,9 +14,13 @@ import Switch from '@mui/material/Switch';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import Tooltip from '@mui/material/Tooltip';
 import Chip from '@mui/material/Chip';
+import Collapse from '@mui/material/Collapse';
+import IconButton from '@mui/material/IconButton';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import TrendingDownIcon from '@mui/icons-material/TrendingDown';
 import CompareArrowsIcon from '@mui/icons-material/CompareArrows';
+import ExpandLessIcon from '@mui/icons-material/ExpandLess';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 
 import GroupFilter from './GroupFilter.jsx';
 import { getBuySellOperations } from '../../services/csv/buy-sell-matcher.js';
@@ -34,6 +38,7 @@ import {
   extractBaseSymbol as normalizeSymbol,
 } from '../../services/clasificacion-instrumentos.js';
 import { calcularNetoOperacion, esCompraPorLado } from '../../services/operacion.js';
+import { readItem, storageKeys, writeItem } from '../../services/storage/local-storage.js';
 import {
   calcularNetoNominales,
   filtrarPorPlazo,
@@ -548,7 +553,7 @@ const colorNeto = (value) => {
   return 'text.secondary';
 };
 
-const NetoNominalesPanel = ({ filas, strings }) => {
+const NetoNominalesPanel = ({ filas, strings, visible, onToggle }) => {
   if (!filas.length) {
     return null;
   }
@@ -556,10 +561,15 @@ const NetoNominalesPanel = ({ filas, strings }) => {
   const titulo = strings?.tables?.netNominalsTitle ?? 'Neto de nominales';
   const ayuda = strings?.tables?.netNominalsTooltip
     ?? 'Comprado menos vendido por símbolo, sumando los plazos filtrados';
+  const accion = visible
+    ? strings?.tables?.netNominalsHide ?? 'Ocultar neto de nominales'
+    : strings?.tables?.netNominalsShow ?? 'Mostrar neto de nominales';
 
   return (
-    <Paper variant="outlined" sx={{ mx: 2, mb: 1 }}>
-      <Box sx={{ px: 2, py: 1 }}>
+    <Paper variant="outlined" sx={{ mx: 2, mb: 1 }} data-testid="processor-net-nominals">
+      {/* La barra de título queda siempre visible: es lo que permite volver a
+          mostrar el panel. */}
+      <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ px: 2, py: 1 }}>
         <Tooltip title={ayuda}>
           <Chip
             icon={<CompareArrowsIcon sx={{ fontSize: 18 }} />}
@@ -569,47 +579,64 @@ const NetoNominalesPanel = ({ filas, strings }) => {
             sx={{ fontWeight: 600, fontSize: '0.875rem', letterSpacing: '0.5px', px: 0.5 }}
           />
         </Tooltip>
-      </Box>
-      {/* Una sola fila de encabezado fija: con dos, ambas quedan en top: 0 y
-          se superponen al desplazar. */}
-      <TableContainer sx={{ maxHeight: 180, overflow: 'auto' }}>
-        <Table size="small" stickyHeader data-testid="processor-net-nominals-table">
-          <TableHead>
-            <TableRow>
-              <TableCell>{strings?.tables?.symbol ?? 'Símbolo'}</TableCell>
-              <TableCell align="right">{strings?.tables?.bought ?? 'Comprado'}</TableCell>
-              <TableCell align="right">{strings?.tables?.sold ?? 'Vendido'}</TableCell>
-              <TableCell align="right">{strings?.tables?.netNominals ?? 'Neto'}</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {filas.map((fila, index) => (
-              <TableRow
-                key={fila.symbol}
-                sx={index % 2 === 1 ? { backgroundColor: 'action.hover' } : undefined}
-              >
-                <TableCell>{fila.symbol}</TableCell>
-                <TableCell align="right">{formatCantidad(fila.comprado)}</TableCell>
-                <TableCell align="right" sx={{ color: fila.vendido ? 'error.main' : undefined }}>
-                  {formatCantidad(-fila.vendido)}
-                </TableCell>
-                <TableCell
-                  align="right"
-                  sx={{
-                    fontWeight: 600,
-                    color: colorNeto(fila.neto),
-                  }}
-                >
-                  {formatCantidadConSigno(fila.neto)}
-                </TableCell>
+        <Tooltip title={accion}>
+          <IconButton
+            size="small"
+            onClick={() => onToggle(!visible)}
+            aria-label={accion}
+            aria-expanded={visible}
+            data-testid="processor-net-nominals-toggle"
+          >
+            {visible ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+          </IconButton>
+        </Tooltip>
+      </Stack>
+      <Collapse in={visible} unmountOnExit>
+        {/* Una sola fila de encabezado fija: con dos, ambas quedan en top: 0 y
+            se superponen al desplazar. */}
+        <TableContainer sx={{ maxHeight: 180, overflow: 'auto' }}>
+          <Table size="small" stickyHeader data-testid="processor-net-nominals-table">
+            <TableHead>
+              <TableRow>
+                <TableCell>{strings?.tables?.symbol ?? 'Símbolo'}</TableCell>
+                <TableCell align="right">{strings?.tables?.bought ?? 'Comprado'}</TableCell>
+                <TableCell align="right">{strings?.tables?.sold ?? 'Vendido'}</TableCell>
+                <TableCell align="right">{strings?.tables?.netNominals ?? 'Neto'}</TableCell>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
+            </TableHead>
+            <TableBody>
+              {filas.map((fila, index) => (
+                <TableRow
+                  key={fila.symbol}
+                  sx={index % 2 === 1 ? { backgroundColor: 'action.hover' } : undefined}
+                >
+                  <TableCell>{fila.symbol}</TableCell>
+                  <TableCell align="right">{formatCantidad(fila.comprado)}</TableCell>
+                  <TableCell align="right" sx={{ color: fila.vendido ? 'error.main' : undefined }}>
+                    {formatCantidad(-fila.vendido)}
+                  </TableCell>
+                  <TableCell
+                    align="right"
+                    sx={{
+                      fontWeight: 600,
+                      color: colorNeto(fila.neto),
+                    }}
+                  >
+                    {formatCantidadConSigno(fila.neto)}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      </Collapse>
     </Paper>
   );
 };
+
+// Mostrar u ocultar el neto de nominales es una preferencia que sobrevive a la
+// recarga. Visible salvo que se haya ocultado explícitamente.
+const leerNetoVisible = () => readItem(storageKeys.showNetNominals) !== false;
 
 const CompraVentaView = ({
   operations,
@@ -622,6 +649,12 @@ const CompraVentaView = ({
   const filterStrings = strings?.filters ?? {};
 
   const [averagingEnabled, setAveragingEnabled] = useState(true);
+  const [netNominalsVisible, setNetNominalsVisible] = useState(leerNetoVisible);
+
+  const handleToggleNetNominals = (visible) => {
+    setNetNominalsVisible(visible);
+    writeItem(storageKeys.showNetNominals, visible);
+  };
 
   const { buys, sells } = useMemo(() => {
     return getBuySellOperations(operations);
@@ -713,7 +746,12 @@ const CompraVentaView = ({
         )}
       </Box>
 
-      <NetoNominalesPanel filas={netNominals} strings={strings} />
+      <NetoNominalesPanel
+        filas={netNominals}
+        strings={strings}
+        visible={netNominalsVisible}
+        onToggle={handleToggleNetNominals}
+      />
 
       <Box
         sx={{

@@ -144,6 +144,8 @@ const strings = {
       averageTooltip: 'Promediar por instrumento y plazo',
       netNominalsTitle: 'Neto de nominales',
       netNominalsTooltip: 'Comprado menos vendido por símbolo, sumando los plazos filtrados',
+      netNominalsShow: 'Mostrar neto de nominales',
+      netNominalsHide: 'Ocultar neto de nominales',
       bought: 'Comprado',
       sold: 'Vendido',
       netNominals: 'Neto',
