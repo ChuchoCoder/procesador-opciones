@@ -3,6 +3,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 
 import {
   formatCantidad,
+  formatCantidadConSigno,
   formatDecimal,
   formatPrecio,
   formatMoneda,
@@ -55,6 +56,26 @@ describe('formato', () => {
 
     it('accepts a caller-chosen placeholder', () => {
       expect(formatCantidad(NaN, { placeholder: '—' })).toBe('—');
+    });
+  });
+
+  describe('formatCantidadConSigno', () => {
+    it('prefixes longs and shorts, but not zero', () => {
+      expect(formatCantidadConSigno(545813)).toBe('+545,813');
+      expect(formatCantidadConSigno(-6311)).toBe('-6,311');
+      expect(formatCantidadConSigno(0)).toBe('0');
+    });
+
+    it('takes the sign from the rounded value', () => {
+      // Sin decimales, 0.3 y -0.2 se ven como 0: no pueden llevar signo.
+      expect(formatCantidadConSigno(0.3)).toBe('0');
+      expect(formatCantidadConSigno(-0.2)).toBe('0');
+      expect(formatCantidadConSigno(1e-9)).toBe('0');
+      expect(formatCantidadConSigno(-0.6)).toBe('-1');
+    });
+
+    it('returns a blank placeholder for non-finite values', () => {
+      expect(formatCantidadConSigno(NaN)).toBe('');
     });
   });
 

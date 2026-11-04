@@ -6,7 +6,14 @@ import Chip from '@mui/material/Chip';
 const DEFAULT_LABEL = 'Filter by instrument';
 import { ALL_GROUP_ID as ALL_OPTION_ID } from '../../services/clasificacion-instrumentos.js';
 
-const GroupFilter = ({ options = [], selectedGroupId, onChange, strings = {} }) => {
+const GroupFilter = ({
+  options = [],
+  selectedGroupId,
+  onChange,
+  strings = {},
+  testId = 'group-filter',
+  sx,
+}) => {
   if (!options.length) {
     return null;
   }
@@ -46,7 +53,11 @@ const GroupFilter = ({ options = [], selectedGroupId, onChange, strings = {} }) 
   };
 
   return (
-    <Stack spacing={1} data-testid="group-filter" sx={{ px: 2, pt: 2, pb: 1 }}>
+    <Stack
+      spacing={1}
+      data-testid={testId}
+      sx={[{ px: 2, pt: 2, pb: 1 }, ...(Array.isArray(sx) ? sx : [sx])]}
+    >
       <Typography variant="subtitle2" color="text.secondary">
         {label}
       </Typography>
@@ -73,10 +84,10 @@ const GroupFilter = ({ options = [], selectedGroupId, onChange, strings = {} }) 
               onClick={() => handleClick(option.id)}
               color={selected ? 'primary' : 'default'}
               variant={selected ? 'filled' : 'outlined'}
-              data-testid={`group-filter-option-${baseTestId}`}
+              data-testid={`${testId}-option-${baseTestId}`}
               aria-pressed={selected ? 'true' : undefined}
               sx={{ cursor: 'pointer' }}
-              {...{ 'data-label-testid': `group-filter-option-${labelTestId}` }}
+              {...{ 'data-label-testid': `${testId}-option-${labelTestId}` }}
             />
           );
         })}

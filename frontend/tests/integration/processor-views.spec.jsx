@@ -22,6 +22,10 @@ const processorStrings = strings.processor;
 
 const montar = (ui) => render(<ThemeProvider theme={theme}>{ui}</ThemeProvider>);
 
+// Filas del cuerpo de una tabla. No usar `querySelectorAll('tbody tr')`: con
+// varias tablas en la página, jsdom devuelve también filas de las otras.
+const filasDe = (tabla) => [...tabla.tBodies[0].rows];
+
 const propsFiltro = {
   groupOptions: [],
   selectedGroupId: [],
@@ -54,7 +58,7 @@ describe('vistas del Procesador', () => {
 
       // No alcanza con que exista la tabla: tiene que mostrar operaciones.
       expect(compras.textContent).not.toContain('Sin datos');
-      const filas = compras.querySelectorAll('tbody tr');
+      const filas = filasDe(compras);
       expect(filas.length).toBeGreaterThan(1);
 
       // Cada fila trae símbolo, venue, cantidad, precio y neto.
@@ -65,6 +69,97 @@ describe('vistas del Procesador', () => {
       // El neto de una compra es negativo.
       expect(celdas[celdas.length - 1]).toMatch(/^-/);
     });
+
+    it('filtra por plazo y recalcula el neto de nominales', async () => {
+      const user = userEvent.setup();
+      montar(
+        <CompraVentaView
+          operations={operaciones}
+          strings={processorStrings}
+          expirationLabels={{}}
+          {...propsFiltro}
+        />,
+      );
+
+      // Plazo de cada fila; la fila de "Sin datos" no tiene segunda celda.
+      const plazosDe = (testId) => filasDe(screen.getByTestId(testId))
+        .map((fila) => fila.cells[1]?.textContent.trim())
+        .filter(Boolean);
+      const plazosVisibles = () => new Set([
+        ...plazosDe('processor-buy-table'),
+        ...plazosDe('processor-sell-table'),
+      ]);
+      const plazosIniciales = [...plazosVisibles()];
+      // El fixture opera en más de un plazo: si no, filtrar no probaría nada.
+      expect(plazosIniciales).toEqual(expect.arrayContaining(['CI', '24HS']));
+
+      // Neto por símbolo según el panel; en cada fila, neto = comprado - vendido.
+      const netoPorSimbolo = () => {
+        const tabla = screen.queryByTestId('processor-net-nominals-table');
+        if (!tabla) {
+          return {};
+        }
+        return Object.fromEntries(filasDe(tabla).map((fila) => {
+          const [simbolo, ...numeros] = [...fila.cells].map((c) => c.textContent.trim());
+          const [comprado, vendido, neto] = numeros.map((n) => Number(n.replace(/[+,]/g, '')));
+          expect(comprado + vendido).toBe(neto);
+          return [simbolo, neto];
+        }));
+      };
+      const netoTodos = netoPorSimbolo();
+      expect(Object.keys(netoTodos).length).toBeGreaterThan(0);
+
+      // Elegir cada plazo por separado: sólo se ven sus filas, y los netos de
+      // todos los plazos suman el neto de "Todos".
+      const suma = {};
+      for (const plazo of plazosIniciales) {
+        await user.click(screen.getByTestId(`settlement-filter-option-${plazo}`));
+        expect(plazosVisibles()).toEqual(new Set([plazo]));
+        Object.entries(netoPorSimbolo()).forEach(([simbolo, neto]) => {
+          suma[simbolo] = (suma[simbolo] ?? 0) + neto;
+        });
+        // Volver a hacer click deselecciona: sin selección es "Todos".
+        await user.click(screen.getByTestId(`settlement-filter-option-${plazo}`));
+      }
+      // Los valores mostrados están redondeados a enteros, y redondear cada
+      // plazo no conmuta con sumar: se admite medio nominal por plazo.
+      Object.entries(netoTodos).forEach(([simbolo, neto]) => {
+        expect(Math.abs(suma[simbolo] - neto)).toBeLessThanOrEqual(plazosIniciales.length / 2);
+      });
+
+      await user.click(screen.getByTestId('settlement-filter-option-CI'));
+      await user.click(screen.getByTestId('settlement-filter-option-all'));
+      expect(plazosVisibles()).toEqual(new Set(plazosIniciales));
+    }, 30000);
+
+    it('olvida un plazo elegido que el filtro de instrumento hizo desaparecer', async () => {
+      const user = userEvent.setup();
+      const vista = (ops) => (
+        <ThemeProvider theme={theme}>
+          <CompraVentaView
+            operations={ops}
+            strings={processorStrings}
+            expirationLabels={{}}
+            {...propsFiltro}
+          />
+        </ThemeProvider>
+      );
+      const { rerender } = render(vista(operaciones));
+      const plazosDe = (testId) => new Set(filasDe(screen.getByTestId(testId))
+        .map((fila) => fila.cells[1]?.textContent.trim())
+        .filter(Boolean));
+      const todos = plazosDe('processor-buy-table');
+
+      await user.click(screen.getByTestId('settlement-filter-option-CI'));
+      expect(plazosDe('processor-buy-table')).toEqual(new Set(['CI']));
+
+      // Sin operaciones no hay plazo CI: la selección se descarta...
+      rerender(vista([]));
+      // ...y no vuelve a filtrar cuando CI reaparece.
+      rerender(vista(operaciones));
+      expect(plazosDe('processor-buy-table')).toEqual(todos);
+      expect(screen.getByTestId('settlement-filter-option-all').getAttribute('aria-pressed')).toBe('true');
+    }, 30000);
 
     it('no explota sin operaciones', () => {
       montar(
@@ -102,7 +197,7 @@ describe('vistas del Procesador', () => {
       // Y la tabla tiene resultados de verdad: instrumento, plazo y P&L.
       const tabla = screen.getByRole('table');
       await waitFor(() => {
-        expect(tabla.querySelectorAll('tbody tr').length).toBeGreaterThan(0);
+        expect(filasDe(tabla).length).toBeGreaterThan(0);
       }, { timeout: 20000 });
 
       expect(tabla.textContent).toMatch(/S31O5|D31O5|TX26/);
@@ -169,7 +264,7 @@ describe('vistas del Procesador', () => {
       montar(<ReconciliationView {...props()} />);
 
       const tabla = screen.getByTestId('reconciliation-matched-table');
-      expect(tabla.querySelectorAll('tbody tr').length).toBeGreaterThan(0);
+      expect(filasDe(tabla).length).toBeGreaterThan(0);
     });
 
     it('muestra filas en la pestaña de diferencias', async () => {
@@ -180,7 +275,7 @@ describe('vistas del Procesador', () => {
 
       await waitFor(() => {
         const tabla = screen.getByTestId('reconciliation-mismatched-table');
-        expect(tabla.querySelectorAll('tbody tr').length).toBeGreaterThan(0);
+        expect(filasDe(tabla).length).toBeGreaterThan(0);
       });
     }, 30000);
 
@@ -192,7 +287,7 @@ describe('vistas del Procesador', () => {
 
       await waitFor(() => {
         const tabla = screen.getByTestId('reconciliation-absent-table');
-        expect(tabla.querySelectorAll('tbody tr').length).toBeGreaterThan(0);
+        expect(filasDe(tabla).length).toBeGreaterThan(0);
       });
     }, 30000);
 
