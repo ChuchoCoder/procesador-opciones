@@ -14,13 +14,13 @@ import Switch from '@mui/material/Switch';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import Tooltip from '@mui/material/Tooltip';
 import Chip from '@mui/material/Chip';
-import Collapse from '@mui/material/Collapse';
-import IconButton from '@mui/material/IconButton';
+import TableFooter from '@mui/material/TableFooter';
+import ToggleButton from '@mui/material/ToggleButton';
+import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import TrendingDownIcon from '@mui/icons-material/TrendingDown';
 import CompareArrowsIcon from '@mui/icons-material/CompareArrows';
-import ExpandLessIcon from '@mui/icons-material/ExpandLess';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import SwapVertIcon from '@mui/icons-material/SwapVert';
 
 import GroupFilter from './GroupFilter.jsx';
 import { getBuySellOperations } from '../../services/csv/buy-sell-matcher.js';
@@ -44,6 +44,7 @@ import {
   filtrarPorPlazo,
   listarPlazos,
   plazosEfectivos,
+  totalizarNetoNominales,
 } from '../../services/neto-nominales.js';
 
 // This view leaves money cells blank when a value is absent, rather than
@@ -553,90 +554,97 @@ const colorNeto = (value) => {
   return 'text.secondary';
 };
 
-const NetoNominalesPanel = ({ filas, strings, visible, onToggle }) => {
-  if (!filas.length) {
-    return null;
-  }
+// Fila del total, al pie de la grilla.
+const celdaTotal = {
+  borderTop: 2,
+  borderTopColor: 'divider',
+  fontWeight: 700,
+  fontSize: '0.875rem',
+  color: 'text.primary',
+};
 
-  const titulo = strings?.tables?.netNominalsTitle ?? 'Neto de nominales';
-  const ayuda = strings?.tables?.netNominalsTooltip
-    ?? 'Comprado menos vendido por símbolo, sumando los plazos filtrados';
-  const accion = visible
-    ? strings?.tables?.netNominalsHide ?? 'Ocultar neto de nominales'
-    : strings?.tables?.netNominalsShow ?? 'Mostrar neto de nominales';
+const NetoNominalesTable = ({ filas, strings }) => {
+  const hasData = filas.length > 0;
+  const total = totalizarNetoNominales(filas);
 
   return (
-    <Paper variant="outlined" sx={{ mx: 2, mb: 1 }} data-testid="processor-net-nominals">
-      {/* La barra de título queda siempre visible: es lo que permite volver a
-          mostrar el panel. */}
-      <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ px: 2, py: 1 }}>
-        <Tooltip title={ayuda}>
-          <Chip
-            icon={<CompareArrowsIcon sx={{ fontSize: 18 }} />}
-            label={titulo}
-            color="primary"
-            variant="outlined"
-            sx={{ fontWeight: 600, fontSize: '0.875rem', letterSpacing: '0.5px', px: 0.5 }}
-          />
-        </Tooltip>
-        <Tooltip title={accion}>
-          <IconButton
-            size="small"
-            onClick={() => onToggle(!visible)}
-            aria-label={accion}
-            aria-expanded={visible}
-            data-testid="processor-net-nominals-toggle"
-          >
-            {visible ? <ExpandLessIcon /> : <ExpandMoreIcon />}
-          </IconButton>
-        </Tooltip>
-      </Stack>
-      <Collapse in={visible} unmountOnExit>
-        {/* Una sola fila de encabezado fija: con dos, ambas quedan en top: 0 y
-            se superponen al desplazar. */}
-        <TableContainer sx={{ maxHeight: 180, overflow: 'auto' }}>
-          <Table size="small" stickyHeader data-testid="processor-net-nominals-table">
-            <TableHead>
+    <Paper
+      elevation={0}
+      sx={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden', borderRadius: 0 }}
+    >
+      <TableContainer sx={{ flex: 1, overflow: 'auto' }}>
+        <Table size="small" stickyHeader data-testid="processor-net-nominals-table">
+          <TableHead>
+            <TableRow>
+              <TableCell>{strings?.tables?.symbol ?? 'Símbolo'}</TableCell>
+              <TableCell align="right">{strings?.tables?.bought ?? 'Comprado'}</TableCell>
+              <TableCell align="right">{strings?.tables?.sold ?? 'Vendido'}</TableCell>
+              <TableCell align="right">{strings?.tables?.netNominals ?? 'Neto'}</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {!hasData && (
               <TableRow>
-                <TableCell>{strings?.tables?.symbol ?? 'Símbolo'}</TableCell>
-                <TableCell align="right">{strings?.tables?.bought ?? 'Comprado'}</TableCell>
-                <TableCell align="right">{strings?.tables?.sold ?? 'Vendido'}</TableCell>
-                <TableCell align="right">{strings?.tables?.netNominals ?? 'Neto'}</TableCell>
+                <TableCell colSpan={4} align="center">
+                  <Typography variant="body2" color="text.secondary">
+                    {strings?.tables?.empty ?? 'Sin datos para mostrar.'}
+                  </Typography>
+                </TableCell>
               </TableRow>
-            </TableHead>
-            <TableBody>
-              {filas.map((fila, index) => (
-                <TableRow
-                  key={fila.symbol}
-                  sx={index % 2 === 1 ? { backgroundColor: 'action.hover' } : undefined}
+            )}
+            {filas.map((fila, index) => (
+              <TableRow
+                key={fila.symbol}
+                sx={index % 2 === 1 ? { backgroundColor: 'action.hover' } : undefined}
+              >
+                <TableCell>{fila.symbol}</TableCell>
+                <TableCell align="right">{formatCantidad(fila.comprado)}</TableCell>
+                <TableCell align="right" sx={{ color: fila.vendido ? 'error.main' : undefined }}>
+                  {formatCantidad(-fila.vendido)}
+                </TableCell>
+                <TableCell
+                  align="right"
+                  sx={{
+                    fontWeight: 600,
+                    color: colorNeto(fila.neto),
+                  }}
                 >
-                  <TableCell>{fila.symbol}</TableCell>
-                  <TableCell align="right">{formatCantidad(fila.comprado)}</TableCell>
-                  <TableCell align="right" sx={{ color: fila.vendido ? 'error.main' : undefined }}>
-                    {formatCantidad(-fila.vendido)}
-                  </TableCell>
-                  <TableCell
-                    align="right"
-                    sx={{
-                      fontWeight: 600,
-                      color: colorNeto(fila.neto),
-                    }}
-                  >
-                    {formatCantidadConSigno(fila.neto)}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
-      </Collapse>
+                  {formatCantidadConSigno(fila.neto)}
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+          {hasData && (
+            <TableFooter data-testid="processor-net-nominals-total">
+              <TableRow>
+                <TableCell sx={celdaTotal}>{strings?.tables?.netNominalsTotal ?? 'Total'}</TableCell>
+                <TableCell align="right" sx={celdaTotal}>{formatCantidad(total.comprado)}</TableCell>
+                <TableCell
+                  align="right"
+                  sx={{ ...celdaTotal, color: total.vendido ? 'error.main' : celdaTotal.color }}
+                >
+                  {formatCantidad(-total.vendido)}
+                </TableCell>
+                <TableCell align="right" sx={{ ...celdaTotal, color: colorNeto(total.neto) }}>
+                  {formatCantidadConSigno(total.neto)}
+                </TableCell>
+              </TableRow>
+            </TableFooter>
+          )}
+        </Table>
+      </TableContainer>
     </Paper>
   );
 };
 
-// Mostrar u ocultar el neto de nominales es una preferencia que sobrevive a la
-// recarga. Visible salvo que se haya ocultado explícitamente.
-const leerNetoVisible = () => readItem(storageKeys.showNetNominals) !== false;
+const VISTA_OPERACIONES = 'operations';
+const VISTA_NETO = 'netNominals';
+
+// Qué grilla se ve es una preferencia que sobrevive a la recarga. Operaciones
+// salvo que se haya elegido el neto de nominales.
+const leerVista = () => (
+  readItem(storageKeys.compraVentaView) === VISTA_NETO ? VISTA_NETO : VISTA_OPERACIONES
+);
 
 const CompraVentaView = ({
   operations,
@@ -649,11 +657,16 @@ const CompraVentaView = ({
   const filterStrings = strings?.filters ?? {};
 
   const [averagingEnabled, setAveragingEnabled] = useState(true);
-  const [netNominalsVisible, setNetNominalsVisible] = useState(leerNetoVisible);
+  const [vista, setVista] = useState(leerVista);
 
-  const handleToggleNetNominals = (visible) => {
-    setNetNominalsVisible(visible);
-    writeItem(storageKeys.showNetNominals, visible);
+  const handleVistaChange = (_event, nueva) => {
+    // Un ToggleButtonGroup exclusivo manda null al tocar el botón ya elegido:
+    // siempre tiene que verse una de las dos grillas.
+    if (!nueva) {
+      return;
+    }
+    setVista(nueva);
+    writeItem(storageKeys.compraVentaView, nueva);
   };
 
   const { buys, sells } = useMemo(() => {
@@ -746,46 +759,82 @@ const CompraVentaView = ({
         )}
       </Box>
 
-      <NetoNominalesPanel
-        filas={netNominals}
-        strings={strings}
-        visible={netNominalsVisible}
-        onToggle={handleToggleNetNominals}
-      />
+      <Stack direction="row" alignItems="center" spacing={1.5} sx={{ px: 2, pb: 1 }}>
+        <Typography
+          variant="overline"
+          color="text.secondary"
+          sx={{ fontWeight: 600, letterSpacing: '1px', lineHeight: 1 }}
+        >
+          {strings?.tables?.viewLabel ?? 'Ver'}
+        </Typography>
+        <ToggleButtonGroup
+          exclusive
+          size="small"
+          color="primary"
+          value={vista}
+          onChange={handleVistaChange}
+          aria-label={strings?.tables?.viewLabel ?? 'Ver'}
+          data-testid="processor-view-selector"
+        >
+          <ToggleButton
+            value={VISTA_OPERACIONES}
+            title={strings?.tables?.viewOperationsTooltip ?? 'Operaciones de compra y de venta'}
+            data-testid="processor-view-operations"
+            sx={{ gap: 0.75, px: 1.5 }}
+          >
+            <SwapVertIcon sx={{ fontSize: 18 }} />
+            {strings?.tables?.viewOperations ?? 'Operaciones'}
+          </ToggleButton>
+          <ToggleButton
+            value={VISTA_NETO}
+            title={strings?.tables?.netNominalsTooltip
+              ?? 'Comprado menos vendido por símbolo, sumando los plazos filtrados'}
+            data-testid="processor-view-net-nominals"
+            sx={{ gap: 0.75, px: 1.5 }}
+          >
+            <CompareArrowsIcon sx={{ fontSize: 18 }} />
+            {strings?.tables?.netNominalsTitle ?? 'Neto de nominales'}
+          </ToggleButton>
+        </ToggleButtonGroup>
+      </Stack>
 
-      <Box
-        sx={{
-          flex: 1,
-          minHeight: 0,
-          display: 'flex',
-          flexDirection: { xs: 'column', lg: 'row' },
-          gap: 0,
-          '& > :first-of-type': {
-            borderRight: { lg: 1, xs: 0 },
-            borderColor: 'divider',
-          },
-        }}
-      >
-        {/* BUY operations table */}
-        <BuySellTable
-          title={strings?.tables?.buyTitle ?? 'Operaciones de Compra'}
-          operations={processedBuys}
-          testId="processor-buy-table"
-          averagingEnabled={averagingEnabled}
-          onToggleAveraging={handleToggleAveraging}
-          showAveragingControl
-        />
+      {vista === VISTA_NETO ? (
+        <NetoNominalesTable filas={netNominals} strings={strings} />
+      ) : (
+        <Box
+          sx={{
+            flex: 1,
+            minHeight: 0,
+            display: 'flex',
+            flexDirection: { xs: 'column', lg: 'row' },
+            gap: 0,
+            '& > :first-of-type': {
+              borderRight: { lg: 1, xs: 0 },
+              borderColor: 'divider',
+            },
+          }}
+        >
+          {/* BUY operations table */}
+          <BuySellTable
+            title={strings?.tables?.buyTitle ?? 'Operaciones de Compra'}
+            operations={processedBuys}
+            testId="processor-buy-table"
+            averagingEnabled={averagingEnabled}
+            onToggleAveraging={handleToggleAveraging}
+            showAveragingControl
+          />
 
-        {/* SELL operations table */}
-        <BuySellTable
-          title={strings?.tables?.sellTitle ?? 'Operaciones de Venta'}
-          operations={processedSells}
-          testId="processor-sell-table"
-          averagingEnabled={averagingEnabled}
-          onToggleAveraging={handleToggleAveraging}
-          showAveragingControl
-        />
-      </Box>
+          {/* SELL operations table */}
+          <BuySellTable
+            title={strings?.tables?.sellTitle ?? 'Operaciones de Venta'}
+            operations={processedSells}
+            testId="processor-sell-table"
+            averagingEnabled={averagingEnabled}
+            onToggleAveraging={handleToggleAveraging}
+            showAveragingControl
+          />
+        </Box>
+      )}
     </Stack>
   );
 };

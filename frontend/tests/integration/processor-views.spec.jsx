@@ -43,8 +43,8 @@ describe('vistas del Procesador', () => {
 
   afterEach(() => {
     cleanup();
-    // La visibilidad del neto de nominales se persiste: que no pase de un test a otro.
-    localStorage.removeItem(storageKeys.showNetNominals);
+    // La grilla elegida (operaciones o neto) se persiste: que no pase de un test a otro.
+    localStorage.removeItem(storageKeys.compraVentaView);
   });
 
   describe('CompraVentaView', () => {
@@ -98,20 +98,28 @@ describe('vistas del Procesador', () => {
       // El fixture opera en más de un plazo: si no, filtrar no probaría nada.
       expect(plazosIniciales).toEqual(expect.arrayContaining(['CI', '24HS']));
 
-      // Neto por símbolo según el panel; en cada fila, neto = comprado - vendido.
-      const netoPorSimbolo = () => {
-        const tabla = screen.queryByTestId('processor-net-nominals-table');
-        if (!tabla) {
-          return {};
-        }
-        return Object.fromEntries(filasDe(tabla).map((fila) => {
-          const [simbolo, ...numeros] = [...fila.cells].map((c) => c.textContent.trim());
-          const [comprado, vendido, neto] = numeros.map((n) => Number(n.replace(/[+,]/g, '')));
+      // Neto por símbolo según la grilla del neto, que se ve en lugar de las
+      // de operaciones. En cada fila, y en el total, neto = comprado - vendido;
+      // el total suma las filas que se ven.
+      const numeros = (fila) => [...fila.cells].slice(1)
+        .map((c) => Number(c.textContent.trim().replace(/[+,]/g, '')));
+      const netoPorSimbolo = async () => {
+        await user.click(screen.getByTestId('processor-view-net-nominals'));
+        const tabla = screen.getByTestId('processor-net-nominals-table');
+        const netos = Object.fromEntries(filasDe(tabla).map((fila) => {
+          const [comprado, vendido, neto] = numeros(fila);
           expect(comprado + vendido).toBe(neto);
-          return [simbolo, neto];
+          return [fila.cells[0].textContent.trim(), neto];
         }));
+        const [compradoTotal, vendidoTotal, netoTotal] = numeros(tabla.tFoot.rows[0]);
+        expect(compradoTotal + vendidoTotal).toBe(netoTotal);
+        const sumaFilas = Object.values(netos).reduce((a, b) => a + b, 0);
+        // Cada fila se muestra redondeada: medio nominal de diferencia por fila.
+        expect(Math.abs(sumaFilas - netoTotal)).toBeLessThanOrEqual(Object.keys(netos).length / 2);
+        await user.click(screen.getByTestId('processor-view-operations'));
+        return netos;
       };
-      const netoTodos = netoPorSimbolo();
+      const netoTodos = await netoPorSimbolo();
       expect(Object.keys(netoTodos).length).toBeGreaterThan(0);
 
       // Elegir cada plazo por separado: sólo se ven sus filas, y los netos de
@@ -120,7 +128,7 @@ describe('vistas del Procesador', () => {
       for (const plazo of plazosIniciales) {
         await user.click(screen.getByTestId(`settlement-filter-option-${plazo}`));
         expect(plazosVisibles()).toEqual(new Set([plazo]));
-        Object.entries(netoPorSimbolo()).forEach(([simbolo, neto]) => {
+        Object.entries(await netoPorSimbolo()).forEach(([simbolo, neto]) => {
           suma[simbolo] = (suma[simbolo] ?? 0) + neto;
         });
         // Volver a hacer click deselecciona: sin selección es "Todos".
@@ -166,7 +174,7 @@ describe('vistas del Procesador', () => {
       expect(screen.getByTestId('settlement-filter-option-all').getAttribute('aria-pressed')).toBe('true');
     }, 30000);
 
-    it('oculta y muestra el neto de nominales, y recuerda la elección', async () => {
+    it('muestra o las operaciones o el neto de nominales, y recuerda la elección', async () => {
       const user = userEvent.setup();
       const vista = () => montar(
         <CompraVentaView
@@ -176,31 +184,37 @@ describe('vistas del Procesador', () => {
           {...propsFiltro}
         />,
       );
-      const toggle = () => screen.getByTestId('processor-net-nominals-toggle');
+      const boton = (testId) => screen.getByTestId(testId);
+      const elegido = (testId) => boton(testId).getAttribute('aria-pressed');
 
       const { unmount } = vista();
-      // Visible por defecto.
-      expect(screen.getByTestId('processor-net-nominals-table')).toBeTruthy();
-      expect(toggle().getAttribute('aria-label')).toBe('Ocultar neto de nominales');
-
-      await user.click(toggle());
-      await waitFor(() => {
-        expect(screen.queryByTestId('processor-net-nominals-table')).toBeNull();
-      });
-      // La barra de título queda, para poder volver a mostrarlo.
-      expect(toggle().getAttribute('aria-expanded')).toBe('false');
-      expect(toggle().getAttribute('aria-label')).toBe('Mostrar neto de nominales');
-      // Ocultar el panel no toca las tablas.
-      expect(screen.getByTestId('processor-buy-table').tBodies[0].rows.length).toBeGreaterThan(1);
-
-      // Al volver a la vista sigue oculto.
-      unmount();
-      vista();
+      // Por defecto, las operaciones; el neto no está.
+      expect(elegido('processor-view-operations')).toBe('true');
+      expect(screen.getByTestId('processor-buy-table')).toBeTruthy();
+      expect(screen.getByTestId('processor-sell-table')).toBeTruthy();
       expect(screen.queryByTestId('processor-net-nominals-table')).toBeNull();
 
-      await user.click(toggle());
+      await user.click(boton('processor-view-net-nominals'));
+      expect(elegido('processor-view-net-nominals')).toBe('true');
+      expect(screen.queryByTestId('processor-buy-table')).toBeNull();
+      expect(screen.queryByTestId('processor-sell-table')).toBeNull();
+      const tabla = screen.getByTestId('processor-net-nominals-table');
+      expect(filasDe(tabla).length).toBeGreaterThan(0);
+      expect(screen.getByTestId('processor-net-nominals-total').textContent).toMatch(/^Total/);
+
+      // Tocar la grilla ya elegida no deja la vista sin ninguna.
+      await user.click(boton('processor-view-net-nominals'));
       expect(screen.getByTestId('processor-net-nominals-table')).toBeTruthy();
-      expect(toggle().getAttribute('aria-expanded')).toBe('true');
+
+      // Al volver a la vista sigue en el neto.
+      unmount();
+      vista();
+      expect(screen.getByTestId('processor-net-nominals-table')).toBeTruthy();
+      expect(screen.queryByTestId('processor-buy-table')).toBeNull();
+
+      await user.click(boton('processor-view-operations'));
+      expect(screen.queryByTestId('processor-net-nominals-table')).toBeNull();
+      expect(filasDe(screen.getByTestId('processor-buy-table')).length).toBeGreaterThan(1);
     }, 30000);
 
     it('no explota sin operaciones', () => {
