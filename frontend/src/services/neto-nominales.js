@@ -66,3 +66,15 @@ export const calcularNetoNominales = (filasCompra = [], filasVenta = []) => {
     .map((entrada) => ({ ...entrada, neto: entrada.comprado - entrada.vendido }))
     .sort((a, b) => a.symbol.localeCompare(b.symbol));
 };
+
+/**
+ * Total de las filas de `calcularNetoNominales`: suma lo comprado y lo vendido
+ * de todos los símbolos, y el neto es su diferencia.
+ *
+ * @returns {{comprado: number, vendido: number, neto: number}}
+ */
+export const totalizarNetoNominales = (filas = []) => {
+  const comprado = filas.reduce((suma, fila) => suma + fila.comprado, 0);
+  const vendido = filas.reduce((suma, fila) => suma + fila.vendido, 0);
+  return { comprado, vendido, neto: comprado - vendido };
+};

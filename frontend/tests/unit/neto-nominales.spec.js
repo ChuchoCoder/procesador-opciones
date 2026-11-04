@@ -5,6 +5,7 @@ import {
   filtrarPorPlazo,
   listarPlazos,
   plazosEfectivos,
+  totalizarNetoNominales,
 } from '../../src/services/neto-nominales.js';
 
 // Filas como las arma CompraVentaView: compras positivas, ventas negativas.
@@ -40,6 +41,28 @@ describe('neto de nominales', () => {
       { symbol: 'AL30C', comprado: 0, vendido: 914_554, neto: -914_554 },
       { symbol: 'AL30D', comprado: 245_763, vendido: 0, neto: 245_763 },
     ]);
+  });
+
+  it('totaliza lo que se ve: comprado, vendido y su diferencia', () => {
+    expect(totalizarNetoNominales(calcularNetoNominales(compras, ventas))).toEqual({
+      comprado: 2_860_373,
+      vendido: 2_320_871,
+      neto: 539_502,
+    });
+    // Con el filtro de instrumento y de plazo, sólo suma los símbolos que quedan.
+    const soloCi = calcularNetoNominales(
+      filtrarPorPlazo(compras, ['CI']),
+      filtrarPorPlazo(ventas, ['CI']),
+    ).filter((fila) => fila.symbol !== 'AL30C');
+    expect(totalizarNetoNominales(soloCi)).toEqual({
+      comprado: 245_763,
+      vendido: 1_106_267,
+      neto: -860_504,
+    });
+  });
+
+  it('el total de nada es cero', () => {
+    expect(totalizarNetoNominales([])).toEqual({ comprado: 0, vendido: 0, neto: 0 });
   });
 
   it('una selección vacía no filtra', () => {
