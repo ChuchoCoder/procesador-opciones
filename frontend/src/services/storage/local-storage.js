@@ -16,6 +16,7 @@ export const storageKeys = {
   expirations: 'po.expirations',
   activeExpiration: 'po.activeExpiration',
   useAveraging: 'po.useAveraging',
+  showNetNominals: 'po.showNetNominals',
   lastReport: 'po.lastReport.v1',
   brokerApiUrl: 'po.brokerApiUrl',
   brokerAuth: 'po.brokerAuth',
