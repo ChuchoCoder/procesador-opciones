@@ -51,25 +51,18 @@ export const filtrarPorPlazo = (filas = [], plazos = []) => {
  */
 export const calcularNetoNominales = (filasCompra = [], filasVenta = []) => {
   const porSimbolo = new Map();
-  const entrada = (symbol) => {
-    if (!porSimbolo.has(symbol)) {
-      porSimbolo.set(symbol, { symbol, comprado: 0, vendido: 0, neto: 0 });
-    }
-    return porSimbolo.get(symbol);
+  const acumular = (filas, campo) => {
+    filas.forEach((fila) => {
+      if (!porSimbolo.has(fila.symbol)) {
+        porSimbolo.set(fila.symbol, { symbol: fila.symbol, comprado: 0, vendido: 0 });
+      }
+      porSimbolo.get(fila.symbol)[campo] += Math.abs(Number(fila.quantity) || 0);
+    });
   };
+  acumular(filasCompra, 'comprado');
+  acumular(filasVenta, 'vendido');
 
-  filasCompra.forEach((fila) => {
-    const cantidad = Math.abs(Number(fila.quantity) || 0);
-    const actual = entrada(fila.symbol);
-    actual.comprado += cantidad;
-    actual.neto += cantidad;
-  });
-  filasVenta.forEach((fila) => {
-    const cantidad = Math.abs(Number(fila.quantity) || 0);
-    const actual = entrada(fila.symbol);
-    actual.vendido += cantidad;
-    actual.neto -= cantidad;
-  });
-
-  return [...porSimbolo.values()].sort((a, b) => a.symbol.localeCompare(b.symbol));
+  return [...porSimbolo.values()]
+    .map((entrada) => ({ ...entrada, neto: entrada.comprado - entrada.vendido }))
+    .sort((a, b) => a.symbol.localeCompare(b.symbol));
 };

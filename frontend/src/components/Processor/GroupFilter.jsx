@@ -53,7 +53,11 @@ const GroupFilter = ({
   };
 
   return (
-    <Stack spacing={1} data-testid={testId} sx={{ px: 2, pt: 2, pb: 1, ...sx }}>
+    <Stack
+      spacing={1}
+      data-testid={testId}
+      sx={[{ px: 2, pt: 2, pb: 1 }, ...(Array.isArray(sx) ? sx : [sx])]}
+    >
       <Typography variant="subtitle2" color="text.secondary">
         {label}
       </Typography>

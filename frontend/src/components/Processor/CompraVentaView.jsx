@@ -22,11 +22,18 @@ import GroupFilter from './GroupFilter.jsx';
 import { getBuySellOperations } from '../../services/csv/buy-sell-matcher.js';
 import FeeTooltip from './FeeTooltip.jsx';
 import TooltipRepoFees from './TooltipRepoFees.jsx';
-import { formatCantidad, formatDecimal, formatMoneda } from '../../services/formato.js';
+import {
+  formatCantidad,
+  formatCantidadConSigno,
+  formatDecimal,
+  formatMoneda,
+} from '../../services/formato.js';
 // Era una copia carácter por carácter de extractBaseSymbol.
-import { extractBaseSymbol as normalizeSymbol } from '../../services/clasificacion-instrumentos.js';
+import {
+  ALL_GROUP_ID,
+  extractBaseSymbol as normalizeSymbol,
+} from '../../services/clasificacion-instrumentos.js';
 import { calcularNetoOperacion, esCompraPorLado } from '../../services/operacion.js';
-import { ALL_GROUP_ID } from '../../services/clasificacion-instrumentos.js';
 import {
   calcularNetoNominales,
   filtrarPorPlazo,
@@ -532,9 +539,13 @@ const BuySellTable = ({
   );
 };
 
-const formatNeto = (value) => {
-  const texto = formatCantidad(value);
-  return value > 0 ? `+${texto}` : texto;
+// El color sigue al valor que se muestra (sin decimales), no al crudo: un
+// residuo de 0.3 se ve "0" y no debe pintarse de verde.
+const colorNeto = (value) => {
+  const redondeado = Math.round(value);
+  if (redondeado > 0) return 'success.main';
+  if (redondeado < 0) return 'error.main';
+  return 'text.secondary';
 };
 
 const NetoNominalesPanel = ({ filas, strings }) => {
@@ -547,27 +558,23 @@ const NetoNominalesPanel = ({ filas, strings }) => {
     ?? 'Comprado menos vendido por símbolo, sumando los plazos filtrados';
 
   return (
-    <Box sx={{ px: 2, pb: 1 }}>
-      <TableContainer
-        component={Paper}
-        variant="outlined"
-        sx={{ maxHeight: 220, overflow: 'auto' }}
-      >
+    <Paper variant="outlined" sx={{ mx: 2, mb: 1 }}>
+      <Box sx={{ px: 2, py: 1 }}>
+        <Tooltip title={ayuda}>
+          <Chip
+            icon={<CompareArrowsIcon sx={{ fontSize: 18 }} />}
+            label={titulo}
+            color="primary"
+            variant="outlined"
+            sx={{ fontWeight: 600, fontSize: '0.875rem', letterSpacing: '0.5px', px: 0.5 }}
+          />
+        </Tooltip>
+      </Box>
+      {/* Una sola fila de encabezado fija: con dos, ambas quedan en top: 0 y
+          se superponen al desplazar. */}
+      <TableContainer sx={{ maxHeight: 180, overflow: 'auto' }}>
         <Table size="small" stickyHeader data-testid="processor-net-nominals-table">
           <TableHead>
-            <TableRow>
-              <TableCell colSpan={4} sx={{ backgroundColor: 'background.paper' }}>
-                <Tooltip title={ayuda}>
-                  <Chip
-                    icon={<CompareArrowsIcon sx={{ fontSize: 18 }} />}
-                    label={titulo}
-                    color="primary"
-                    variant="outlined"
-                    sx={{ fontWeight: 600, fontSize: '0.875rem', letterSpacing: '0.5px', px: 0.5 }}
-                  />
-                </Tooltip>
-              </TableCell>
-            </TableRow>
             <TableRow>
               <TableCell>{strings?.tables?.symbol ?? 'Símbolo'}</TableCell>
               <TableCell align="right">{strings?.tables?.bought ?? 'Comprado'}</TableCell>
@@ -590,17 +597,17 @@ const NetoNominalesPanel = ({ filas, strings }) => {
                   align="right"
                   sx={{
                     fontWeight: 600,
-                    color: fila.neto > 0 ? 'success.main' : fila.neto < 0 ? 'error.main' : 'text.secondary',
+                    color: colorNeto(fila.neto),
                   }}
                 >
-                  {formatNeto(fila.neto)}
+                  {formatCantidadConSigno(fila.neto)}
                 </TableCell>
               </TableRow>
             ))}
           </TableBody>
         </Table>
       </TableContainer>
-    </Box>
+    </Paper>
   );
 };
 
@@ -636,12 +643,16 @@ const CompraVentaView = ({
     () => listarPlazos(buyRows, sellRows),
     [buyRows, sellRows],
   );
-  // Un plazo elegido que ya no aparece (por el filtro de instrumento) no deja
-  // las tablas vacías: se ignora.
+  // Un plazo elegido que ya no aparece (por el filtro de instrumento) se
+  // descarta de la selección: si sólo se ignorara, volvería a filtrar sin aviso
+  // cuando el plazo reaparece, mientras los chips mostraban otra cosa.
   const activeSettlements = useMemo(
     () => plazosEfectivos(selectedSettlements, availableSettlements),
     [selectedSettlements, availableSettlements],
   );
+  if (activeSettlements.length !== selectedSettlements.length) {
+    setSelectedSettlements(activeSettlements);
+  }
   const settlementOptions = useMemo(
     () => [
       { id: ALL_GROUP_ID, label: filterStrings.all ?? 'Todos', testId: 'all' },

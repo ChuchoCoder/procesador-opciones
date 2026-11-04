@@ -74,6 +74,25 @@ export const formatCantidad = (value, { placeholder = '' } = {}) =>
   format(value, CANTIDAD_OPTIONS, placeholder);
 
 /**
+ * A quantity with an explicit sign, so a long and a short position read apart
+ * at a glance. The sign follows the rounded value: 0.3 renders as "0", not
+ * "+0". Zero is rendered unsigned.
+ * @param {number} value
+ * @param {{placeholder?: string}} [options]
+ * @returns {string}
+ */
+export const formatCantidadConSigno = (value, { placeholder = '' } = {}) => {
+  if (!Number.isFinite(value)) return placeholder;
+
+  const redondeado = normalizeZero(Math.round(value));
+  const absolute = formatCantidad(Math.abs(redondeado), { placeholder });
+
+  if (redondeado > 0) return `+${absolute}`;
+  if (redondeado < 0) return `-${absolute}`;
+  return absolute;
+};
+
+/**
  * A general decimal value: up to 4 fraction digits, grouped, trailing zeros
  * dropped. Used where precision varies (strikes, ratios).
  * @param {number} value
