@@ -42,39 +42,91 @@ export const filtrarPorPlazo = (filas = [], plazos = []) => {
   return filas.filter((fila) => permitidos.has(fila.settlement));
 };
 
+/** Clave de una fila del neto: la tenencia se ingresa por símbolo y plazo. */
+export const claveNeto = (symbol, settlement) => `${symbol}::${settlement}`;
+
 /**
- * Neto de nominales por símbolo: lo comprado menos lo vendido, sumando todos
- * los plazos de las filas recibidas.
+ * Neto de nominales por símbolo y plazo: lo comprado menos lo vendido.
  *
- * @returns {Array<{symbol: string, comprado: number, vendido: number, neto: number}>}
- *   `vendido` en valor absoluto; ordenado por símbolo.
+ * Va por plazo porque lo disponible depende del plazo: lo que se tenía en CI
+ * más lo operado en CI es lo que queda en CI.
+ *
+ * @returns {Array<{key: string, symbol: string, settlement: string,
+ *   comprado: number, vendido: number, neto: number}>}
+ *   `vendido` en valor absoluto; ordenado por símbolo y después por plazo
+ *   (CI, 24HS, resto).
  */
 export const calcularNetoNominales = (filasCompra = [], filasVenta = []) => {
-  const porSimbolo = new Map();
+  const porClave = new Map();
   const acumular = (filas, campo) => {
     filas.forEach((fila) => {
-      if (!porSimbolo.has(fila.symbol)) {
-        porSimbolo.set(fila.symbol, { symbol: fila.symbol, comprado: 0, vendido: 0 });
+      const key = claveNeto(fila.symbol, fila.settlement);
+      if (!porClave.has(key)) {
+        porClave.set(key, {
+          key,
+          symbol: fila.symbol,
+          settlement: fila.settlement,
+          comprado: 0,
+          vendido: 0,
+        });
       }
-      porSimbolo.get(fila.symbol)[campo] += Math.abs(Number(fila.quantity) || 0);
+      porClave.get(key)[campo] += Math.abs(Number(fila.quantity) || 0);
     });
   };
   acumular(filasCompra, 'comprado');
   acumular(filasVenta, 'vendido');
 
-  return [...porSimbolo.values()]
+  return [...porClave.values()]
     .map((entrada) => ({ ...entrada, neto: entrada.comprado - entrada.vendido }))
-    .sort((a, b) => a.symbol.localeCompare(b.symbol));
+    .sort((a, b) => a.symbol.localeCompare(b.symbol)
+      || rangoPlazo(a.settlement) - rangoPlazo(b.settlement)
+      || a.settlement.localeCompare(b.settlement));
 };
 
 /**
- * Total de las filas de `calcularNetoNominales`: suma lo comprado y lo vendido
- * de todos los símbolos, y el neto es su diferencia.
+ * Suma a cada fila la tenencia que se ingresó para su símbolo y plazo, y lo
+ * disponible: la tenencia más el neto. Sin tenencia ingresada, `tenencia` es
+ * `null` y se toma como cero.
  *
- * @returns {{comprado: number, vendido: number, neto: number}}
+ * @param {Array} filas Filas de `calcularNetoNominales`.
+ * @param {Record<string, number>} tenencias Por clave de `claveNeto`.
+ */
+export const aplicarTenencias = (filas = [], tenencias = {}) => filas.map((fila) => {
+  const tenencia = Number.isFinite(tenencias?.[fila.key]) ? tenencias[fila.key] : null;
+  return { ...fila, tenencia, disponible: (tenencia ?? 0) + fila.neto };
+});
+
+/**
+ * Total de las filas que se ven: suma tenencia, comprado y vendido; el neto es
+ * comprado menos vendido y lo disponible, tenencia más neto.
+ *
+ * @returns {{tenencia: number, comprado: number, vendido: number, neto: number, disponible: number}}
  */
 export const totalizarNetoNominales = (filas = []) => {
-  const comprado = filas.reduce((suma, fila) => suma + fila.comprado, 0);
-  const vendido = filas.reduce((suma, fila) => suma + fila.vendido, 0);
-  return { comprado, vendido, neto: comprado - vendido };
+  const sumar = (campo) => filas.reduce((suma, fila) => suma + (Number(fila[campo]) || 0), 0);
+  const tenencia = sumar('tenencia');
+  const comprado = sumar('comprado');
+  const vendido = sumar('vendido');
+  const neto = comprado - vendido;
+  return { tenencia, comprado, vendido, neto, disponible: tenencia + neto };
+};
+
+/**
+ * Lee los nominales que se escriben a mano. Son enteros, así que puntos,
+ * comas y espacios se toman como separadores de miles ("1.000.000" y
+ * "1,000,000" valen lo mismo).
+ *
+ * @returns {number|null|undefined} El número; `null` si el texto está vacío
+ *   (sin tenencia); `undefined` si no es un número.
+ */
+export const parsearNominales = (texto) => {
+  const limpio = String(texto ?? '').replace(/[\s.,]/g, '');
+  if (!limpio) {
+    return null;
+  }
+  if (!/^-?\d+$/.test(limpio)) {
+    return undefined;
+  }
+  // `Number('-0')` es -0; la tenencia en cero se muestra "0".
+  return Number(limpio) || 0;
 };

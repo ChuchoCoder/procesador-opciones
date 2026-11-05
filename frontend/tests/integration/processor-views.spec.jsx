@@ -43,8 +43,9 @@ describe('vistas del Procesador', () => {
 
   afterEach(() => {
     cleanup();
-    // La grilla elegida (operaciones o neto) se persiste: que no pase de un test a otro.
+    // La grilla elegida y las tenencias se persisten: que no pasen de un test a otro.
     localStorage.removeItem(storageKeys.compraVentaView);
+    localStorage.removeItem(storageKeys.holdings);
   });
 
   describe('CompraVentaView', () => {
@@ -98,47 +99,45 @@ describe('vistas del Procesador', () => {
       // El fixture opera en más de un plazo: si no, filtrar no probaría nada.
       expect(plazosIniciales).toEqual(expect.arrayContaining(['CI', '24HS']));
 
-      // Neto por símbolo según la grilla del neto, que se ve en lugar de las
-      // de operaciones. En cada fila, y en el total, neto = comprado - vendido;
-      // el total suma las filas que se ven.
-      const numeros = (fila) => [...fila.cells].slice(1)
-        .map((c) => Number(c.textContent.trim().replace(/[+,]/g, '')));
-      const netoPorSimbolo = async () => {
+      // Neto por símbolo y plazo según la grilla del neto, que se ve en lugar
+      // de las de operaciones. Columnas: símbolo, plazo, tenencia, comprado,
+      // vendido, neto, disponible. Sin tenencia, disponible = neto; en cada
+      // fila, y en el total, neto = comprado - vendido.
+      const numero = (celda) => Number(celda.textContent.trim().replace(/[+,]/g, ''));
+      const netoPorFila = async () => {
         await user.click(screen.getByTestId('processor-view-net-nominals'));
         const tabla = screen.getByTestId('processor-net-nominals-table');
         const netos = Object.fromEntries(filasDe(tabla).map((fila) => {
-          const [comprado, vendido, neto] = numeros(fila);
+          const [comprado, vendido, neto, disponible] = [...fila.cells].slice(3).map(numero);
           expect(comprado + vendido).toBe(neto);
-          return [fila.cells[0].textContent.trim(), neto];
+          expect(disponible).toBe(neto);
+          return [`${fila.cells[0].textContent.trim()}::${fila.cells[1].textContent.trim()}`, neto];
         }));
-        const [compradoTotal, vendidoTotal, netoTotal] = numeros(tabla.tFoot.rows[0]);
+        const [, tenenciaTotal, compradoTotal, vendidoTotal, netoTotal] = [...tabla.tFoot.rows[0].cells].map(numero);
+        expect(tenenciaTotal).toBe(0);
         expect(compradoTotal + vendidoTotal).toBe(netoTotal);
-        const sumaFilas = Object.values(netos).reduce((a, b) => a + b, 0);
+        const sumaFilas = Object.values(netos).reduce((x, y) => x + y, 0);
         // Cada fila se muestra redondeada: medio nominal de diferencia por fila.
         expect(Math.abs(sumaFilas - netoTotal)).toBeLessThanOrEqual(Object.keys(netos).length / 2);
         await user.click(screen.getByTestId('processor-view-operations'));
         return netos;
       };
-      const netoTodos = await netoPorSimbolo();
+      const netoTodos = await netoPorFila();
       expect(Object.keys(netoTodos).length).toBeGreaterThan(0);
 
-      // Elegir cada plazo por separado: sólo se ven sus filas, y los netos de
-      // todos los plazos suman el neto de "Todos".
-      const suma = {};
+      // Elegir cada plazo por separado: sólo se ven sus filas, en las dos
+      // grillas, y juntas son las mismas filas que con "Todos".
+      const porPlazo = {};
       for (const plazo of plazosIniciales) {
         await user.click(screen.getByTestId(`settlement-filter-option-${plazo}`));
         expect(plazosVisibles()).toEqual(new Set([plazo]));
-        Object.entries(await netoPorSimbolo()).forEach(([simbolo, neto]) => {
-          suma[simbolo] = (suma[simbolo] ?? 0) + neto;
-        });
+        const netos = await netoPorFila();
+        Object.keys(netos).forEach((clave) => expect(clave.endsWith(`::${plazo}`)).toBe(true));
+        Object.assign(porPlazo, netos);
         // Volver a hacer click deselecciona: sin selección es "Todos".
         await user.click(screen.getByTestId(`settlement-filter-option-${plazo}`));
       }
-      // Los valores mostrados están redondeados a enteros, y redondear cada
-      // plazo no conmuta con sumar: se admite medio nominal por plazo.
-      Object.entries(netoTodos).forEach(([simbolo, neto]) => {
-        expect(Math.abs(suma[simbolo] - neto)).toBeLessThanOrEqual(plazosIniciales.length / 2);
-      });
+      expect(porPlazo).toEqual(netoTodos);
 
       await user.click(screen.getByTestId('settlement-filter-option-CI'));
       await user.click(screen.getByTestId('settlement-filter-option-all'));
@@ -215,6 +214,69 @@ describe('vistas del Procesador', () => {
       await user.click(boton('processor-view-operations'));
       expect(screen.queryByTestId('processor-net-nominals-table')).toBeNull();
       expect(filasDe(screen.getByTestId('processor-buy-table')).length).toBeGreaterThan(1);
+    }, 30000);
+
+    it('calcula lo disponible con la tenencia ingresada, y la recuerda', async () => {
+      const user = userEvent.setup();
+      localStorage.setItem(storageKeys.compraVentaView, JSON.stringify('netNominals'));
+      const vista = () => montar(
+        <CompraVentaView
+          operations={operaciones}
+          strings={processorStrings}
+          expirationLabels={{}}
+          {...propsFiltro}
+        />,
+      );
+      const numero = (texto) => Number(texto.trim().replace(/[+,]/g, ''));
+
+      const { unmount } = vista();
+      const tabla = screen.getByTestId('processor-net-nominals-table');
+      const fila = filasDe(tabla)[0];
+      const [simbolo, plazo] = [...fila.cells].slice(0, 2).map((c) => c.textContent.trim());
+      const clave = `${simbolo}::${plazo}`;
+      const neto = numero(fila.cells[5].textContent);
+      const disponible = () => numero(
+        screen.getByTestId(`processor-net-nominals-available-${clave}`).textContent,
+      );
+      const campo = () => screen.getByTestId(`processor-net-nominals-holding-${clave}`);
+      expect(campo().getAttribute('aria-label')).toBe(`Tenencia de ${simbolo} en ${plazo}`);
+      expect(disponible()).toBe(neto);
+
+      // Con puntos de miles, como se escribe en es-AR.
+      await user.type(campo(), '1.000.000');
+      expect(disponible()).toBe(1_000_000 + neto);
+      const total = () => [...tabla.tFoot.rows[0].cells].map((c) => c.textContent.trim());
+      expect(numero(total()[1])).toBe(1_000_000);
+
+      // Al salir del campo queda con el formato de la grilla.
+      await user.tab();
+      expect(campo().value).toBe('1,000,000');
+
+      // Lo que no es un número se marca y no cambia lo disponible: queda el
+      // último número válido ("12"), al que vuelve el campo al salir.
+      await user.clear(campo());
+      await user.type(campo(), '12a');
+      expect(campo().getAttribute('aria-invalid')).toBe('true');
+      expect(disponible()).toBe(12 + neto);
+      await user.tab();
+      expect(campo().value).toBe('12');
+      expect(campo().getAttribute('aria-invalid')).toBe('false');
+      await user.clear(campo());
+      await user.type(campo(), '250000');
+      await user.tab();
+      expect(disponible()).toBe(250_000 + neto);
+
+      // Se recuerda al volver a la vista.
+      unmount();
+      vista();
+      expect(campo().value).toBe('250,000');
+      expect(disponible()).toBe(250_000 + neto);
+
+      // "Borrar tenencias" vuelve al neto.
+      await user.click(screen.getByTestId('processor-net-nominals-clear-holdings'));
+      expect(campo().value).toBe('');
+      expect(disponible()).toBe(neto);
+      expect(screen.queryByTestId('processor-net-nominals-clear-holdings')).toBeNull();
     }, 30000);
 
     it('no explota sin operaciones', () => {

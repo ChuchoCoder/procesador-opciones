@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import todosLosStrings from '../../strings/es-AR.js';
 import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
@@ -15,6 +15,8 @@ import FormControlLabel from '@mui/material/FormControlLabel';
 import Tooltip from '@mui/material/Tooltip';
 import Chip from '@mui/material/Chip';
 import TableFooter from '@mui/material/TableFooter';
+import TextField from '@mui/material/TextField';
+import Button from '@mui/material/Button';
 import ToggleButton from '@mui/material/ToggleButton';
 import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
@@ -40,9 +42,11 @@ import {
 import { calcularNetoOperacion, esCompraPorLado } from '../../services/operacion.js';
 import { readItem, storageKeys, writeItem } from '../../services/storage/local-storage.js';
 import {
+  aplicarTenencias,
   calcularNetoNominales,
   filtrarPorPlazo,
   listarPlazos,
+  parsearNominales,
   plazosEfectivos,
   totalizarNetoNominales,
 } from '../../services/neto-nominales.js';
@@ -563,9 +567,64 @@ const celdaTotal = {
   color: 'text.primary',
 };
 
-const NetoNominalesTable = ({ filas, strings }) => {
+const textoTenencia = (valor) => (Number.isFinite(valor) ? formatCantidad(valor) : '');
+
+/**
+ * Campo de la tenencia de una fila. Guarda el texto mientras se escribe, para
+ * no reformatear bajo el cursor, y avisa el número en cada cambio válido.
+ */
+const TenenciaInput = ({ valor, onChange, label, invalidLabel, testId }) => {
+  const [texto, setTexto] = useState(() => textoTenencia(valor));
+  const [enFoco, setEnFoco] = useState(false);
+  const parseado = parsearNominales(texto);
+  const invalido = parseado === undefined;
+
+  // Fuera de foco el campo muestra la tenencia guardada, con formato: así
+  // refleja "Borrar tenencias", y al salir un texto inválido vuelve al último
+  // número válido. Mientras se escribe, manda lo que se escribe.
+  useEffect(() => {
+    if (!enFoco) {
+      setTexto(textoTenencia(valor));
+    }
+  }, [valor, enFoco]);
+
+  return (
+    <TextField
+      size="small"
+      variant="standard"
+      value={texto}
+      placeholder="0"
+      error={invalido}
+      onFocus={() => setEnFoco(true)}
+      onBlur={() => setEnFoco(false)}
+      onChange={(event) => {
+        const nuevo = event.target.value;
+        setTexto(nuevo);
+        const numero = parsearNominales(nuevo);
+        if (numero !== undefined) {
+          onChange(numero);
+        }
+      }}
+      slotProps={{
+        htmlInput: {
+          inputMode: 'numeric',
+          'aria-label': label,
+          'aria-invalid': invalido,
+          title: invalido ? invalidLabel : undefined,
+          'data-testid': testId,
+          style: { textAlign: 'right' },
+        },
+      }}
+      sx={{ width: 130 }}
+    />
+  );
+};
+
+const NetoNominalesTable = ({ filas, strings, onTenenciaChange }) => {
   const hasData = filas.length > 0;
   const total = totalizarNetoNominales(filas);
+  const t = strings?.tables ?? {};
+  const columnas = 7;
 
   return (
     <Paper
@@ -576,40 +635,64 @@ const NetoNominalesTable = ({ filas, strings }) => {
         <Table size="small" stickyHeader data-testid="processor-net-nominals-table">
           <TableHead>
             <TableRow>
-              <TableCell>{strings?.tables?.symbol ?? 'Símbolo'}</TableCell>
-              <TableCell align="right">{strings?.tables?.bought ?? 'Comprado'}</TableCell>
-              <TableCell align="right">{strings?.tables?.sold ?? 'Vendido'}</TableCell>
-              <TableCell align="right">{strings?.tables?.netNominals ?? 'Neto'}</TableCell>
+              <TableCell>{t.symbol ?? 'Símbolo'}</TableCell>
+              <TableCell>{t.settlement ?? 'Plazo'}</TableCell>
+              <TableCell align="right">
+                <Tooltip title={t.holdingTooltip ?? 'Nominales que tenías en ese plazo antes de operar'}>
+                  <span>{t.holding ?? 'Tenencia'}</span>
+                </Tooltip>
+              </TableCell>
+              <TableCell align="right">{t.bought ?? 'Comprado'}</TableCell>
+              <TableCell align="right">{t.sold ?? 'Vendido'}</TableCell>
+              <TableCell align="right">{t.netNominals ?? 'Neto'}</TableCell>
+              <TableCell align="right">
+                <Tooltip title={t.availableTooltip ?? 'Tenencia más el neto: lo que te queda en ese plazo'}>
+                  <span>{t.available ?? 'Disponible'}</span>
+                </Tooltip>
+              </TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
             {!hasData && (
               <TableRow>
-                <TableCell colSpan={4} align="center">
+                <TableCell colSpan={columnas} align="center">
                   <Typography variant="body2" color="text.secondary">
-                    {strings?.tables?.empty ?? 'Sin datos para mostrar.'}
+                    {t.empty ?? 'Sin datos para mostrar.'}
                   </Typography>
                 </TableCell>
               </TableRow>
             )}
             {filas.map((fila, index) => (
               <TableRow
-                key={fila.symbol}
+                key={fila.key}
                 sx={index % 2 === 1 ? { backgroundColor: 'action.hover' } : undefined}
               >
                 <TableCell>{fila.symbol}</TableCell>
+                <TableCell>{fila.settlement}</TableCell>
+                <TableCell align="right" sx={{ py: 0.25 }}>
+                  <TenenciaInput
+                    valor={fila.tenencia}
+                    onChange={(numero) => onTenenciaChange(fila.key, numero)}
+                    label={(t.holdingInputLabel ?? 'Tenencia de {symbol} en {settlement}')
+                      .replace('{symbol}', fila.symbol)
+                      .replace('{settlement}', fila.settlement)}
+                    invalidLabel={t.holdingInvalid ?? 'Ingresá un número entero de nominales'}
+                    testId={`processor-net-nominals-holding-${fila.key}`}
+                  />
+                </TableCell>
                 <TableCell align="right">{formatCantidad(fila.comprado)}</TableCell>
                 <TableCell align="right" sx={{ color: fila.vendido ? 'error.main' : undefined }}>
                   {formatCantidad(-fila.vendido)}
                 </TableCell>
+                <TableCell align="right" sx={{ fontWeight: 600, color: colorNeto(fila.neto) }}>
+                  {formatCantidadConSigno(fila.neto)}
+                </TableCell>
                 <TableCell
                   align="right"
-                  sx={{
-                    fontWeight: 600,
-                    color: colorNeto(fila.neto),
-                  }}
+                  sx={{ fontWeight: 700, color: colorNeto(fila.disponible) }}
+                  data-testid={`processor-net-nominals-available-${fila.key}`}
                 >
-                  {formatCantidadConSigno(fila.neto)}
+                  {formatCantidad(fila.disponible)}
                 </TableCell>
               </TableRow>
             ))}
@@ -617,7 +700,8 @@ const NetoNominalesTable = ({ filas, strings }) => {
           {hasData && (
             <TableFooter data-testid="processor-net-nominals-total">
               <TableRow>
-                <TableCell sx={celdaTotal}>{strings?.tables?.netNominalsTotal ?? 'Total'}</TableCell>
+                <TableCell sx={celdaTotal} colSpan={2}>{t.netNominalsTotal ?? 'Total'}</TableCell>
+                <TableCell align="right" sx={celdaTotal}>{formatCantidad(total.tenencia)}</TableCell>
                 <TableCell align="right" sx={celdaTotal}>{formatCantidad(total.comprado)}</TableCell>
                 <TableCell
                   align="right"
@@ -628,12 +712,27 @@ const NetoNominalesTable = ({ filas, strings }) => {
                 <TableCell align="right" sx={{ ...celdaTotal, color: colorNeto(total.neto) }}>
                   {formatCantidadConSigno(total.neto)}
                 </TableCell>
+                <TableCell align="right" sx={{ ...celdaTotal, color: colorNeto(total.disponible) }}>
+                  {formatCantidad(total.disponible)}
+                </TableCell>
               </TableRow>
             </TableFooter>
           )}
         </Table>
       </TableContainer>
     </Paper>
+  );
+};
+
+// Tenencias ingresadas, por clave símbolo::plazo. Se guardan para no perderlas
+// al cambiar de pestaña o recargar; "Borrar tenencias" las limpia.
+const leerTenencias = () => {
+  const guardadas = readItem(storageKeys.holdings);
+  if (!guardadas || typeof guardadas !== 'object' || Array.isArray(guardadas)) {
+    return {};
+  }
+  return Object.fromEntries(
+    Object.entries(guardadas).filter(([, valor]) => Number.isFinite(valor)),
   );
 };
 
@@ -658,6 +757,17 @@ const CompraVentaView = ({
 
   const [averagingEnabled, setAveragingEnabled] = useState(true);
   const [vista, setVista] = useState(leerVista);
+  const [tenencias, setTenencias] = useState(leerTenencias);
+
+  const guardarTenencias = (nuevas) => {
+    setTenencias(nuevas);
+    writeItem(storageKeys.holdings, nuevas);
+  };
+
+  const handleTenenciaChange = (clave, numero) => {
+    const { [clave]: _anterior, ...resto } = tenencias;
+    guardarTenencias(numero === null ? resto : { ...resto, [clave]: numero });
+  };
 
   const handleVistaChange = (_event, nueva) => {
     // Un ToggleButtonGroup exclusivo manda null al tocar el botón ya elegido:
@@ -717,9 +827,10 @@ const CompraVentaView = ({
   );
 
   const netNominals = useMemo(
-    () => calcularNetoNominales(filteredBuyRows, filteredSellRows),
-    [filteredBuyRows, filteredSellRows],
+    () => aplicarTenencias(calcularNetoNominales(filteredBuyRows, filteredSellRows), tenencias),
+    [filteredBuyRows, filteredSellRows, tenencias],
   );
+  const hayTenencias = Object.keys(tenencias).length > 0;
 
   const processedBuys = useMemo(
     () => (averagingEnabled ? aggregateRows(filteredBuyRows) : filteredBuyRows),
@@ -796,10 +907,25 @@ const CompraVentaView = ({
             {strings?.tables?.netNominalsTitle ?? 'Neto de nominales'}
           </ToggleButton>
         </ToggleButtonGroup>
+        {vista === VISTA_NETO && hayTenencias && (
+          <Button
+            size="small"
+            color="inherit"
+            onClick={() => guardarTenencias({})}
+            data-testid="processor-net-nominals-clear-holdings"
+            sx={{ ml: 'auto !important', color: 'text.secondary' }}
+          >
+            {strings?.tables?.clearHoldings ?? 'Borrar tenencias'}
+          </Button>
+        )}
       </Stack>
 
       {vista === VISTA_NETO ? (
-        <NetoNominalesTable filas={netNominals} strings={strings} />
+        <NetoNominalesTable
+          filas={netNominals}
+          strings={strings}
+          onTenenciaChange={handleTenenciaChange}
+        />
       ) : (
         <Box
           sx={{
