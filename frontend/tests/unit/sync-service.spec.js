@@ -28,7 +28,7 @@ vi.mock('../../src/services/broker/token-manager.js', () => ({
   ensureValidToken: vi.fn(async (auth) => auth),
 }));
 
-const { startDailySync, DAILY_MODE } = await import('../../src/services/broker/sync-service.js');
+const { startDailySync, refreshNewOperations, DAILY_MODE } = await import('../../src/services/broker/sync-service.js');
 
 const brokerAuth = { token: 'token-de-prueba', accountId: '17825' };
 
@@ -175,5 +175,74 @@ describe('startDailySync', () => {
 
     expect(cb.commitSync).toHaveBeenCalledTimes(1);
     expect(cb.failSync).not.toHaveBeenCalled();
+  });
+});
+
+describe('refreshNewOperations', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  // Caso real del 2026-11-19 (cuenta 17825): una orden de compra de AL30D por
+  // 9.835 estaba ejecutada en 5.117 cuando la API armó la respuesta. Terminó de
+  // ejecutarse a las 12:23:01.128, antes de que la sync guardara su marca de
+  // tiempo (el reloj de la PC al commitear). La ejecución final quedaba "más
+  // vieja" que la última sync y el refresh la descartaba para siempre: la app
+  // mostraba 167.316 comprados contra 172.034 del broker.
+  const parcial = opBroker('O0TXMjMFdB9T-10822808', {
+    clOrdId: '533661747125719',
+    execId: 'EXEC-PARCIAL',
+    instrumentId: { symbol: 'MERV - XMEV - AL30D - CI' },
+    orderQty: 9835,
+    cumQty: 5117,
+    status: 'PARTIALLY_FILLED',
+    transactTime: '20261119-12:22:58.400-0300',
+  });
+  const ejecutada = {
+    ...parcial,
+    execId: 'EXEC-FINAL',
+    cumQty: 9835,
+    status: 'FILLED',
+    transactTime: '20261119-12:23:01.128-0300',
+  };
+  const commitDeLaSyncAnterior = Date.parse('2026-11-19T12:23:01.500-03:00');
+
+  const sincronizarDia = async (operaciones) => {
+    listOperations.mockResolvedValueOnce({ operations: operaciones });
+    const cb = hacerCallbacks();
+    await startDailySync({ brokerAuth, existingOperations: [], mode: DAILY_MODE, ...cb });
+    return cb.commitSync.mock.calls[0][0];
+  };
+
+  const refrescar = async (existentes, operaciones) => {
+    listOperations.mockResolvedValueOnce({ operations: operaciones });
+    const cb = hacerCallbacks();
+    const resultado = await refreshNewOperations({
+      brokerAuth,
+      operations: existentes,
+      lastSyncTimestamp: commitDeLaSyncAnterior,
+      ...cb,
+    });
+    return { mergedOps: cb.commitSync.mock.calls[0][0], resultado };
+  };
+
+  it('toma la ejecución final aunque su transactTime sea anterior a la última sync', async () => {
+    const tras1raSync = await sincronizarDia([parcial]);
+
+    const { mergedOps, resultado } = await refrescar(tras1raSync, [ejecutada]);
+
+    const deLaOrden = mergedOps.filter((op) => op.order_id === parcial.orderId);
+    expect(deLaOrden).toHaveLength(1);
+    expect(deLaOrden[0].quantity).toBe(9835);
+    expect(resultado.operationsAdded).toBe(1);
+  });
+
+  it('no duplica las órdenes que no cambiaron desde la última sync', async () => {
+    const tras1raSync = await sincronizarDia([ejecutada]);
+
+    const { mergedOps, resultado } = await refrescar(tras1raSync, [ejecutada]);
+
+    expect(mergedOps.filter((op) => op.order_id === ejecutada.orderId)).toHaveLength(1);
+    expect(resultado.operationsAdded).toBe(0);
   });
 });

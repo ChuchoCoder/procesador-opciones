@@ -39,8 +39,6 @@ export const filtrarLineaDeBase = (operaciones = [], modo = DAILY_MODE) => {
 };
 const REFRESH_MODE = 'refresh';
 
-const isNumber = (value) => typeof value === 'number' && Number.isFinite(value);
-
 async function fetchPageWithRetry({ token, tradingDay, pageToken }) {
   let attempts = 0;
 
@@ -94,7 +92,6 @@ async function fetchPageWithRetry({ token, tradingDay, pageToken }) {
  * @param {string} config.tradingDay - Trading day to retrieve (e.g., 'today', 'YYYY-MM-DD')
  * @param {Function} config.onProgress - Optional progress callback: ({ pageIndex, operationsCount, pagesFetched }) => void
  * @param {Object} config.cancellationToken - Optional cancellation token: { isCanceled: boolean }
- * @param {number|null} config.minTimestamp - Optional minimum trade timestamp; operations <= value are ignored
  * @param {string} config.mode - Sync mode identifier ('daily' or 'refresh')
  * @param {string} config.brokerApiUrl - Optional broker API base URL to use for this sync
  * @returns {Promise<Object>} Result: { success: boolean, operationsAdded: number, error?: string, needsReauth?: boolean, rateLimited?: boolean }
@@ -112,7 +109,6 @@ export async function startDailySync({
   tradingDay = 'today',
   onProgress = null,
   cancellationToken = null,
-  minTimestamp = null,
   mode = DAILY_MODE,
   brokerApiUrl,
 }) {
@@ -255,16 +251,20 @@ export async function startDailySync({
         });
       }
       
-      const timestampFiltered = isNumber(minTimestamp)
-        ? normalized.filter((op) => op.tradeTimestamp > minTimestamp)
-        : normalized;
-      totalEvaluated += timestampFiltered.length;
+      // No se filtra por la hora de la última sync. `/rest/order/all` trae el
+      // día entero, cada orden con su estado más reciente, y una orden que se
+      // ejecuta entre que la API arma la respuesta y la sync guarda su marca de
+      // tiempo (el reloj de la PC al commitear) queda con un `transactTime`
+      // anterior a esa marca: filtrar por hora la perdía para siempre. Lo que ya
+      // estaba lo reconoce el dedupe por orderId + execId, y `mergeBrokerBatch`
+      // reemplaza el estado viejo de cada orden que cambió.
+      totalEvaluated += normalized.length;
 
       let acceptedForPage = [];
-      if (timestampFiltered.length > 0) {
-        acceptedForPage = dedupeOperations(dedupePool, timestampFiltered);
+      if (normalized.length > 0) {
+        acceptedForPage = dedupeOperations(dedupePool, normalized);
          
-        console.log(`[Sync ${mode}] Page ${pageIndex}: ${timestampFiltered.length} operations fetched, ${acceptedForPage.length} accepted after dedup`);
+        console.log(`[Sync ${mode}] Page ${pageIndex}: ${normalized.length} operations fetched, ${acceptedForPage.length} accepted after dedup`);
         if (acceptedForPage.length > 0) {
           candidateOperations.push(...acceptedForPage);
           dedupePool.push(...acceptedForPage);
@@ -282,7 +282,7 @@ export async function startDailySync({
           operationsCount: candidateOperations.length,
           pagesFetched: pageIndex + 1,
           estimatedTotal: pageResult.data.estimatedTotal ?? lastEstimatedTotal,
-          retrievedCount: timestampFiltered.length,
+          retrievedCount: normalized.length,
         });
       }
 
@@ -351,33 +351,24 @@ export async function startDailySync({
 }
 
 /**
- * Refresh operations: fetch only operations newer than last sync timestamp.
+ * Refresh operations: re-fetch the day and keep only what changed since the
+ * operations already loaded (new orders and new exec reports of known ones).
  * Used for manual refresh button (US3).
- * 
- * @param {Object} config - Same as startDailySync but includes lastSyncTimestamp
- * @param {number|null} config.lastSyncTimestamp - Timestamp of last successful sync (epoch ms)
+ *
+ * @param {Object} config - Same as startDailySync
  * @returns {Promise<Object>} Result: { success: boolean, operationsAdded: number, hasNewOperations: boolean }
  */
 export async function refreshNewOperations(params = {}) {
   const {
-    sync,
     operations = [],
     cancellationToken = null,
-    lastSyncTimestamp,
     ...rest
   } = params;
-
-  const inferredLastSync = isNumber(lastSyncTimestamp)
-    ? lastSyncTimestamp
-    : isNumber(sync?.lastSyncTimestamp)
-      ? sync.lastSyncTimestamp
-      : null;
 
   const result = await startDailySync({
     ...rest,
     cancellationToken,
     existingOperations: operations,
-    minTimestamp: inferredLastSync,
     mode: REFRESH_MODE,
   });
 
