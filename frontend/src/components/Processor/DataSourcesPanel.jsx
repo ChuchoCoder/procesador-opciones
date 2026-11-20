@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Chip from '@mui/material/Chip';
@@ -12,29 +12,69 @@ import DescriptionIcon from '@mui/icons-material/Description';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import CloseIcon from '@mui/icons-material/Close';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import WarningAmberIcon from '@mui/icons-material/WarningAmber';
+
+import { describirUltimaSync } from '../../services/ultima-sync.js';
+
+/** Cada cuánto se recalcula la antigüedad de la última sync en pantalla. */
+const INTERVALO_RELOJ_MS = 30 * 1000;
+
+/** La hora actual, refrescada cada `intervaloMs` para que la antigüedad avance sola. */
+const useAhora = (intervaloMs) => {
+  const [ahora, setAhora] = useState(() => Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setAhora(Date.now()), intervaloMs);
+    return () => clearInterval(id);
+  }, [intervaloMs]);
+  return ahora;
+};
 
 /**
- * Format timestamp as "hace X minutos/horas"
- * @param {number|null} timestamp - Epoch milliseconds
- * @returns {string|null} Formatted relative time
+ * La hora de la última sync, siempre a la vista junto al botón de sincronizar.
+ * Pasado el umbral se marca como desactualizada: la app no se actualiza sola.
  */
-const formatLastSync = (timestamp) => {
-  if (!timestamp) return null;
-  
-  try {
-    const now = Date.now();
-    const diff = now - timestamp;
-    const minutes = Math.floor(diff / 60000);
-    const hours = Math.floor(diff / 3600000);
-    const days = Math.floor(diff / 86400000);
-    
-    if (minutes < 1) return 'hace menos de 1 minuto';
-    if (minutes < 60) return `hace ${minutes} ${minutes === 1 ? 'minuto' : 'minutos'}`;
-    if (hours < 24) return `hace ${hours} ${hours === 1 ? 'hora' : 'horas'}`;
-    return `hace ${days} ${days === 1 ? 'día' : 'días'}`;
-  } catch {
+const UltimaSync = ({ timestamp, syncing }) => {
+  const ahora = useAhora(INTERVALO_RELOJ_MS);
+
+  if (syncing) {
+    return (
+      <Typography variant="caption" color="text.secondary" data-testid="ultima-sync">
+        Sincronizando…
+      </Typography>
+    );
+  }
+
+  const ultima = describirUltimaSync(timestamp, ahora);
+  if (!ultima) {
     return null;
   }
+
+  if (!ultima.desactualizada) {
+    return (
+      <Typography
+        variant="caption"
+        color="text.secondary"
+        data-testid="ultima-sync"
+        title={`Última sincronización con el broker: ${ultima.relativo}`}
+      >
+        Sync {ultima.hora}
+      </Typography>
+    );
+  }
+
+  return (
+    <Box
+      data-testid="ultima-sync"
+      data-desactualizada="true"
+      title="Los datos pueden no estar al día: sincronizá para ver las últimas operaciones del broker."
+      sx={{ display: 'flex', alignItems: 'center', gap: 0.5, color: 'warning.dark' }}
+    >
+      <WarningAmberIcon sx={{ fontSize: 16 }} />
+      <Typography variant="caption" sx={{ fontWeight: 600 }}>
+        Sync {ultima.hora} · {ultima.relativo}
+      </Typography>
+    </Box>
+  );
 };
 
 /**
@@ -70,6 +110,7 @@ const DataSourcesPanel = ({
   };
 
   const open = Boolean(anchorEl);
+  const ultimaSync = describirUltimaSync(brokerSource?.lastSyncTimestamp);
 
   const totalSources = [brokerSource?.connected, csvSource?.fileName].filter(Boolean).length;
   const totalOperations = (brokerSource?.operationCount || 0) + (csvSource?.operationCount || 0);
@@ -126,6 +167,12 @@ const DataSourcesPanel = ({
             <RefreshIcon fontSize="small" />
           </IconButton>
         )}
+        {brokerSource?.connected && (
+          <UltimaSync
+            timestamp={brokerSource.lastSyncTimestamp}
+            syncing={brokerSource.syncing}
+          />
+        )}
       </Box>
 
       {/* Popover with Details */}
@@ -179,9 +226,7 @@ const DataSourcesPanel = ({
               <Stack spacing={0.5} sx={{ pl: 3.5 }}>
                 <Typography variant="caption" color="text.secondary">
                   {brokerSource.operationCount || 0} operaciones
-                  {brokerSource.lastSyncTimestamp && (
-                    <> · Última sync: {formatLastSync(brokerSource.lastSyncTimestamp)}</>
-                  )}
+                  {ultimaSync && <> · Última sync: {ultimaSync.relativo} ({ultimaSync.hora})</>}
                 </Typography>
 
                 <Box>
